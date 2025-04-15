@@ -16,6 +16,11 @@
     "declaration": false,
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
+    "paths": {
+      "rag-2-games-lib": [
+        "./dist/rag-2-games-lib"
+      ]
+    },
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
