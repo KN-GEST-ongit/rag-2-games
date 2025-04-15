@@ -11,9 +11,9 @@ module.exports = {
         '3xl': '1760px',
       },
       colors: {
-        mainGray: '#454545',
+        mainGray: '#272727',
         lightGray: '#5D5D5D',
-        darkGray: ' #3C3D42',
+        darkGray: '#3C3D42',
         mainOrange: '#FF6000',
         lightOragne: '#FFA559',
         mainCreme: '#FFE6C7',
@@ -38,23 +38,6 @@ module.exports = {
       boxShadow: {
         navbarShadow: '0px 1px 7px 2px rgba(255, 96, 0, 1)',
         footerShadow: 'inset 0px 10px 23px 0px rgba(69, 69, 69, 1)',
-      },
-      animation: {
-        typewriter21: 'typewriter 3s steps(21) forwards',
-        caret21:
-          'typewriter 3s steps(21) forwards, blink 2s steps(21) infinite 3s',
-      },
-      keyframes: {
-        typewriter: {
-          to: { left: '100%' },
-        },
-        blink: {
-          '0%': { opacity: '0' },
-          '0.1%': { opacity: '1' },
-          '50%': { opacity: '1' },
-          '50.1%': { opacity: '0' },
-          '100%': { opacity: '0' },
-        },
       },
     },
   },
