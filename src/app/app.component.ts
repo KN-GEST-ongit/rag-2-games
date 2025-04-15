@@ -15,7 +15,10 @@ import { Rag2GamesLibComponent } from '../../projects/rag-2-games-lib/src/public
   ],
   template: `
     <app-navbar />
-    <main><router-outlet /></main>
+    <main
+      class="max-w-full min-h-all overflow-x-hidden overflow-y-hidden relative z-40">
+      <router-outlet />
+    </main>
     <rag-2-games-lib />
     <app-footer />
   `,
