@@ -13,10 +13,12 @@ import { Rag2GamesLibComponent } from '../../projects/rag-2-games-lib/src/public
     FooterComponent,
     Rag2GamesLibComponent,
   ],
-  template: ` <app-navbar />
+  template: `
+    <app-navbar />
     <main><router-outlet /></main>
-    <lib-rag-2-games-lib />
-    <app-footer />`,
+    <rag-2-games-lib />
+    <app-footer />
+  `,
 })
 export class AppComponent {
   public title = 'rag-2-games';
