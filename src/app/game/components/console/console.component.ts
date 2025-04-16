@@ -1,5 +1,3 @@
-/* eslint-disable max-depth */
-/* eslint-disable complexity */
 import {
   ApplicationRef,
   Component,

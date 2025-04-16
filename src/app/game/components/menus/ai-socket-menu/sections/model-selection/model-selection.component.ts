@@ -1,4 +1,3 @@
-/* eslint-disable max-depth */
 import {
   Component,
   EventEmitter,

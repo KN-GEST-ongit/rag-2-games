@@ -1,4 +1,3 @@
-/* eslint-disable max-depth */
 /* eslint-disable max-lines */
 import {
   AfterViewInit,

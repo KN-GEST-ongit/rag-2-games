@@ -107,7 +107,6 @@ export class FlappyBirdGameWindowComponent
     this._passedObstacles = Array(4).fill(false);
   }
 
-  // eslint-disable-next-line complexity
   private checkCollision(): void {
     const birdBottom = this.game.state.birdY + this._birdHeight;
     const birdTop = this.game.state.birdY;
@@ -117,7 +116,6 @@ export class FlappyBirdGameWindowComponent
         obstacle.distanceX < 120 &&
         obstacle.distanceX + this._obstacleWidth > 100
       ) {
-        // eslint-disable-next-line max-depth
         if (
           birdTop < obstacle.centerGapY - this._obstacleGapHeight / 2 ||
           birdBottom > obstacle.centerGapY + this._obstacleGapHeight / 2
