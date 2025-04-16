@@ -16,13 +16,15 @@ import { Subject, Subscription } from 'rxjs';
 import { Player } from '@gameModels/player.class';
 import { PlayerMenuComponent } from './components/menus/player-menu/player-menu.component';
 import { PlayerSourceType } from 'app/shared/models/player-source-type.enum';
-import { games } from './data/games';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { GameMenuComponent } from './components/menus/game-menu/game-menu.component';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { GameControlsComponent } from './components/game-controls/game-controls.component';
 import { CantDisplayGameComponent } from './components/cant-display-game/cant-display-game.component';
-import { GameRendererComponent } from './components/game-renderer/game-renderer.component';
+import {
+  Rag2GamesLibComponent,
+  games,
+} from '../../../projects/rag-2-games-lib/src/public-api';
 
 @Component({
   selector: 'app-game',
@@ -35,7 +37,7 @@ import { GameRendererComponent } from './components/game-renderer/game-renderer.
     GameMenuComponent,
     CantDisplayGameComponent,
     GameControlsComponent,
-    GameRendererComponent,
+    Rag2GamesLibComponent,
   ],
   template: `
     <div class="flex flex-col min-h-all w-full items-center bg-zinc-400">
@@ -68,7 +70,7 @@ import { GameRendererComponent } from './components/game-renderer/game-renderer.
             </div>
           </div>
           <app-game-controls [game]="game" />
-          <app-game-renderer
+          <rag-2-games-lib
             class="flex w-full items-center justify-center py-12"
             [gameName]="game.name"
             [game]="game"

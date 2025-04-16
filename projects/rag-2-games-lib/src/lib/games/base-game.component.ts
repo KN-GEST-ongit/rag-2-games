@@ -1,6 +1,4 @@
-/* eslint-disable complexity */
 /* eslint-disable max-lines */
-/* eslint-disable max-depth */
 import {
   ChangeDetectionStrategy,
   Component,
