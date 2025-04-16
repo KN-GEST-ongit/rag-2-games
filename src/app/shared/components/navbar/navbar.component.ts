@@ -1,5 +1,4 @@
 import { AfterViewInit, OnDestroy, OnInit } from '@angular/core';
-/* eslint-disable max-depth */
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { NgOptimizedImage } from '@angular/common';
 import { Component, HostListener } from '@angular/core';

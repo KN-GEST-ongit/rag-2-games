@@ -1,5 +1,4 @@
 /* eslint-disable max-lines */
-/* eslint-disable max-depth */
 /* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from 'app/game/components/canvas/canvas.component';
