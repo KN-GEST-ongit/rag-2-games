@@ -10,7 +10,8 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "games:build": "ng build rag-2-games-lib",
-    "games:pack": "cd dist/rag-2-games-lib && npm pack"
+    "games:pack": "cd dist/rag-2-games-lib && npm pack",
+    "games:link": "cd dist/rag-2-games-lib && npm link"
   },
   "private": true,
   "dependencies": {
