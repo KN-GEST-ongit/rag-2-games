@@ -1,24 +1,33 @@
-# Rag2GamesLib
+# RAG-2 games library
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.0.0.
+## License
 
-## Code scaffolding
+This project is available under the AGPL License. See [LICENSE](../../LICENSE) for more information.
 
-Run `ng generate component component-name --project rag-2-games-lib` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project rag-2-games-lib`.
-> Note: Don't forget to add `--project rag-2-games-lib` or else it will be added to the default project in your `angular.json` file. 
+The application was created as part of the work of the Human-Computer Interaction Scientific Club "GEST" at the Rzeszów University of Technology.
 
-## Build
+## Compliance and distribution
 
-Run `ng build rag-2-games-lib` to build the project. The build artifacts will be stored in the `dist/` directory.
+If you modify this code and make it available to others, you must also make the modified source code available under the same AGPL-3.0 License. This applies especially if you deploy the modified software on a server or otherwise make it available over a network, in which case you must provide access to the modified source code to the users who interact with your version of the application.
 
-## Publishing
+Failure to comply with the terms of the AGPL license may result in legal consequences. It is important to follow the license terms when modifying, distributing, or deploying this software. Please ensure you understand and follow the obligations set forth in the [LICENSE](../../LICENSE) file.
 
-After building your library with `ng build rag-2-games-lib`, go to the dist folder `cd dist/rag-2-games-lib` and run `npm publish`.
+## Description
 
-## Running unit tests
+An external service with minigames used exclusively in the RAG-2 application frontend repository. It contains all games and the necessary models for them. Main frontend repo is available [here](https://github.com/theImmortalCoders/rag-2-frontend).
 
-Run `ng test rag-2-games-lib` to execute the unit tests via [Karma](https://karma-runner.github.io).
+To make any changes in the library structure make sure that you are not in main app directory. All new necessery npm packages need to be installed directly in library dirs. So after such actions chech that the packages are included in [package.json](./package.json) in correct location.
 
-## Further help
+## Features
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This library provides games and the necessary models for them. Avalaible components, models etc. to use after importing the library are included in the [public-api.ts](./src/public-api.ts) file.
+
+## Tech stack
+
+- TypeScript 5.4
+- Angular 18.0
+- TailwindCSS 3.1
+- FeatherIcons 4.29
+- Karma 6.4
+- Cypress 13.5
+- ESLint 9.3
