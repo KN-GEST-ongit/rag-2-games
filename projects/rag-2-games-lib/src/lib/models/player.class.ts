@@ -1,5 +1,5 @@
-import { TExchangeData } from '@gameModels/exchange-data.type';
-import { PlayerSourceType } from 'app/shared/models/player-source-type.enum';
+import { TExchangeData } from './exchange-data.type';
+import { PlayerSourceType } from './player-source-type.enum';
 
 export interface IPlayerControlsBinding {
   variableName: string;

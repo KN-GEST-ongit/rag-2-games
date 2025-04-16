@@ -1,7 +1,7 @@
 /* eslint-disable @angular-eslint/component-selector */
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
-import { Game } from '@gameModels/game.class';
+import { TExchangeData } from './models/exchange-data.type';
+import { Game } from './models/game.class';
 import { Observable } from 'rxjs';
 import { PongGameWindowComponent } from './games/pong/pong.component';
 import { SkiJumpGameWindowComponent } from './games/skijump/skijump.component';

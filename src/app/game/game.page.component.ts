@@ -7,15 +7,15 @@ import {
   OnInit,
   inject,
 } from '@angular/core';
-import { Game } from '@gameModels/game.class';
+import { Game } from '../../../projects/rag-2-games-lib/src/public-api';
 import { ConsoleComponent } from './components/console/console.component';
-import { TExchangeData } from '@gameModels/exchange-data.type';
+import { TExchangeData } from '../../../projects/rag-2-games-lib/src/public-api';
 import { DataMenuComponent } from './components/menus/data-menu/data-menu.component';
 import { AiSocketMenuComponent } from './components/menus/ai-socket-menu/ai-socket-menu.component';
 import { Subject, Subscription } from 'rxjs';
-import { Player } from '@gameModels/player.class';
+import { Player } from '../../../projects/rag-2-games-lib/src/public-api';
 import { PlayerMenuComponent } from './components/menus/player-menu/player-menu.component';
-import { PlayerSourceType } from 'app/shared/models/player-source-type.enum';
+import { PlayerSourceType } from '../../../projects/rag-2-games-lib/src/public-api';
 import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { GameMenuComponent } from './components/menus/game-menu/game-menu.component';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';

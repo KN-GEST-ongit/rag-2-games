@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
+import { TExchangeData } from '../../../projects/rag-2-games-lib/src/public-api';
 
 @Pipe({
   name: 'exchange_data',

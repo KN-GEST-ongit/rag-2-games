@@ -1,6 +1,5 @@
-/* eslint-disable max-depth */
 import { Injectable } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
+import { TExchangeData } from '../../../../projects/rag-2-games-lib/src/public-api';
 
 @Injectable({
   providedIn: 'root',

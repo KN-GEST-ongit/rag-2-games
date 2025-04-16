@@ -1,4 +1,4 @@
-import { Game } from '@gameModels/game.class';
+import { Game } from '../models/game.class';
 import { Pong } from '../games/pong/models/pong.class';
 import { FlappyBird } from '../games/flappybird/models/flappybird.class';
 import { SkiJump } from '../games/skijump/models/skijump.class';

@@ -5,8 +5,8 @@ import {
   OnDestroy,
   Output,
 } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
-import { Game } from '@gameModels/game.class';
+import { TExchangeData } from '../../../../../../../../projects/rag-2-games-lib/src/public-api';
+import { Game } from '../../../../../../../../projects/rag-2-games-lib/src/public-api';
 import { IRecordedGameRequest } from '@api-models/recorded-game.models';
 import { formatFileSize } from '@utils/helpers/formatFileSize';
 

@@ -1,4 +1,4 @@
-import { TExchangeData } from '@gameModels/exchange-data.type';
+import { TExchangeData } from '../../../../../projects/rag-2-games-lib/src/public-api';
 import { IPlayer } from '@api-models/player.models';
 import { IUserResponse } from '@api-models/user.models';
 
