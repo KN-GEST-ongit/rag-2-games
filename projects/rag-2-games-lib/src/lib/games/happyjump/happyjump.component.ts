@@ -19,8 +19,7 @@ import { HappyJump, HappyJumpState } from './models/happyjump.class';
       >, movingPlatforms:
       <b>{{ game.state.movingPlatforms }}</b>
     </div>
-    <app-canvas [displayMode]="'vertical'" class="bg-zinc-300" #gameCanvas>
-    </app-canvas>
+    <app-canvas [displayMode]="'vertical'" #gameCanvas> </app-canvas>
     <b>FPS: {{ fps }}</b>
   `,
 })

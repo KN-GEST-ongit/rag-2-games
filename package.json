@@ -1,6 +1,6 @@
 {
   "name": "rag-2-games",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -9,7 +9,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "games:build": "ng build rag-2-games-lib",
+    "games:build": "ng build rag-2-games-lib && copy projects\\rag-2-games-lib\\src\\styles.css dist\\rag-2-games-lib\\styles.css",
     "games:pack": "cd dist/rag-2-games-lib && npm pack",
     "games:link": "cd dist/rag-2-games-lib && npm link"
   },

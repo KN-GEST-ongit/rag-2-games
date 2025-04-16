@@ -24,10 +24,7 @@ import { FlappyBird, FlappyBirdState } from './models/flappybird.class';
         }}
       </b>
     </div>
-    <app-canvas
-      [displayMode]="'horizontal'"
-      class="bg-zinc-300"
-      #gameCanvas></app-canvas>
+    <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b> `,
 })
 export class FlappyBirdGameWindowComponent
