@@ -9,6 +9,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
+    "games:new": "node scripts/generateGameFiles.js",
     "games:build": "ng build rag-2-games-lib",
     "games:pack": "cd dist/rag-2-games-lib && npm pack",
     "games:link": "cd dist/rag-2-games-lib && npm link"
