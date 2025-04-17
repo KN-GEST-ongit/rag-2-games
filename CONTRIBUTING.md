@@ -1,5 +1,55 @@
 # RAG-2-GAMES
 
+## GETTING STARTED
+
+### GET THE CORRECT VERSION OF NODE
+
+The first thing you need to do is ensure that you have the correct version of **Node.js** installed. This repository requires **Node v20.18.0**. If you have a different version installed, you can use `NVM` (Node Version Manager) to manage multiple versions of Node. If you need assistance, feel free to ask one of the codeowners for help.
+
+### HOW TO START THE APP AND LIBRARY
+
+To start working with this repository:
+
+- Clone the repository and navigate into the project directory.
+
+```
+git clone https://github.com/KN-GEST-ongit/rag-2-games.git
+
+cd rag-2-games
+```
+
+- Install all dependencies.
+
+```
+npm install
+```
+
+- Start the development server.
+
+```
+npm start
+```
+
+This project uses Angular CLI (installed locally via `devDependencies`). You **do not need to install it globally**.
+
+To run Angular CLI commands, always use `npx` before it.
+
+### SET UP YOUR IDE
+
+You should also configure **Prettier** and **ESLint** in your IDE to ensure consistent code formatting and style across all developers.
+
+If you are using **VSCode** (most recommended) install the following extensions:
+
+- Prettier - Code formatter
+- Prettier ESLint
+- ESLint
+
+Additionally, ensure that the `Format on Save` option is enabled in your VSCode settings:
+
+- Open setting by clicking CTRL + ,
+- Search for `Format on save`
+- Ensure that the option `Editor: Format on save` is checked
+
 ## PROJECT CONTRIBUTION GUIDELINES
 
 ### STARTING A NEW TASK
@@ -7,8 +57,8 @@
 Before starting a new task, make sure you’ve completed the following steps:
 
 - Create an issue in this repository with a clear and descriptive title in English.
-- Add yourself to the _Assignes_ of issue.
-- Create a new branch from **dev** branch. Name the branch using the format _issue-1_ (if the issue number is 1).
+- Add yourself to the `Assignees` of issue.
+- Create a new branch from **dev** branch. Name the branch using the format `issue-1` (if the issue number is 1).
 - Checkout to your newly created branch and start working on your task.
 
 ### MAKING COMMITS
@@ -31,7 +81,7 @@ Examples of correctly formatted commit messages:
 
 Once you’ve completed your task, open a pull request from your branch to the **dev** branch. Make sure to:
 
-- Add yourself to the _Assignees_ section of the pull request
+- Add yourself to the `Assignees` section of the pull request
 - Request a review from one of the repository code owners
 
 Then wait for your changes to be reviewed and either merged into the dev branch or for feedback requesting changes.
