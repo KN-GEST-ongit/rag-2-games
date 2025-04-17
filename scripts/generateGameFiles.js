@@ -194,13 +194,21 @@ function updateGameLibComponent(gameName) {
   const newGameImport = `import { ${capitalize(gameName)}GameWindowComponent } from './games/${gameName.toLowerCase()}/${gameName.toLowerCase()}.component';\n`;
 
   if (!gameLibComponent.includes(newGameImport)) {
-    const importSectionEnd = gameLibComponent.indexOf('@Component({');
+    const componentIndex = gameLibComponent.indexOf('@Component({');
 
-    if (importSectionEnd !== -1) {
+    if (componentIndex !== -1) {
+      const componentLineStart = gameLibComponent.lastIndexOf(
+        '\n',
+        componentIndex
+      );
+
+      const insertPosition =
+        gameLibComponent.lastIndexOf('\n', componentLineStart - 1) + 1;
+
       gameLibComponent =
-        gameLibComponent.slice(0, importSectionEnd) +
+        gameLibComponent.slice(0, insertPosition) +
         newGameImport +
-        gameLibComponent.slice(importSectionEnd);
+        gameLibComponent.slice(insertPosition);
     } else {
       gameLibComponent = newGameImport + gameLibComponent;
     }
