@@ -7,7 +7,7 @@ import {
   Input,
   OnDestroy,
 } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
+import { TExchangeData } from '../../../../../projects/rag-2-games-lib/src/public-api';
 import { ExchangeDataPipe } from '@utils/pipes/exchange-data.pipe';
 import { ConsoleFieldsetComponent } from './console-fieldset/console-fieldset.component';
 

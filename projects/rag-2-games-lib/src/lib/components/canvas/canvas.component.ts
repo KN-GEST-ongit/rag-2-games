@@ -7,7 +7,7 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { CanvasUtilsService } from 'app/game/services/canvas-utils.service';
+import { CanvasUtilsService } from '../../services/canvas-utils.service';
 import * as feather from 'feather-icons';
 
 @Component({
@@ -19,7 +19,7 @@ import * as feather from 'feather-icons';
         #canvasElement
         [attr.width]="width"
         [attr.height]="height"
-        class="border-mainOrange border-2"></canvas>
+        class="border-mainOrange border-2 bg-zinc-300"></canvas>
       <!-- <button
         (click)="toggleFullscreen()"
         class="absolute -bottom-16 -right-16">

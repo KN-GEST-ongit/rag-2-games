@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
-import { CanvasComponent } from 'app/game/components/canvas/canvas.component';
+import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { HappyJump, HappyJumpState } from './models/happyjump.class';
 
@@ -19,8 +19,7 @@ import { HappyJump, HappyJumpState } from './models/happyjump.class';
       >, movingPlatforms:
       <b>{{ game.state.movingPlatforms }}</b>
     </div>
-    <app-canvas [displayMode]="'vertical'" class="bg-zinc-300" #gameCanvas>
-    </app-canvas>
+    <app-canvas [displayMode]="'vertical'" #gameCanvas> </app-canvas>
     <b>FPS: {{ fps }}</b>
   `,
 })

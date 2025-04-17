@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./src/**/*.{html,ts}'],
+  content: ['./src/**/*.{html,ts}', './projects/**/*.{html,ts}'],
   theme: {
     extend: {
       screens: {
@@ -17,13 +17,6 @@ module.exports = {
         mainOrange: '#FF6000',
         lightOragne: '#FFA559',
         mainCreme: '#FFE6C7',
-      },
-      backgroundImage: {
-        homeImageAI: "url('/images/home/home.jpg')",
-        homeImageUser: "url('/images/authors/user.png')",
-        homeImageUser0: "url('/images/authors/marcin.jpg')",
-        homeImageUser1: "url('/images/authors/pawel.jpg')",
-        homeImageUser2: "url('/images/authors/bartek.jpg')",
       },
       height: {
         navbar: '80px',
@@ -51,23 +44,6 @@ module.exports = {
           '0 4px 12px rgba(255, 230, 199, 1), 0 -2px 4px rgba(255, 230, 199, 0)',
         menuInfoPanelShadow:
           '0 2px 6px rgba(53, 53, 53, 1), 0 -1px 2px rgba(53, 53, 53, 0)',
-      },
-      animation: {
-        typewriter17: 'typewriter 2s steps(17) forwards',
-        caret17:
-          'typewriter 2s steps(17) forwards, blink 2s steps(17) infinite 2s',
-      },
-      keyframes: {
-        typewriter: {
-          to: { left: '100%' },
-        },
-        blink: {
-          '0%': { opacity: '0' },
-          '0.1%': { opacity: '1' },
-          '50%': { opacity: '1' },
-          '50.1%': { opacity: '0' },
-          '100%': { opacity: '0' },
-        },
       },
     },
   },
@@ -100,14 +76,6 @@ module.exports = {
         },
         '.side-menu-container': {
           '@apply flex flex-col shadow-sideMenuShadow z-20 absolute transition-all ease-in-out duration-700':
-            {},
-        },
-        '.dashboard-button': {
-          '@apply flex flex-row items-center justify-center space-x-4 xs:space-x-2 rounded-lg mt-1 sm:mt-2 px-2 sm:px-3 py-1 sm:py-2 bg-mainGray text-sm sm:text-base text-mainOrange border-2 border-mainOrange transition-all ease-in-out hover:bg-mainOrange hover:text-mainGray':
-            {},
-        },
-        '.dashboard-icon': {
-          '@apply text-mainOrange group-hover:text-mainGray transition-all ease-in-out min-w-fit size-4 sm:size-5':
             {},
         },
       });

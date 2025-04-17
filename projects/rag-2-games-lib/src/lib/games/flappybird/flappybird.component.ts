@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
-import { CanvasComponent } from 'app/game/components/canvas/canvas.component';
+import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { FlappyBird, FlappyBirdState } from './models/flappybird.class';
 
@@ -24,10 +24,7 @@ import { FlappyBird, FlappyBirdState } from './models/flappybird.class';
         }}
       </b>
     </div>
-    <app-canvas
-      [displayMode]="'horizontal'"
-      class="bg-zinc-300"
-      #gameCanvas></app-canvas>
+    <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b> `,
 })
 export class FlappyBirdGameWindowComponent
