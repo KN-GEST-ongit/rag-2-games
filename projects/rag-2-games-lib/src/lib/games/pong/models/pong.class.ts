@@ -1,6 +1,6 @@
-import { TGameState } from '@gameModels/game-state.type';
-import { Game } from '@gameModels/game.class';
-import { Player } from '@gameModels/player.class';
+import { TGameState } from '../../../models/game-state.type';
+import { Game } from '../../../models/game.class';
+import { Player } from '../../../models/player.class';
 
 export class PongState implements TGameState {
   public leftPaddleY = 0;

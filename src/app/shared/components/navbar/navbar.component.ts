@@ -60,6 +60,18 @@ import { GameListComponent } from './game-list.component';
         <div></div>
       </div>
     </nav>
+    <div
+      class="flex flex-col space-y-1 bg-zinc-400 py-2 px-4 w-full text-mainGray uppercase font-mono italic text-center border-mainOrange border-2 font-semibold">
+      <span class="text-red-700 underline">
+        Please read the ./CONTRIBUTING.md file before start working with this
+        repository.
+      </span>
+      <span>
+        That's only preview (demo) version of main fronend app. It contains only
+        elements that can be helpful during game development process.
+      </span>
+      <span> If you are not sure how to do something - just ask :) </span>
+    </div>
   `,
 })
 export class NavbarComponent implements OnInit, AfterViewInit, OnDestroy {

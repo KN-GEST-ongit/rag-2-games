@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
+import { TExchangeData } from '../../../../../../../../projects/rag-2-games-lib/src/public-api';
 import { KeyValuePipe } from '@angular/common';
-import { Player } from '@gameModels/player.class';
+import { Player } from '../../../../../../../../projects/rag-2-games-lib/src/public-api';
 
 @Component({
   selector: 'app-debug-mode-panel',

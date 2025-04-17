@@ -4,3 +4,44 @@
 
 @tailwind utilities;
 /* You can add global styles to this file, and also import other style files */
+
+body {
+  overflow-x: hidden;
+  cursor: url('/cursors/stronghold.png'), auto;
+  background-color: #353535;
+}
+
+a,
+button,
+button:disabled {
+  cursor: url('/cursors/stronghold_pointer.png'), pointer;
+}
+
+input,
+textarea,
+label,
+input::selection,
+textarea::selection,
+input:active,
+textarea:active,
+input:hover,
+input:focus,
+input:focus-within,
+input:not(:placeholder-shown) {
+  cursor: url('/cursors/stronghold_writer.png'), auto;
+}
+
+html {
+  --scroll-behavior: smooth !important;
+  scroll-behavior: smooth !important;
+}
+
+.min-h-all {
+  min-height: calc(100vh - 72px);
+}
+
+@media (min-width: 375px) {
+  .min-h-all {
+    min-height: calc(100vh - 80px);
+  }
+}

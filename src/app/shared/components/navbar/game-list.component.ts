@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { games } from 'app/game/data/games';
+import { games } from '../../../../../projects/rag-2-games-lib/src/public-api';
 
 @Component({
   selector: 'app-game-list',

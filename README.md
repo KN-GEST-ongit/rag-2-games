@@ -1,4 +1,4 @@
-# RAG-2 games
+# RAG-2-GAMES
 
 ## License
 
@@ -15,6 +15,8 @@ Failure to comply with the terms of the AGPL license may result in legal consequ
 ## Description
 
 An external service with minigames used exclusively in the RAG-2 application frontend repository. It contains all games and the necessary models for them. Main frontend repo is available [here](https://github.com/theImmortalCoders/rag-2-frontend).
+
+To contribute to this repository, please read the CONTRIBUTING [file](./CONTRIBUTING.md).
 
 ## Features of whole frontend app
 

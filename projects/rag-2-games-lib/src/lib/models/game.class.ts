@@ -1,5 +1,5 @@
-import { Player } from '@gameModels/player.class';
-import { TGameState } from '@gameModels/game-state.type';
+import { Player } from './player.class';
+import { TGameState } from './game-state.type';
 
 export abstract class Game {
   public abstract name: string;

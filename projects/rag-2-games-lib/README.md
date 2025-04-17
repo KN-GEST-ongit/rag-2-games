@@ -1,4 +1,4 @@
-# RAG-2 games library
+# RAG-2-GAMES library
 
 ## License
 
@@ -15,8 +15,6 @@ Failure to comply with the terms of the AGPL license may result in legal consequ
 ## Description
 
 An external service with minigames used exclusively in the RAG-2 application frontend repository. It contains all games and the necessary models for them. Main frontend repo is available [here](https://github.com/theImmortalCoders/rag-2-frontend).
-
-To make any changes in the library structure make sure that you are not in main app directory. All new necessery npm packages need to be installed directly in library dirs. So after such actions chech that the packages are included in [package.json](./package.json) in correct location.
 
 ## Features
 

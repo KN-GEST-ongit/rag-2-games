@@ -1,6 +1,4 @@
-/* eslint-disable complexity */
 /* eslint-disable max-lines */
-/* eslint-disable max-depth */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,13 +12,13 @@ import {
   AfterViewInit,
   ElementRef,
 } from '@angular/core';
-import { TExchangeData } from '@gameModels/exchange-data.type';
-import { Player } from '@gameModels/player.class';
+import { TExchangeData } from '../models/exchange-data.type';
+import { Player } from '../models/player.class';
 import { Observable, Subscription } from 'rxjs';
 import { CanvasComponent } from '../components/canvas/canvas.component';
-import { Game } from '@gameModels/game.class';
-import { IPlayerInputData } from '@gameModels/player-input-data.type';
-import { PlayerSourceType } from 'app/shared/models/player-source-type.enum';
+import { Game } from '../models/game.class';
+import { IPlayerInputData } from '../models/player-input-data.type';
+import { PlayerSourceType } from '../models/player-source-type.enum';
 
 @Component({
   selector: 'app-base-game-window',
