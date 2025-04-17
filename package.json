@@ -1,6 +1,6 @@
 {
   "name": "rag-2-games",
-  "version": "0.9.1",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
