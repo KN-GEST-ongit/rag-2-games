@@ -50,6 +50,54 @@ Additionally, ensure that the `Format on Save` option is enabled in your VSCode 
 - Search for `Format on save`
 - Ensure that the option `Editor: Format on save` is checked
 
+## WORKING WITH THIS PROJECT
+
+### MAIN INFO
+
+This is a preview (demo) version of the main frontend app. It contains only elements that are useful for the game development process.
+
+### FILES INFO
+
+All changes should be made in the `/projects/rag-2-games-lib/`. Do **not** create any new files in the main `src/` directory.
+
+Remember to export all components/models that need to be **accessible** in the main app by adding them to `public-api.ts`.
+
+### ADDING NEW DEPENDENCIES
+
+If you need to add a new package from npm to the library, add it to the `peerDependencies` section of **library's** `package.json`.
+
+### GAME CREATING SCRIPT
+
+A script has already been created to help you start working on a new game. Please refer to the provided manual or the existing README [file](./scripts/README.md) for detailed instructions on how to use the scripts.
+
+### BUILDING AND EXPORTING LIBRARY
+
+To build and export the library, we have created some helpful aliases for you to **use**.
+
+For building library, run:
+
+```
+npm run games:build
+```
+
+If there are no errors, the build will be completed.
+
+After building, you have two options for exporting the library:
+
+- Pack it ino `.tgz` file using:
+
+```
+npm run games:pack
+```
+
+- Link it to npm locally with:
+
+```
+npm run games:link
+```
+
+If everything goes well, the library will be ready to be used in the main frontend app.
+
 ## PROJECT CONTRIBUTION GUIDELINES
 
 ### STARTING A NEW TASK

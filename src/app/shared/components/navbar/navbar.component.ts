@@ -61,21 +61,16 @@ import { GameListComponent } from './game-list.component';
       </div>
     </nav>
     <div
-      class="flex flex-col space-y-2 bg-zinc-400 py-2 px-4 w-full text-mainGray uppercase font-mono italic text-center border-mainOrange border-2 font-semibold">
+      class="flex flex-col space-y-1 bg-zinc-400 py-2 px-4 w-full text-mainGray uppercase font-mono italic text-center border-mainOrange border-2 font-semibold">
       <span class="text-red-700 underline">
         Please read the ./CONTRIBUTING.md file before start working with this
         repository.
       </span>
       <span>
         That's only preview (demo) version of main fronend app. It contains only
-        elements that can be helpful during game development process. Remember
-        to export all components/models that would be needed in main app by
-        adding them in public-api.ts. All changes need to be done in
-        /projects/rag-2-games-lib/. Don't create any new files in main src/
-        directory. If you want to add some new package from npm to library do it
-        in the peerDependencies section.
-        <u>If you are not sure - just ask</u> :)
+        elements that can be helpful during game development process.
       </span>
+      <span> If you are not sure how to do something - just ask :) </span>
     </div>
   `,
 })
