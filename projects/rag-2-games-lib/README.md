@@ -1,4 +1,4 @@
-# RAG-2 games library
+# RAG-2-GAMES library
 
 ## License
 
