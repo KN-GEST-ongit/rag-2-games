@@ -61,7 +61,7 @@ import { GameListComponent } from './game-list.component';
       </div>
     </nav>
     <p
-      class="bg-zinc-400 p-2 w-full text-mainGray uppercase font-mono text-center border-mainOrange border-2 font-semibold">
+      class="bg-zinc-400 py-2 px-4 w-full text-mainGray uppercase font-mono italic text-center border-mainOrange border-2 font-semibold">
       That's only preview (demo) version of main fronend app. It contains only
       elements that can be helpful during game development process. Remember to
       export all components/models that would be needed in main app by adding
