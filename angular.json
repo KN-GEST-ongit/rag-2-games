@@ -10,7 +10,7 @@
           "inlineTemplate": true,
           "inlineStyle": true,
           "style": "css",
-          "skipTests": false,
+          "skipTests": true,
           "standalone": true
         },
         "@schematics/angular:class": {
@@ -127,7 +127,7 @@
           "inlineTemplate": true,
           "inlineStyle": true,
           "style": "css",
-          "skipTests": false,
+          "skipTests": true,
           "standalone": true
         }
       },
