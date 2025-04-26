@@ -7,16 +7,10 @@ export class PacmanState implements TGameState {
     public pacmanX = 1.5 * this.tileSize;
     public pacmanY = 1.5 * this.tileSize;
     public speed = 2;
-    public movingDirectionX = 0;
-    public movingDirectionY = 0;
-    public inputDirectionX = 0;
-    public inputDirectionY = 0;
     public score = 0;
 
     public ghostX = 5.5 * this.tileSize;
     public ghostY = 5.5 * this.tileSize;
-    public ghostDirX = 0;
-    public ghostDirY = -1;
     public ghostSpeed = 2;
 
     public isGameStarted = false;
