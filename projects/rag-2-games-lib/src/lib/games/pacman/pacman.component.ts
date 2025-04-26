@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -39,10 +40,22 @@ export class PacmanGameWindowComponent
 
   protected override update(): void {
     super.update();
-  
-    this.handleInput();
-    this.movePacman();
-    this.collectPoint(); 
+
+    if (
+      !this.game.state.isGameStarted &&
+      (this.game.players[0].inputData['moveX'] !== 0 || this.game.players[0].inputData['moveY'] !== 0)
+    ) {
+      this.game.state.isGameStarted = true;
+    }
+
+    if (!this.isPaused && this.game.state.isGameStarted) {
+      this.handleInput();
+      this.movePacman();
+      this.collectPoint(); 
+
+      this.moveGhost();
+      this.checkPacmanGhostCollision();
+    }
   
     this.render();
   }
@@ -75,35 +88,49 @@ export class PacmanGameWindowComponent
     }
   }
 
-  private canMoveInDirection(dirX: number, dirY: number): boolean {
+  private canMoveEntity(
+    posX: number,
+    posY: number,
+    dirX: number,
+    dirY: number,
+    speed: number,
+    radius: number
+  ): boolean {
     const tileSize = this.game.state.tileSize;
     const map = this.game.state.map;
-    const pacmanRadius = tileSize / 2.2;
   
-    const futureX = this.game.state.pacmanX + dirX * this.game.state.speed;
-    const futureY = this.game.state.pacmanY + dirY * this.game.state.speed;
+    const futureX = posX + dirX * speed;
+    const futureY = posY + dirY * speed;
   
     const checkPoints = [
-      { x: futureX - pacmanRadius, y: futureY - pacmanRadius },
-      { x: futureX + pacmanRadius, y: futureY - pacmanRadius },
-      { x: futureX - pacmanRadius, y: futureY + pacmanRadius },
-      { x: futureX + pacmanRadius, y: futureY + pacmanRadius },
+      { x: futureX - radius, y: futureY - radius },
+      { x: futureX + radius, y: futureY - radius },
+      { x: futureX - radius, y: futureY + radius },
+      { x: futureX + radius, y: futureY + radius },
     ];
   
     for (const point of checkPoints) {
       const tileX = Math.floor(point.x / tileSize);
       const tileY = Math.floor(point.y / tileSize);
   
-      if (tileY < 0 || tileY >= map.length || tileX < 0 || tileX >= map[0].length) {
-        return false;
-      }
-  
-      if (map[tileY][tileX] === 1) {
+      if (
+        tileY < 0 ||
+        tileY >= map.length ||
+        tileX < 0 ||
+        tileX >= map[0].length ||
+        map[tileY][tileX] === 1
+      ) {
         return false;
       }
     }
   
     return true;
+  }
+
+  private canMoveInDirection(dirX: number, dirY: number): boolean {
+    const state = this.game.state;
+    const radius = state.tileSize / 2.2;
+    return this.canMoveEntity(state.pacmanX, state.pacmanY, dirX, dirY, state.speed, radius);
   }
   
   private collectPoint(): void {
@@ -114,42 +141,97 @@ export class PacmanGameWindowComponent
     if (this.game.state.map[y]?.[x] === 2) {
       this.game.state.map[y][x] = 0;
       this.game.state.score++;
-}
+    }
   }
+
+  //GHOST
+  private moveGhost(): void {
+    const ghost = this.game.state;
+  
+    if (this.canGhostMoveInDirection(ghost.ghostDirX, ghost.ghostDirY)) {
+      ghost.ghostX += ghost.ghostDirX * ghost.ghostSpeed;
+      ghost.ghostY += ghost.ghostDirY * ghost.ghostSpeed;
+    } else {
+      const directions = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+      ];
+  
+      const available = directions.filter(d =>
+        this.canGhostMoveInDirection(d.x, d.y)
+      );
+  
+      if (available.length > 0) {
+        const newDir = available[Math.floor(Math.random() * available.length)];
+        ghost.ghostDirX = newDir.x;
+        ghost.ghostDirY = newDir.y;
+      }
+    }
+  }
+
+  private canGhostMoveInDirection(dirX: number, dirY: number): boolean {
+    const state = this.game.state;
+    const radius = state.tileSize / 2.2;
+    return this.canMoveEntity(state.ghostX, state.ghostY, dirX, dirY, state.ghostSpeed, radius);
+  }
+
+  private checkPacmanGhostCollision(): void {
+    const pacman = this.game.state;
+    const dx = pacman.pacmanX - pacman.ghostX;
+    const dy = pacman.pacmanY - pacman.ghostY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+  
+    if (distance < pacman.tileSize / 2) {
+      //GAME OVER
+      this.restart();
+    }
+  }
+  
 
   private render(): void {
     const context = this._canvas.getContext('2d');
-    if (!context) return;
+    if (context){
+      const tileSize = this.game.state.tileSize;
+      const map = this.game.state.map;
   
-    const tileSize = this.game.state.tileSize;
-    const map = this.game.state.map;
+      context.clearRect(0, 0, this._canvas.width, this._canvas.height);
   
-    context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+      for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[y].length; x++) {
+          const value = map[y][x];
+          const px = x * tileSize;
+          const py = y * tileSize;
   
-    for (let y = 0; y < map.length; y++) {
-      for (let x = 0; x < map[y].length; x++) {
-        const value = map[y][x];
-        const px = x * tileSize;
-        const py = y * tileSize;
-  
-        if (value === 1) {
-          context.fillStyle = 'blue';
-          context.fillRect(px, py, tileSize, tileSize);
-        } else if (value === 2) {
-          context.fillStyle = 'yellow';
-          context.beginPath();
-          context.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 6, 0, Math.PI * 2);
-          context.fill();
+          if (value === 1) {
+            context.fillStyle = 'blue';
+            context.fillRect(px, py, tileSize, tileSize);
+          } else if (value === 2) {
+            context.fillStyle = 'yellow';
+            context.beginPath();
+            context.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 6, 0, Math.PI * 2);
+            context.fill();
+          }
         }
       }
-    }
   
-    const pacX = this.game.state.pacmanX;
-    const pacY = this.game.state.pacmanY;
+      const pacX = this.game.state.pacmanX;
+      const pacY = this.game.state.pacmanY;
 
-    context.fillStyle = 'gold';
-    context.beginPath();
-    context.arc(pacX, pacY, tileSize / 2.2, 0, Math.PI * 2);
-    context.fill();
+      context.fillStyle = 'gold';
+      context.beginPath();
+      context.arc(pacX, pacY, tileSize / 2.2, 0, Math.PI * 2);
+      context.fill();
+
+
+      const ghostX = this.game.state.ghostX;
+      const ghostY = this.game.state.ghostY;
+
+      context.fillStyle = 'red';
+      context.beginPath();
+      context.arc(ghostX, ghostY, tileSize / 2.2, 0, Math.PI * 2);
+      context.fill();
+    }
   }
 }
