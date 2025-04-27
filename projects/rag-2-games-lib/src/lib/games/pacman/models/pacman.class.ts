@@ -3,32 +3,32 @@ import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 
 export class PacmanState implements TGameState {
-    public tileSize = 40;
-    public pacmanX = 1.5 * this.tileSize;
-    public pacmanY = 1.5 * this.tileSize;
+    public tileSize = 35;
+    public pacmanX: number;
+    public pacmanY: number;
     public speed = 2;
     public score = 0;
 
-    public ghostX = 5.5 * this.tileSize;
-    public ghostY = 5.5 * this.tileSize;
+    public ghostX: number;
+    public ghostY: number;
     public ghostSpeed = 2;
 
     public isGameStarted = false;
 
+    public map: number[][];
+
+    public constructor(map?: number[][]) {
+      this.map = map ?? [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+      ];
     
-    // 1 - wall
-    // 2 - point
-    public map: number[][] = [
-      [1,1,1,1,1,1,1,1,1,1,1],
-      [1,2,2,2,1,2,2,2,2,2,1],
-      [1,2,1,2,1,2,1,1,1,2,1],
-      [1,2,1,2,2,2,2,2,1,2,1],
-      [1,2,1,1,1,1,1,2,1,2,1],
-      [1,2,2,2,2,2,2,2,1,2,1],
-      [1,2,1,1,1,1,1,1,1,2,1],
-      [1,2,2,2,2,2,2,2,2,2,1],
-      [1,1,1,1,1,1,1,1,1,1,1],
-    ];
+      this.pacmanX = 1.5 * this.tileSize;
+      this.pacmanY = 1.5 * this.tileSize;
+      this.ghostX = 12.5 * this.tileSize;
+      this.ghostY = 9.5 * this.tileSize;
+    }
 }
 
 export class Pacman extends Game {
