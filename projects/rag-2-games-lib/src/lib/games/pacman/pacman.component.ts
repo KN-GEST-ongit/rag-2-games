@@ -47,7 +47,7 @@ export class PacmanGameWindowComponent
 
   public override restart(): void {
     const randomIndex = Math.floor(Math.random() * PacmanMaps.length);
-    const selectedMap = PacmanMaps[randomIndex];
+    const selectedMap = PacmanMaps[randomIndex].map(row => [...row]);
   
     this.game.state = new PacmanState(selectedMap);
   
