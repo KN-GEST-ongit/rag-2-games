@@ -11,6 +11,9 @@ import { Spaceinvaders, SpaceinvadersState } from './models/spaceinvaders.class'
     <div>
       score: <b>{{ game.state.score }}</b>
     </div>
+    <div>
+      wave: <b>{{ game.state.difficulty }}</b>
+    </div>
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
@@ -47,6 +50,7 @@ export class SpaceinvadersGameWindowComponent
     this.handleInput();
     this.updateLaser();
     this.moveAliens();
+    this.difficulty();
 
     this.render();
   }
@@ -99,7 +103,8 @@ export class SpaceinvadersGameWindowComponent
       if (isHit) {
         alien.alive = false;
         this.game.state.laserY = -1;
-        this.game.state.score++;
+        this.game.state.score += 5;
+        this.game.state.alienCount--;
         break;
       }
     }
@@ -126,6 +131,14 @@ export class SpaceinvadersGameWindowComponent
       for (const alien of this.game.state.aliens) {
         alien.y += 20;
       }
+    }
+  }
+
+  private difficulty(): void {
+    if (this.game.state.alienCount === 0) {
+      this.game.state.difficulty++;
+      this.game.state.score += 100;
+      this.game.state.generateAliens();
     }
   }
 

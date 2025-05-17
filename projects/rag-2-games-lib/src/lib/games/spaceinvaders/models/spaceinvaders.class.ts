@@ -8,21 +8,34 @@ export class SpaceinvadersState implements TGameState {
     public laserX = -1;
     public laserY = -1;
     public laserSpeed = 15;
+    public difficulty = 1;
+    public alienCount = this.difficulty*5;
 
-    public aliens = Array.from({ length: 50 }, (_, i) => {
-        const cols = 10;
-        const spacingX = 80;
-        const spacingY = 60;
+    public aliens: { x: number; y: number; alive: boolean }[] = [];
 
-        const col = i % cols;
-        const row = Math.floor(i / cols);
+    private readonly _cols = 10;
+    private readonly _spacingX = 80;
+    private readonly _spacingY = 60;
+
+    public constructor() {
+        this.generateAliens();
+    }
+
+    public generateAliens(): void {
+        this.alienCount = this.difficulty * 5;
+
+        this.aliens = Array.from({ length: this.alienCount }, (_, i) => {
+        const col = i % this._cols;
+        const row = Math.floor(i / this._cols);
 
         return {
-            x: 100 + col * spacingX,
-            y: 50 + row * spacingY,
+            x: 100 + col * this._spacingX,
+            y: 50 + row * this._spacingY,
             alive: true,
         };
-    });
+        });
+    }
+
 
     public alienDirection = 1;
     public alienSpeed = 2;
@@ -42,8 +55,10 @@ export class Spaceinvaders extends Game {
         laserY: int, <-1, 600>; # -1 means no laser
         laserSpeed: int, <1, 20>;
         aliens: [{x: int, <0, 600>, y: int, <0, 400>, alive: boolean}];
+        difficulty: int, <1,10>;
         alienDirection: int, {-1, 1};
         alienSpeed: int, <1, 5>;
+        alienCount; int, <0,50>;
         score: int, <0, inf>;
         isGameStarted: boolean;
         failCounter: int, <0, inf>;
@@ -53,8 +68,10 @@ export class Spaceinvaders extends Game {
         playerSpeed: 5;
         laserY: -1;
         laserSpeed: 10;
+        difficulty: 1;
         alienDirection: 1;
         alienSpeed: 2;
+        alienCount: 5;
         score: 0;
         isGameStarted: false;
         failCounter: 0;
