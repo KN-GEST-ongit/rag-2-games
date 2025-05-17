@@ -5,8 +5,9 @@ import { Player } from '../../../models/player.class';
 export class SpaceinvadersState implements TGameState {
     public playerX = 300;
     public playerSpeed = 5;
+    public laserX = -1;
     public laserY = -1;
-    public laserSpeed = 10;
+    public laserSpeed = 15;
 
     public aliens = Array.from({ length: 5 }, (_, i) => ({
         x: 100 + i * 80,
@@ -46,7 +47,7 @@ export class Spaceinvaders extends Game {
         alienDirection: 1;
         alienSpeed: 2;
         score: 0;
-        isGameStarted: true;
+        isGameStarted: false;
         failCounter: 0;
     `;
     public override players = [

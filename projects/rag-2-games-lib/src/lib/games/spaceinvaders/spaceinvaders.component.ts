@@ -45,13 +45,14 @@ export class SpaceinvadersGameWindowComponent
     super.update();
 
     this.handleInput();
+    this.updateLaser();
 
     this.render();
   }
 
    private handleInput(): void {
     const input = this.game.players[0].inputData;
-
+    
     if (input['move'] === -1) this.game.state.playerX -= this.game.state.playerSpeed;
     if (input['move'] === 1) this.game.state.playerX += this.game.state.playerSpeed;
 
@@ -62,15 +63,53 @@ export class SpaceinvadersGameWindowComponent
     );
 
     if (input['shoot'] && this.game.state.laserY < 0) {
+      this.game.state.laserX = this.game.state.playerX + (this._playerWidth - this._laserWidth) / 2;
       this.game.state.laserY = this._canvas.height - this._playerHeight - this._laserHeight;
     }
   }
+
+private updateLaser(): void {
+  if (this.game.state.laserY < 0) return;
+
+  this.updateLaserPosition();
+  this.checkLaserCollision();
+  
+  if (this.game.state.laserY < 0) {
+    this.game.state.laserY = -1;
+  }
+}
+
+private updateLaserPosition(): void {
+  this.game.state.laserY -= this.game.state.laserSpeed;
+}
+
+private checkLaserCollision(): void {
+  const laserCenterX = this.game.state.playerX + this._playerWidth / 2;
+
+  for (const alien of this.game.state.aliens) {
+    if (!alien.alive) continue;
+
+    const isHit =
+      this.game.state.laserY < alien.y + this._alienSize &&
+      this.game.state.laserY + this._laserHeight > alien.y &&
+      laserCenterX > alien.x &&
+      laserCenterX < alien.x + this._alienSize;
+
+    if (isHit) {
+      alien.alive = false;
+      this.game.state.laserY = -1;
+      this.game.state.score++;
+      break;
+    }
+  }
+}
 
   private render(): void {
     const context = this._canvas.getContext('2d');
     if (context) {
       context.clearRect(0, 0, this._canvas.width, this._canvas.height);
 
+      //player
       context.fillStyle = 'green';
       context.fillRect(
       this.game.state.playerX,
@@ -78,6 +117,17 @@ export class SpaceinvadersGameWindowComponent
       this._playerWidth,
       this._playerHeight
       );
+
+      //laser
+      if (this.game.state.laserY >= 0) {
+        context.fillStyle = 'red';
+        context.fillRect(
+          this.game.state.laserX,
+          this.game.state.laserY,
+          this._laserWidth,
+          this._laserHeight
+      );
+    }
     }
   }
 
