@@ -1,26 +1,35 @@
+/* eslint-disable max-lines */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Snake, SnakeState, ISnakeSegment } from './models/snake.class';
-
 @Component({
   selector: 'app-snake',
   standalone: true,
   imports: [CanvasComponent],
   template: `
-    <div>
-      score: <b>{{ game.state.score }}</b>
-    </div>
+    @if (!game.state.isGameOver) {
+      <div>
+        score: <b>{{ game.state.score }}</b>
+      </div>
+    }
+    @else if (game.state.isGameOver) {
+      <div style="color: red; font-weight: bold; font-size: 20px;">
+        Game Over! Press restart to play again. Yout score is: <b>{{ game.state.score }}</b>
+      </div>
+    } 
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
-    <b>FPS: {{ fps }}</b> `,
+    <b>FPS: {{ fps }}</b> 
+    
+  `,
 })
 export class SnakeGameWindowComponent
   extends BaseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
-  private _moveInterval = 150;
+  private _moveInterval = 50;
   private _lastMoveTime = 0;
   private _gridWidth = 0;
   private _gridHeight = 0;
@@ -70,11 +79,16 @@ export class SnakeGameWindowComponent
     this.game.state.score = 0;
     this.game.state.isGameStarted = false;
     this.game.state.isGameOver = false;
+
+    this.generateFood();
   }
 
   private gameStart(): void {
     if (!this.game.state.isGameStarted && this.game.players[0].inputData['start'] === 1) {
       this.game.state.isGameStarted = true;
+    }
+    else if (this.game.state.isGameOver && this.game.players[0].inputData['start'] === 1) {
+      this.resetGame();
     }
   }
 
@@ -118,6 +132,16 @@ export class SnakeGameWindowComponent
 
     const newHead = this.calculateNewHeadPosition();
 
+    if (this.isCollisionWithWall(newHead)) {
+      this.game.state.isGameOver = true;
+      return;
+    }
+
+    if (this.isCollisionWithSelf(newHead)) {
+      this.game.state.isGameOver = true;
+      return;
+    }
+
     if (newHead.x === this.game.state.foodItem.x && newHead.y === this.game.state.foodItem.y) {
         this.game.state.score += 1;
         this.game.state.segments.unshift(newHead);
@@ -148,6 +172,25 @@ export class SnakeGameWindowComponent
     
     return head;
   }
+
+  private isCollisionWithWall(head: ISnakeSegment): boolean {
+    return (
+        head.x < 0 || 
+        head.y < 0 || 
+        head.x >= this._gridWidth || 
+        head.y >= this._gridHeight
+    );
+}
+
+private isCollisionWithSelf(head: ISnakeSegment): boolean {
+  for (let i = 1; i < this.game.state.segments.length; i++) {
+      const segment = this.game.state.segments[i];
+      if (segment.x === head.x && segment.y === head.y) {
+          return true;
+      }
+  }
+  return false;
+}
 
   private render(): void {
     const context = this._canvas.getContext('2d');
