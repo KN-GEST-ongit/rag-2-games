@@ -46,6 +46,7 @@ export class SpaceinvadersGameWindowComponent
 
     this.handleInput();
     this.updateLaser();
+    this.moveAliens();
 
     this.render();
   }
@@ -68,41 +69,65 @@ export class SpaceinvadersGameWindowComponent
     }
   }
 
-private updateLaser(): void {
-  if (this.game.state.laserY < 0) return;
+  private updateLaser(): void {
+    if (this.game.state.laserY < 0) return;
 
-  this.updateLaserPosition();
-  this.checkLaserCollision();
-  
-  if (this.game.state.laserY < 0) {
-    this.game.state.laserY = -1;
-  }
-}
-
-private updateLaserPosition(): void {
-  this.game.state.laserY -= this.game.state.laserSpeed;
-}
-
-private checkLaserCollision(): void {
-  const laserCenterX = this.game.state.playerX + this._playerWidth / 2;
-
-  for (const alien of this.game.state.aliens) {
-    if (!alien.alive) continue;
-
-    const isHit =
-      this.game.state.laserY < alien.y + this._alienSize &&
-      this.game.state.laserY + this._laserHeight > alien.y &&
-      laserCenterX > alien.x &&
-      laserCenterX < alien.x + this._alienSize;
-
-    if (isHit) {
-      alien.alive = false;
+    this.updateLaserPosition();
+    this.checkLaserCollision();
+    
+    if (this.game.state.laserY < 0) {
       this.game.state.laserY = -1;
-      this.game.state.score++;
-      break;
     }
   }
-}
+
+  private updateLaserPosition(): void {
+    this.game.state.laserY -= this.game.state.laserSpeed;
+  }
+
+  private checkLaserCollision(): void {
+    const laserCenterX = this.game.state.laserX + this._laserWidth / 2;
+
+    for (const alien of this.game.state.aliens) {
+      if (!alien.alive) continue;
+
+      const isHit =
+        this.game.state.laserY < alien.y + this._alienSize &&
+        this.game.state.laserY + this._laserHeight > alien.y &&
+        laserCenterX > alien.x &&
+        laserCenterX < alien.x + this._alienSize;
+
+      if (isHit) {
+        alien.alive = false;
+        this.game.state.laserY = -1;
+        this.game.state.score++;
+        break;
+      }
+    }
+  }
+
+  private moveAliens(): void {
+    let isEdgeReached = false;
+
+    for (const alien of this.game.state.aliens) {
+      if (!alien.alive) continue;
+
+      alien.x += this.game.state.alienSpeed * this.game.state.alienDirection;
+
+      if (
+        alien.x < 0 ||
+        alien.x + this._alienSize > this._canvas.width
+      ) {
+        isEdgeReached = true;
+      }
+    }
+
+    if (isEdgeReached) {
+      this.game.state.alienDirection *= -1;
+      for (const alien of this.game.state.aliens) {
+        alien.y += 20;
+      }
+    }
+  }
 
   private render(): void {
     const context = this._canvas.getContext('2d');
@@ -128,6 +153,15 @@ private checkLaserCollision(): void {
           this._laserHeight
       );
     }
+
+    //alien
+    context.fillStyle = 'purple';
+    for (const alien of this.game.state.aliens) {
+      if (alien.alive) {
+        context.fillRect(alien.x, alien.y, this._alienSize, this._alienSize);
+      }
+    }
+
     }
   }
 

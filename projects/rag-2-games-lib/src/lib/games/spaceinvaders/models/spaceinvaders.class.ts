@@ -9,11 +9,20 @@ export class SpaceinvadersState implements TGameState {
     public laserY = -1;
     public laserSpeed = 15;
 
-    public aliens = Array.from({ length: 5 }, (_, i) => ({
-        x: 100 + i * 80,
-        y: 50,
-        alive: true,
-    }));
+    public aliens = Array.from({ length: 50 }, (_, i) => {
+        const cols = 10;
+        const spacingX = 80;
+        const spacingY = 60;
+
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+
+        return {
+            x: 100 + col * spacingX,
+            y: 50 + row * spacingY,
+            alive: true,
+        };
+    });
 
     public alienDirection = 1;
     public alienSpeed = 2;
