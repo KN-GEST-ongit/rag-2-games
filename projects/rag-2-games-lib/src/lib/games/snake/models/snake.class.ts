@@ -2,17 +2,19 @@ import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 
+export interface ISnakeSegment {
+    x: number;
+    y: number;
+  }
+
 export class SnakeState implements TGameState {
     public score = 0;
-    public playerX = 485;
-    public playerY = 285;
+    public segments: ISnakeSegment[] = [{ x: 10, y: 10 }];
     public isGameStarted = false;
-    // public foodItems = Array.from({ length: 10 }, () => ({
-    //     x: Math.random() * 800,
-    //     y: Math.random() * 600,
-    //   }));
-    public playerSpeedX = 0;
-    public playerSpeedY = 0;
+    public direction = 'none';
+    public gridSize = 20;
+    public isGameOver = false;
+    public foodItem: ISnakeSegment = { x: 15, y: 15 };
 }
 
 export class Snake extends Game {
@@ -21,31 +23,29 @@ export class Snake extends Game {
 
     public override outputSpec = `
         output:
-            playerX: float, <0, 980>;
-            playerY: float, <0, 580>;
-            playerSpeedX: float, <-5, 5>;
-            playerSpeedY: float, <-5, 5>;
+            segments: [{ x: int, <0, 49>, y: int, <0, 29> }];
+            direction: string, {'up', 'down', 'left', 'right', 'none'};
             isGameStarted: boolean;
             score: int, <0, inf>;
+            gridSize: int, <10, 30>;
+            foodItem: { x: int, <0, 49>, y: int, <0, 29> };
+            isGameOver: boolean;
         
         default values:
-            playerX: 485;
-            playerY: 285;
-            playerSpeedX: 0;
-            playerSpeedY: 0;
+            segments: [{ x: 10, y: 10 }];
+            direction: 'none';
             isGameStarted: false;
             score: 0;
-
-        const values:
-            playerWidth: 30;
-            playerHeight: 30;
+            gridSize: 20;
+            foodItem: { x: 15, y: 15 };
+            isGameOver: false;
     `;
     public override players = [
         new Player(
             0,
             true,
             'Player 1',
-            { moveY: 0, moveX: 0 },
+            { moveY: 0, moveX: 0, start: 0 },
             {
                 ArrowUp: {
                     variableName: 'moveY',
