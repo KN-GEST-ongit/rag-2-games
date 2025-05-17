@@ -51,6 +51,7 @@ export class SpaceinvadersGameWindowComponent
     this.updateLaser();
     this.moveAliens();
     this.difficulty();
+    this.checkLossCondition();
 
     this.render();
   }
@@ -139,6 +140,19 @@ export class SpaceinvadersGameWindowComponent
       this.game.state.difficulty++;
       this.game.state.score += 100;
       this.game.state.generateAliens();
+    }
+  }
+
+   private checkLossCondition(): void {
+    for (const alien of this.game.state.aliens) {
+      if (
+        alien.alive &&
+        alien.y + this._alienSize > this._canvas.height - this._playerHeight
+      ) {
+        this.game.state.failCounter++;
+        this.restart();
+        break;
+      }
     }
   }
 
