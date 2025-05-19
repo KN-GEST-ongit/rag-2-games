@@ -14,6 +14,10 @@ export class PacmanState implements TGameState {
     public ghostSpeed = 2;
 
     public isGameStarted = false;
+    public isPowerMode = false;
+    public isGhostVisible = true;
+    public powerModeTimer = 0;
+    public maxPowerModeTime = 420;
 
     public map: number[][];
 

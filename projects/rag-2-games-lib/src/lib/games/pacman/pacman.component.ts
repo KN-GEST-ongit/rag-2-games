@@ -75,6 +75,13 @@ export class PacmanGameWindowComponent
 
       this._mouthAnimCounter += 0.15;
     }
+    if (this.game.state.isPowerMode) {
+      this.game.state.powerModeTimer++;
+      if (this.game.state.powerModeTimer > this.game.state.maxPowerModeTime) {
+        this.game.state.isPowerMode = false;
+        this.game.state.powerModeTimer = 0;
+      }
+    }
 
     this.render();
   }
@@ -160,6 +167,11 @@ export class PacmanGameWindowComponent
     if (this.game.state.map[y]?.[x] === 2) {
       this.game.state.map[y][x] = 0;
       this.game.state.score++;
+    } else if (this.game.state.map[y]?.[x] === 3) {
+      this.game.state.map[y][x] = 0;
+      this.game.state.score += 30;
+      this.game.state.isPowerMode = true;
+      this.game.state.powerModeTimer = 0;
     }
   }
 
@@ -203,8 +215,12 @@ export class PacmanGameWindowComponent
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance < pacman.tileSize / 2) {
-      //GAME OVER
-      this.restart();
+      if (this.game.state.isPowerMode) {
+        this.game.state.score += 100;
+        this.resetGhost();
+      } else {
+        this.restart();
+      }
     }
   }
 
@@ -215,7 +231,9 @@ export class PacmanGameWindowComponent
 
       this.drawMap(context);
       this.drawPacman(context);
-      this.drawGhost(context);
+      if (this.game.state.isGhostVisible) {
+        this.drawGhost(context);
+      }
     }
   }
 
@@ -235,6 +253,11 @@ export class PacmanGameWindowComponent
           context.fillStyle = 'yellow';
           context.beginPath();
           context.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 6, 0, Math.PI * 2);
+          context.fill();
+        } else if (value === 3) {
+          context.fillStyle = 'yellow';
+          context.beginPath();
+          context.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 4, 0, Math.PI * 2);
           context.fill();
         }
       }
@@ -279,5 +302,19 @@ export class PacmanGameWindowComponent
     context.beginPath();
     context.arc(ghostX, ghostY, tileSize / 2.2, 0, Math.PI * 2);
     context.fill();
+  }
+
+  private resetGhost(): void {
+    this.game.state.isGhostVisible = false;
+    this.game.state.ghostX = -999;
+    this.game.state.ghostY = -999;
+
+    setTimeout(() => {
+      this.game.state.ghostX = 12.5 * this.game.state.tileSize;
+      this.game.state.ghostY = 9.5 * this.game.state.tileSize;
+      this._ghostDirX = 0;
+      this._ghostDirY = -1;
+      this.game.state.isGhostVisible = true;
+    }, 2000);
   }
 }
