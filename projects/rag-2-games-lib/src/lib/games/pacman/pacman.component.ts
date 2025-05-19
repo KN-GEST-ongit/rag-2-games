@@ -76,14 +76,18 @@ export class PacmanGameWindowComponent
       this._mouthAnimCounter += 0.15;
     }
     if (this.game.state.isPowerMode) {
-      this.game.state.powerModeTimer++;
+      this.powerMode();
+    }
+
+    this.render();
+  }
+
+  private powerMode(): void{
+    this.game.state.powerModeTimer++;
       if (this.game.state.powerModeTimer > this.game.state.maxPowerModeTime) {
         this.game.state.isPowerMode = false;
         this.game.state.powerModeTimer = 0;
       }
-    }
-
-    this.render();
   }
 
   private handleInput(): void {
@@ -234,6 +238,9 @@ export class PacmanGameWindowComponent
       if (this.game.state.isGhostVisible) {
         this.drawGhost(context);
       }
+      if (this.game.state.isPowerMode) {
+        this.drawPowerMode(context);
+      }
     }
   }
 
@@ -316,5 +323,16 @@ export class PacmanGameWindowComponent
       this._ghostDirY = -1;
       this.game.state.isGhostVisible = true;
     }, 2000);
+  }
+
+  private drawPowerMode(context: CanvasRenderingContext2D): void {
+    const secondsLeft =
+          ((this.game.state.maxPowerModeTime - this.game.state.powerModeTimer) / 60).toFixed(1);
+      
+        if (context) {
+          context.fillStyle = 'lime';
+          context.font = '20px Arial';
+          context.fillText(`Posiadasz SUPERMOC: ${secondsLeft}s`, 5, 20);
+        }
   }
 }
