@@ -26,9 +26,6 @@ export class PacmanGameWindowComponent
   private _inputDirectionX = 0;
   private _inputDirectionY = 0;
 
-  private _ghostDirX = 0;
-  private _ghostDirY = -1;
-
   private _mouthAnimCounter = 0;
 
   public override game!: Pacman;
@@ -70,7 +67,7 @@ export class PacmanGameWindowComponent
       this.movePacman();
       this.collectPoint();
 
-      this.moveGhost();
+      this.moveEnemies();
       this.checkPacmanGhostCollision();
 
       this._mouthAnimCounter += 0.15;
@@ -118,14 +115,7 @@ export class PacmanGameWindowComponent
     }
   }
 
-  private canMoveEntity(
-    posX: number,
-    posY: number,
-    dirX: number,
-    dirY: number,
-    speed: number,
-    radius: number
-  ): boolean {
+  private canMoveEntity(posX: number, posY: number, dirX: number, dirY: number, speed: number, radius: number): boolean {
     const tileSize = this.game.state.tileSize;
     const map = this.game.state.map;
 
@@ -180,51 +170,60 @@ export class PacmanGameWindowComponent
   }
 
   //GHOST
-  private moveGhost(): void {
-    const ghost = this.game.state;
+  private moveEnemies(): void {
+    for (const enemy of this.game.state.enemies) {
+      if (!enemy.isVisible) {
+        enemy.respawnTimer++;
+        if (enemy.respawnTimer >= 120) {
+          enemy.x = 13.5 * this.game.state.tileSize; //RESPAWN X
+          enemy.y = 9.5 * this.game.state.tileSize; //RESPAWN Y
+          enemy.dirX = 0;
+          enemy.dirY = -1;
+          enemy.isVisible = true;
+          enemy.respawnTimer = 0;
+        }
+        continue;
+      }
 
-    if (this.canGhostMoveInDirection(this._ghostDirX, this._ghostDirY)) {
-      ghost.ghostX += this._ghostDirX * ghost.ghostSpeed;
-      ghost.ghostY += this._ghostDirY * ghost.ghostSpeed;
-    } else {
-      const directions = [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 },
-      ];
-
-      const available = directions.filter(d =>
-        this.canGhostMoveInDirection(d.x, d.y)
-      );
-
-      if (available.length > 0) {
-        const newDir = available[Math.floor(Math.random() * available.length)];
-        this._ghostDirX = newDir.x;
-        this._ghostDirY = newDir.y;
+      if (this.canMoveEntity(enemy.x, enemy.y, enemy.dirX, enemy.dirY, this.game.state.speed, this.game.state.tileSize / 2.2)) {
+        enemy.x += enemy.dirX * this.game.state.speed;
+        enemy.y += enemy.dirY * this.game.state.speed;
+      } else {
+        const directions = [
+          { x: 1, y: 0 },
+          { x: -1, y: 0 },
+          { x: 0, y: 1 },
+          { x: 0, y: -1 },
+        ];
+        const available = directions.filter(d => this.canMoveEntity(enemy.x, enemy.y, d.x, d.y, this.game.state.speed, this.game.state.tileSize / 2.2));
+        if (available.length > 0) {
+          const newDir = available[Math.floor(Math.random() * available.length)];
+          enemy.dirX = newDir.x;
+          enemy.dirY = newDir.y;
+        }
       }
     }
   }
 
-  private canGhostMoveInDirection(dirX: number, dirY: number): boolean {
-    const state = this.game.state;
-    const radius = state.tileSize / 2.2;
-    return this.canMoveEntity(state.ghostX, state.ghostY, dirX, dirY, state.ghostSpeed, radius);
-  }
-
   private checkPacmanGhostCollision(): void {
-    const pacman = this.game.state;
-    const dx = pacman.pacmanX - pacman.ghostX;
-    const dy = pacman.pacmanY - pacman.ghostY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    for(const enemy of this.game.state.enemies){
+      const pacman = this.game.state;
+      const dx = pacman.pacmanX - enemy.x;
+      const dy = pacman.pacmanY - enemy.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (distance < pacman.tileSize / 2) {
-      if (this.game.state.isPowerMode) {
-        this.game.state.score += 100;
-        this.resetGhost();
-      } else {
-        this.restart();
+      if (distance < pacman.tileSize / 2) {
+        if (this.game.state.isPowerMode) {
+          enemy.isVisible = false;
+          enemy.respawnTimer = 0;
+          this.game.state.score += 100;
+          enemy.x = -999;
+          enemy.y = -999;
+        } else {
+          this.restart();
       }
+    }
+
     }
   }
 
@@ -235,9 +234,7 @@ export class PacmanGameWindowComponent
 
       this.drawMap(context);
       this.drawPacman(context);
-      if (this.game.state.isGhostVisible) {
-        this.drawGhost(context);
-      }
+      this.drawEnemies(context);
       if (this.game.state.isPowerMode) {
         this.drawPowerMode(context);
       }
@@ -301,28 +298,14 @@ export class PacmanGameWindowComponent
     context.fill();
   }
 
-  private drawGhost(context: CanvasRenderingContext2D): void {
-    const tileSize = this.game.state.tileSize;
-    const ghostX = this.game.state.ghostX;
-    const ghostY = this.game.state.ghostY;
-    context.fillStyle = 'red';
-    context.beginPath();
-    context.arc(ghostX, ghostY, tileSize / 2.2, 0, Math.PI * 2);
-    context.fill();
-  }
-
-  private resetGhost(): void {
-    this.game.state.isGhostVisible = false;
-    this.game.state.ghostX = -999;
-    this.game.state.ghostY = -999;
-
-    setTimeout(() => {
-      this.game.state.ghostX = 12.5 * this.game.state.tileSize;
-      this.game.state.ghostY = 9.5 * this.game.state.tileSize;
-      this._ghostDirX = 0;
-      this._ghostDirY = -1;
-      this.game.state.isGhostVisible = true;
-    }, 2000);
+  private drawEnemies(context: CanvasRenderingContext2D): void {
+    for (const enemy of this.game.state.enemies) {
+      if (!enemy.isVisible) continue;
+      context.fillStyle = 'red';
+      context.beginPath();
+      context.arc(enemy.x, enemy.y, this.game.state.tileSize / 2.2, 0, Math.PI * 2);
+      context.fill();
+    }
   }
 
   private drawPowerMode(context: CanvasRenderingContext2D): void {

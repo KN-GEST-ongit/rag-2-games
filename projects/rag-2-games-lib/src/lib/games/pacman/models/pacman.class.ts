@@ -2,6 +2,15 @@ import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 
+export interface IEnemy {
+  x: number;
+  y: number;
+  dirX: number;
+  dirY: number;
+  isVisible: boolean;
+  respawnTimer: number;
+};
+
 export class PacmanState implements TGameState {
     public tileSize = 35;
     public pacmanX: number;
@@ -9,15 +18,12 @@ export class PacmanState implements TGameState {
     public speed = 2;
     public score = 0;
 
-    public ghostX: number;
-    public ghostY: number;
-    public ghostSpeed = 2;
-
     public isGameStarted = false;
     public isPowerMode = false;
-    public isGhostVisible = true;
     public powerModeTimer = 0;
     public maxPowerModeTime = 420;
+
+    public enemies: IEnemy[] = [];
 
     public map: number[][];
 
@@ -30,8 +36,10 @@ export class PacmanState implements TGameState {
     
       this.pacmanX = 1.5 * this.tileSize;
       this.pacmanY = 1.5 * this.tileSize;
-      this.ghostX = 12.5 * this.tileSize;
-      this.ghostY = 9.5 * this.tileSize;
+      this.enemies = [
+      { x: 12.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0 },
+      { x: 13.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0 },
+    ];
     }
 }
 
