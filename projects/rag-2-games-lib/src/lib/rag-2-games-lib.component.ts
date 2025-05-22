@@ -7,6 +7,7 @@ import { PongGameWindowComponent } from './games/pong/pong.component';
 import { SkiJumpGameWindowComponent } from './games/skijump/skijump.component';
 import { FlappyBirdGameWindowComponent } from './games/flappybird/flappybird.component';
 import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.component';
+import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
 
 @Component({
   selector: 'rag-2-games-lib',
@@ -16,6 +17,7 @@ import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.compon
     SkiJumpGameWindowComponent,
     FlappyBirdGameWindowComponent,
     HappyJumpGameWindowComponent,
+  	TetrisGameWindowComponent
   ],
   template: `
     @switch (gameName) {
@@ -48,6 +50,24 @@ import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.compon
       }
       @case ('happyjump') {
         <app-happyjump
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+			@case ('tetris') {
+        <app-tetris
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+			@case ('tetris') {
+        <app-tetris
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
