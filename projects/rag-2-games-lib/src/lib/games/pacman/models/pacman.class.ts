@@ -19,6 +19,8 @@ export class PacmanState implements TGameState {
     public speed = 2;
     public score = 0;
 
+    public level = 1;
+
     public isGameStarted = false;
     public isPowerMode = false;
     public powerModeTimer = 0;

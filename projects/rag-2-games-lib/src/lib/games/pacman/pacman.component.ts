@@ -10,6 +10,7 @@ import { PacmanMaps } from './models/pacman.maps';
   standalone: true,
   imports: [CanvasComponent],
   template: `<div>
+    level: <b>{{ game.state.level }}</b>
     score: <b>{{ game.state.score }}</b>
     </div>
     <app-canvas
@@ -74,6 +75,9 @@ export class PacmanGameWindowComponent
     }
     if (this.game.state.isPowerMode) {
       this.powerMode();
+    }
+    if (this.isLevelComplete()) {
+      this.nextLevel();
     }
 
     this.render();
@@ -318,4 +322,31 @@ export class PacmanGameWindowComponent
           context.fillText(`Posiadasz SUPERMOC: ${secondsLeft}s`, 5, 20);
         }
   }
+
+  private isLevelComplete(): boolean {
+    for (const row of this.game.state.map) {
+      for (const tile of row) {
+        if (tile === 2 || tile === 3) return false;
+      }
+    }
+    return true;
+  }
+
+  private nextLevel(): void {
+    const randomIndex = Math.floor(Math.random() * PacmanMaps.length);
+    const nextMap = PacmanMaps[randomIndex].map(row => [...row]);
+
+    const newState = new PacmanState(nextMap);
+    newState.score = this.game.state.score;
+    newState.level = this.game.state.level + 1;
+    this.game.state = newState;
+
+    this._canvas.width = nextMap[0].length * this.game.state.tileSize;
+    this._canvas.height = nextMap.length * this.game.state.tileSize;
+
+    this._movingDirectionX = 0;
+    this._movingDirectionY = 0;
+    this._inputDirectionX = 0;
+    this._inputDirectionY = 0;
+}
 }
