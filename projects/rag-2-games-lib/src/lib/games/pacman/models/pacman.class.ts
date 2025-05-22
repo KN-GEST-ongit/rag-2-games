@@ -41,7 +41,9 @@ export class PacmanState implements TGameState {
       this.pacmanY = 1.5 * this.tileSize;
       this.enemies = [
       { x: 12.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'red' },
-      { x: 13.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'cyan' },
+      { x: 11.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'cyan' },
+      { x: 11.5 * this.tileSize, y: 8.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'pink' },
+      { x: 12.5 * this.tileSize, y: 8.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'orange' },
     ];
     }
 }
