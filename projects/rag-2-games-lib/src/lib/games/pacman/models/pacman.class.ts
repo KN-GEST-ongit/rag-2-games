@@ -9,6 +9,7 @@ export interface IEnemy {
   dirY: number;
   isVisible: boolean;
   respawnTimer: number;
+  color: string;
 };
 
 export class PacmanState implements TGameState {
@@ -37,8 +38,8 @@ export class PacmanState implements TGameState {
       this.pacmanX = 1.5 * this.tileSize;
       this.pacmanY = 1.5 * this.tileSize;
       this.enemies = [
-      { x: 12.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0 },
-      { x: 13.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0 },
+      { x: 12.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'red' },
+      { x: 13.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'cyan' },
     ];
     }
 }

@@ -301,7 +301,7 @@ export class PacmanGameWindowComponent
   private drawEnemies(context: CanvasRenderingContext2D): void {
     for (const enemy of this.game.state.enemies) {
       if (!enemy.isVisible) continue;
-      context.fillStyle = 'red';
+      context.fillStyle = enemy.color;
       context.beginPath();
       context.arc(enemy.x, enemy.y, this.game.state.tileSize / 2.2, 0, Math.PI * 2);
       context.fill();
