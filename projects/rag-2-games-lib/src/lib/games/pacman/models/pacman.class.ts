@@ -20,6 +20,7 @@ export class PacmanState implements TGameState {
     public score = 0;
 
     public level = 1;
+    public mapId = -999;
 
     public isGameStarted = false;
     public isPowerMode = false;
@@ -40,10 +41,10 @@ export class PacmanState implements TGameState {
       this.pacmanX = 1.5 * this.tileSize;
       this.pacmanY = 1.5 * this.tileSize;
       this.enemies = [
-      { x: 12.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'red' },
-      { x: 11.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'cyan' },
+      { x: 12.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: 1, dirY: 0, isVisible: true, respawnTimer: 0, color: 'red' },
+      { x: 11.5 * this.tileSize, y: 9.5 * this.tileSize, dirX: -1, dirY: 0, isVisible: true, respawnTimer: 0, color: 'cyan' },
       { x: 11.5 * this.tileSize, y: 8.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'pink' },
-      { x: 12.5 * this.tileSize, y: 8.5 * this.tileSize, dirX: 0, dirY: -1, isVisible: true, respawnTimer: 0, color: 'orange' },
+      { x: 12.5 * this.tileSize, y: 8.5 * this.tileSize, dirX: 0, dirY: 1, isVisible: true, respawnTimer: 0, color: 'orange' },
     ];
     }
 }

@@ -12,6 +12,7 @@ import { PacmanMaps } from './models/pacman.maps';
   template: `<div>
     level: <b>{{ game.state.level }}</b>
     score: <b>{{ game.state.score }}</b>
+    map_ID: <b>{{ game.state.mapId }}</b>
     </div>
     <app-canvas
       [displayMode]="'horizontal'"
@@ -48,6 +49,7 @@ export class PacmanGameWindowComponent
     const selectedMap = PacmanMaps[randomIndex].map(row => [...row]);
   
     this.game.state = new PacmanState(selectedMap);
+    this.game.state.mapId = randomIndex;
   
     this._canvas.width = selectedMap[0].length * this.game.state.tileSize;
     this._canvas.height = selectedMap.length * this.game.state.tileSize;
