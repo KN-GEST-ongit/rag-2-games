@@ -16,11 +16,10 @@ export class PacmanState implements TGameState {
     public tileSize = 35;
     public pacmanX: number;
     public pacmanY: number;
-    public speed = 2;
+    public speed = 3;
     public score = 0;
 
     public level = 1;
-    public mapId = -999;
 
     public isGameStarted = false;
     public isPowerMode = false;
@@ -53,7 +52,36 @@ export class Pacman extends Game {
     public override name = 'pacman';
     public override state = new PacmanState();
 
-    public override outputSpec = ``;
+    public override outputSpec = `
+    output:
+    pacmanX: float, <0, ${24 * this.state.tileSize}>;
+    pacmanY: float, <0, ${16 * this.state.tileSize}>;
+    ghostX: float, <0, ${24 * this.state.tileSize}>;
+    ghostY: float, <0, ${16 * this.state.tileSize}>;
+    tileSize: int, <1, 100>;
+    speed: float, <1, 10>;
+    ghostSpeed: float, <1, 10>;
+    score: int, <0, inf>;
+    level: int, <1, inf>;
+    isGameStarted: boolean;
+    isPowerMode: boolean;
+    powerModeTimer: int, <0, inf>;
+    maxPowerModeTime: int, <1, inf>;
+    map: int[${this.state.map.length}][${this.state.map[0].length}] (0: empty, 1: wall, 2: point, 3: superpoint);
+
+  default values:
+    pacmanX: ${this.state.pacmanX};
+    pacmanY: ${this.state.pacmanY};
+    tileSize: ${this.state.tileSize};
+    speed: ${this.state.speed};
+    score: 0;
+    level: 1;
+    isGameStarted: false;
+    isPowerMode: false;
+    powerModeTimer: 0;
+    maxPowerModeTime: ${this.state.maxPowerModeTime};
+    map: [[...]];
+    `;
     public override players = [
         new Player(
             0,
