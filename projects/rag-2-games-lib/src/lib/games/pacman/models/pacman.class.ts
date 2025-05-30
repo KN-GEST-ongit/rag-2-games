@@ -87,15 +87,20 @@ export class Pacman extends Game {
             0,
             true,
             'Player 1',
-            { moveX: 0, moveY: 0 },
+            { move: 0 },
             {
-              w: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
-              s: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
-              a: { variableName: 'moveX', pressedValue: -1, releasedValue: 0 },
-              d: { variableName: 'moveX', pressedValue: 1, releasedValue: 0 },
+              w: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+              s: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+              a: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+              d: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+
+              ArrowUp: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+              ArrowDown: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+              ArrowLeft: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+              ArrowRight: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
             },
-            '<moveX>: value of {-1, 0, 1}, -1: left, 0: stop, 1: right; <moveY>: value of {-1, 0, 1}, -1: up, 0: stop, 1: down',
-            { up: '[W]', down: '[S]', left: '[A]', right: '[D]' }
+            '<move>: value of {0: stop, 1: left, 2: right, 3: up, 4: down}',
+            { up: '[W]/[↑]', down: '[S]/[↓]', left: '[A]/[←]', right: '[D]/[→]' }
         ),
     ];
 }
