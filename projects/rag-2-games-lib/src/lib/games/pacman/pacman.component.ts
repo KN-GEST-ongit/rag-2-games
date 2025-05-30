@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable max-lines */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
@@ -58,7 +59,7 @@ export class PacmanGameWindowComponent
 
     if (
       !this.game.state.isGameStarted &&
-      (this.game.players[0].inputData['moveX'] !== 0 || this.game.players[0].inputData['moveY'] !== 0)
+      this.game.players[0].inputData['move'] !== 0
     ) {
       this.game.state.isGameStarted = true;
     }
@@ -93,10 +94,19 @@ export class PacmanGameWindowComponent
 
   private handleInput(): void {
     const player = this.game.players[0];
-    const inputX = player.inputData['moveX'] as number || 0;
-    const inputY = player.inputData['moveY'] as number || 0;
+    const move = player.inputData['move'] as number;
 
-    if (inputX !== 0 || inputY !== 0) {
+    let inputX = 0;
+    let inputY = 0;
+
+    switch (move) {
+      case 1: inputX = -1; break;
+      case 2: inputX = 1; break;
+      case 3: inputY = -1; break;
+      case 4: inputY = 1; break;
+    }
+
+    if (move !== 0) {
       this._inputDirectionX = inputX;
       this._inputDirectionY = inputY;
     }
@@ -263,7 +273,7 @@ export class PacmanGameWindowComponent
           context.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 6, 0, Math.PI * 2);
           context.fill();
         } else if (value === 3) {
-          context.fillStyle = 'yellow';
+          context.fillStyle = 'GoldenRod';
           context.beginPath();
           context.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 4, 0, Math.PI * 2);
           context.fill();
@@ -300,15 +310,24 @@ export class PacmanGameWindowComponent
     context.arc(pacX, pacY, radius, startAngle, endAngle);
     context.closePath();
     context.fill();
+
+    context.strokeStyle = 'black';
+    context.lineWidth = 1;
+    context.stroke();
   }
 
   private drawEnemies(context: CanvasRenderingContext2D): void {
     for (const enemy of this.game.state.enemies) {
       if (!enemy.isVisible) continue;
-      context.fillStyle = enemy.color;
+      const isScared = this.game.state.isPowerMode;
+      context.fillStyle = isScared ? 'limegreen' : enemy.color;
       context.beginPath();
       context.arc(enemy.x, enemy.y, this.game.state.tileSize / 2.2, 0, Math.PI * 2);
       context.fill();
+
+      context.strokeStyle = 'black';
+      context.lineWidth = 1;
+      context.stroke();
     }
   }
 
