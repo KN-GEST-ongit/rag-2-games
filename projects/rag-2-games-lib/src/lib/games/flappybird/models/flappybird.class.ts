@@ -20,6 +20,7 @@ export class FlappyBirdState implements TGameState {
 
 export class FlappyBird extends Game {
   public override name = 'flappybird';
+  public override author = 'Paweł Buczek';
   public override state = new FlappyBirdState();
   public override outputSpec = `
         output:
@@ -33,7 +34,7 @@ export class FlappyBird extends Game {
           obstacles: [{distanceX: int, <-50, 1900>, centerGapyY: int <100, 500>}];
           isGameStarted: boolean;
           failCounter: int, <0, inf>
-  
+
         default values:
           birdY: 300;
           birdSpeedY: 0;

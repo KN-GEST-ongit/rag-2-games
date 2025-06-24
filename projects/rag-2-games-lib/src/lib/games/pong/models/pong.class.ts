@@ -18,6 +18,7 @@ export class PongState implements TGameState {
 
 export class Pong extends Game {
   public override name = 'pong';
+  public override author = 'Marcin Bator';
   public override state = new PongState();
   public override outputSpec = `
       output:
