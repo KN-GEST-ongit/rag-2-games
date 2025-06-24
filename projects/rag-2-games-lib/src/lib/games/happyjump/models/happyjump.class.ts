@@ -24,6 +24,7 @@ export class HappyJumpState implements TGameState {
 
 export class HappyJump extends Game {
   public override name = 'happyjump';
+  public override author = 'Paweł Buczek';
   public override state = new HappyJumpState();
 
   public override outputSpec = `
