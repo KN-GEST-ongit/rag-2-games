@@ -23,6 +23,7 @@ export class SkiJumpState implements TGameState {
 
 export class SkiJump extends Game {
   public override name = 'skijump';
+  public override author = 'Marcin Bator';
   public override state = new SkiJumpState();
   public override outputSpec = `
     output:
