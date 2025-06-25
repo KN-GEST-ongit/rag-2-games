@@ -8,6 +8,7 @@ import { SkiJumpGameWindowComponent } from './games/skijump/skijump.component';
 import { FlappyBirdGameWindowComponent } from './games/flappybird/flappybird.component';
 import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.component';
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
+import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
 
 @Component({
   selector: 'rag-2-games-lib',
@@ -17,7 +18,8 @@ import { SnakeGameWindowComponent } from './games/snake/snake.component';
     SkiJumpGameWindowComponent,
     FlappyBirdGameWindowComponent,
     HappyJumpGameWindowComponent,
-  	SnakeGameWindowComponent],
+  	SnakeGameWindowComponent,
+  	PacmanGameWindowComponent],
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -56,8 +58,13 @@ import { SnakeGameWindowComponent } from './games/snake/snake.component';
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
+<<<<<<< HEAD
 			@case ('snake') {
         <app-snake
+=======
+			@case ('pacman') {
+        <app-pacman
+>>>>>>> 6d885821b6ba2ba41115a31b0cabd0cd625db2da
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
