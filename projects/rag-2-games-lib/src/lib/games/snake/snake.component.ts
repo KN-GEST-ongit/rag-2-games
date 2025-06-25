@@ -1,4 +1,5 @@
 /* eslint-disable max-lines */
+/* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -15,7 +16,7 @@ import { Snake, SnakeState, ISnakeSegment } from './models/snake.class';
     }
     @else if (game.state.isGameOver) {
       <div style="color: red; font-weight: bold; font-size: 20px;">
-        Game Over! Press restart to play again. Yout score is: <b>{{ game.state.score }}</b>
+        Game Over! Press Space to play again. Yout score is: <b>{{ game.state.score }}</b>
       </div>
     } 
     <app-canvas
@@ -29,7 +30,7 @@ export class SnakeGameWindowComponent
   extends BaseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
-  private _moveInterval = 50;
+  private _moveInterval = 100;
   private _lastMoveTime = 0;
   private _gridWidth = 0;
   private _gridHeight = 0;
@@ -95,36 +96,30 @@ export class SnakeGameWindowComponent
   private updateDirection(): void {
     if (this.game.state.isGameOver) return;
 
-    const moveX = Number(this.game.players[0].inputData['moveX']);
-    const moveY = Number(this.game.players[0].inputData['moveY']);
+    const moveValue = Number(this.game.players[0].inputData['move']);
 
-    if (this.isHorizontalMoveValid(moveX)) {
-      this.setHorizontalDirection(moveX);
+    switch (moveValue) {
+      case 1:
+        if (this.game.state.direction !== 'left') {
+          this.game.state.direction = 'right';
+        }
+        break;
+      case 2:
+        if (this.game.state.direction !== 'right') {
+          this.game.state.direction = 'left';
+        }
+        break;
+      case 3:
+        if (this.game.state.direction !== 'up') {
+          this.game.state.direction = 'down';
+        }
+        break;
+      case 4:
+        if (this.game.state.direction !== 'down') {
+          this.game.state.direction = 'up';
+        }
+        break;
     }
-  
-    if (this.isVerticalMoveValid(moveY)) {
-      this.setVerticalDirection(moveY);
-    }
-  }
-
-  private isHorizontalMoveValid(moveX: number): boolean {
-    const currentDirection = this.game.state.direction;
-    return (moveX === -1 && currentDirection !== 'right') || 
-           (moveX === 1 && currentDirection !== 'left');
-  }
-
-  private isVerticalMoveValid(moveY: number): boolean {
-    const currentDirection = this.game.state.direction;
-    return (moveY === -1 && currentDirection !== 'down') || 
-           (moveY === 1 && currentDirection !== 'up');
-  }
-
-  private setHorizontalDirection(moveX: number): void {
-    this.game.state.direction = moveX === -1 ? 'left' : 'right';
-  }
-
-  private setVerticalDirection(moveY: number): void {
-    this.game.state.direction = moveY === -1 ? 'up' : 'down';
   }
 
   private moveSnake(): void {

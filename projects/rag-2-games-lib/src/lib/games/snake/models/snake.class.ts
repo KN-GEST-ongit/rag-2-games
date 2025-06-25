@@ -19,6 +19,7 @@ export class SnakeState implements TGameState {
 
 export class Snake extends Game {
     public override name = 'snake';
+    public override author = "Norbert Stachowicz";
     public override state = new SnakeState();
 
     public override outputSpec = `
@@ -45,25 +46,25 @@ export class Snake extends Game {
             0,
             true,
             'Player 1',
-            { moveY: 0, moveX: 0, start: 0 },
+            { move: 0, start: 0 },
             {
                 ArrowUp: {
-                    variableName: 'moveY',
-                    pressedValue: -1,
+                    variableName: 'move',
+                    pressedValue: 4,
                     releasedValue: 0,
                 },
                 ArrowDown: {
-                    variableName: 'moveY',
-                    pressedValue: 1,
+                    variableName: 'move',
+                    pressedValue: 3,
                     releasedValue: 0,
                 },
                 ArrowLeft: {
-                    variableName: 'moveX',
-                    pressedValue: -1,
+                    variableName: 'move',
+                    pressedValue: 2,
                     releasedValue: 0,
                 },
                 ArrowRight: {
-                    variableName: 'moveX',
+                    variableName: 'move',
                     pressedValue: 1,
                     releasedValue: 0,
                 },
@@ -73,7 +74,7 @@ export class Snake extends Game {
                     releasedValue: 0,
                 },
             },
-            '<moveX>: value of {-1, 0, 1}, -1: left, 0: stop, 1: right; <moveY>: value of {-1, 0, 1}, -1: up, 0: stop, 1: down; <start>: value of {0, 1}, 0: not pressed, 1: pressed;',
+            '<move>: value of {0, 1, 2, 3, 4}, 0: stop, 1: right, 2: left, 3: down, 4: up; <start>: value of {0, 1}, 0: not pressed, 1: pressed;',
             {
                 up: '[ARROW_UP]',
                 down: '[ARROW_DOWN]',

@@ -58,13 +58,17 @@ import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
-<<<<<<< HEAD
 			@case ('snake') {
         <app-snake
-=======
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      } 
 			@case ('pacman') {
         <app-pacman
->>>>>>> 6d885821b6ba2ba41115a31b0cabd0cd625db2da
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
