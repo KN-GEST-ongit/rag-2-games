@@ -12,15 +12,12 @@ import { ISnakeFood } from './models/snake.food';
   standalone: true,
   imports: [CanvasComponent],
   template: `
-      <div>
-        score: <b>{{ game.state.score }}</b>
-      </div>
+    <div>
+      score: <b>{{ game.state.score }}</b>
+    </div>
 
-    <app-canvas
-      [displayMode]="'horizontal'"
-      #gameCanvas></app-canvas>
-    <b>FPS: {{ fps }}</b> 
-    
+    <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
+    <b>FPS: {{ fps }}</b>
   `,
 })
 export class SnakeGameWindowComponent
@@ -42,10 +39,16 @@ export class SnakeGameWindowComponent
 
   public override ngAfterViewInit(): void {
     super.ngAfterViewInit();
-    this._canvas.width = Math.floor(this._canvas.width / this.game.state.gridSize) * this.game.state.gridSize;
-    this._canvas.height = Math.floor(this._canvas.height / this.game.state.gridSize) * this.game.state.gridSize;
+    this._canvas.width =
+      Math.floor(this._canvas.width / this.game.state.gridSize) *
+      this.game.state.gridSize;
+    this._canvas.height =
+      Math.floor(this._canvas.height / this.game.state.gridSize) *
+      this.game.state.gridSize;
     this._gridWidth = Math.floor(this._canvas.width / this.game.state.gridSize);
-    this._gridHeight = Math.floor(this._canvas.height / this.game.state.gridSize);
+    this._gridHeight = Math.floor(
+      this._canvas.height / this.game.state.gridSize
+    );
     this.resetGame();
     this.render();
   }
@@ -64,7 +67,12 @@ export class SnakeGameWindowComponent
     this.gameStart();
     this.updateDirection();
 
-    if (!this.isPaused && this.game.state.isGameStarted && !this.game.state.isGameOver && currentTime - this._lastMoveTime > this._moveInterval){
+    if (
+      !this.isPaused &&
+      this.game.state.isGameStarted &&
+      !this.game.state.isGameOver &&
+      currentTime - this._lastMoveTime > this._moveInterval
+    ) {
       this.moveSnake();
       this._lastMoveTime = currentTime;
     }
@@ -74,7 +82,7 @@ export class SnakeGameWindowComponent
   private resetGame(): void {
     const centerX = Math.floor(this._gridWidth / 2);
     const centerY = Math.floor(this._gridHeight / 2);
-    
+
     this.game.state.segments = [{ x: centerX, y: centerY }];
     this.game.state.direction = 'none';
     this.game.state.velocity = 0;
@@ -87,10 +95,15 @@ export class SnakeGameWindowComponent
   }
 
   private gameStart(): void {
-    if (!this.game.state.isGameStarted && this.game.players[0].inputData['start'] === 1) {
+    if (
+      !this.game.state.isGameStarted &&
+      this.game.players[0].inputData['start'] === 1
+    ) {
       this.game.state.isGameStarted = true;
-    }
-    else if (this.game.state.isGameOver && this.game.players[0].inputData['start'] === 1) {
+    } else if (
+      this.game.state.isGameOver &&
+      this.game.players[0].inputData['start'] === 1
+    ) {
       this.resetGame();
     }
   }
@@ -139,25 +152,28 @@ export class SnakeGameWindowComponent
       return;
     }
 
-    if (newHead.x === this.game.state.foodItem.x && newHead.y === this.game.state.foodItem.y) {
-        this.game.state.score += 1;
-        this._iterationCount += 1;
-        if (this._moveInterval > 25 && this._iterationCount == 5) {
-          this.game.state.velocity += 3;
-          this._moveInterval -= 2;
-          this._iterationCount = 0;
-        }
-        this.game.state.segments.unshift(newHead);
-        this.generateFood();
+    if (
+      newHead.x === this.game.state.foodItem.x &&
+      newHead.y === this.game.state.foodItem.y
+    ) {
+      this.game.state.score += 1;
+      this._iterationCount += 1;
+      if (this._moveInterval > 25 && this._iterationCount == 5) {
+        this.game.state.velocity += 3;
+        this._moveInterval -= 2;
+        this._iterationCount = 0;
+      }
+      this.game.state.segments.unshift(newHead);
+      this.generateFood();
     } else {
-        this.game.state.segments.unshift(newHead);
-        this.game.state.segments.pop();
+      this.game.state.segments.unshift(newHead);
+      this.game.state.segments.pop();
     }
   }
-  
+
   private calculateNewHeadPosition(): ISnakeSegment {
     const head = { ...this.game.state.segments[0] };
-    
+
     switch (this.game.state.direction) {
       case 'up':
         head.y -= 1;
@@ -172,70 +188,74 @@ export class SnakeGameWindowComponent
         head.x += 1;
         break;
     }
-    
+
     return head;
   }
 
   private isCollisionWithWall(head: ISnakeSegment): boolean {
     return (
-        head.x < 0 || 
-        head.y < 0 || 
-        head.x >= this._gridWidth || 
-        head.y >= this._gridHeight
+      head.x < 0 ||
+      head.y < 0 ||
+      head.x >= this._gridWidth ||
+      head.y >= this._gridHeight
     );
-}
+  }
 
-private isCollisionWithSelf(head: ISnakeSegment): boolean {
-  for (let i = 1; i < this.game.state.segments.length; i++) {
+  private isCollisionWithSelf(head: ISnakeSegment): boolean {
+    for (let i = 1; i < this.game.state.segments.length; i++) {
       const segment = this.game.state.segments[i];
       if (segment.x === head.x && segment.y === head.y) {
-          return true;
+        return true;
       }
+    }
+    return false;
   }
-  return false;
-}
 
   private render(): void {
     const context = this._canvas.getContext('2d');
     if (context) {
-        context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+      context.clearRect(0, 0, this._canvas.width, this._canvas.height);
 
-        context.fillStyle = 'blue';
-        this.game.state.segments.forEach(segment => {
-            context.fillRect(
-                segment.x * this.game.state.gridSize,
-                segment.y * this.game.state.gridSize,
-                this.game.state.gridSize,
-                this.game.state.gridSize
-            );
-        });
-
-        context.fillStyle = 'red';
+      context.fillStyle = 'blue';
+      this.game.state.segments.forEach(segment => {
         context.fillRect(
-            this.game.state.foodItem.x * this.game.state.gridSize,
-            this.game.state.foodItem.y * this.game.state.gridSize,
-            this.game.state.gridSize,
-            this.game.state.gridSize
+          segment.x * this.game.state.gridSize,
+          segment.y * this.game.state.gridSize,
+          this.game.state.gridSize,
+          this.game.state.gridSize
         );
+      });
+
+      context.fillStyle = 'red';
+      context.fillRect(
+        this.game.state.foodItem.x * this.game.state.gridSize,
+        this.game.state.foodItem.y * this.game.state.gridSize,
+        this.game.state.gridSize,
+        this.game.state.gridSize
+      );
     }
-}
+  }
 
   private generateFood(): void {
     const gridWidth = Math.floor(this._canvas.width / this.game.state.gridSize);
-    const gridHeight = Math.floor(this._canvas.height / this.game.state.gridSize);
+    const gridHeight = Math.floor(
+      this._canvas.height / this.game.state.gridSize
+    );
 
     let newFoodPosition: ISnakeFood;
     do {
-        newFoodPosition = {
-            x: Math.floor(Math.random() * gridWidth),
-            y: Math.floor(Math.random() * gridHeight),
-        };
+      newFoodPosition = {
+        x: Math.floor(Math.random() * gridWidth),
+        y: Math.floor(Math.random() * gridHeight),
+      };
     } while (this.isFoodOnSnake(newFoodPosition));
 
     this.game.state.foodItem = newFoodPosition;
-}
+  }
 
-private isFoodOnSnake(position: ISnakeFood): boolean {
-    return this.game.state.segments.some(segment => segment.x === position.x && segment.y === position.y);
-}
+  private isFoodOnSnake(position: ISnakeFood): boolean {
+    return this.game.state.segments.some(
+      segment => segment.x === position.x && segment.y === position.y
+    );
+  }
 }

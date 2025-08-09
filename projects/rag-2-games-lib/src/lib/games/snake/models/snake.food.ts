@@ -1,4 +1,4 @@
 export interface ISnakeFood {
-    x: number;
-    y: number;
+  x: number;
+  y: number;
 }
