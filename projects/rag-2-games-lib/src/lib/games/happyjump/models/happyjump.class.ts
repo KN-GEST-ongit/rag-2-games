@@ -3,7 +3,7 @@ import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 
 export class HappyJumpState implements TGameState {
-  public playerX = 540;
+  public playerX = 185;
   public playerY = 570;
   public playerSpeedX = 0;
   public playerSpeedY = 0;

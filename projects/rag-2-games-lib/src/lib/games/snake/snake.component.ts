@@ -3,22 +3,19 @@
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { Snake, SnakeState, ISnakeSegment } from './models/snake.class';
+import { Snake, SnakeState } from './models/snake.class';
+import { ISnakeSegment } from './models/snake.segments';
+import { ISnakeFood } from './models/snake.food';
+
 @Component({
   selector: 'app-snake',
   standalone: true,
   imports: [CanvasComponent],
   template: `
-    @if (!game.state.isGameOver) {
       <div>
         score: <b>{{ game.state.score }}</b>
       </div>
-    }
-    @else if (game.state.isGameOver) {
-      <div style="color: red; font-weight: bold; font-size: 20px;">
-        Game Over! Press Space to play again. Yout score is: <b>{{ game.state.score }}</b>
-      </div>
-    } 
+
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
@@ -34,6 +31,7 @@ export class SnakeGameWindowComponent
   private _lastMoveTime = 0;
   private _gridWidth = 0;
   private _gridHeight = 0;
+  private _iterationCount = 0;
 
   public override game!: Snake;
 
@@ -44,6 +42,8 @@ export class SnakeGameWindowComponent
 
   public override ngAfterViewInit(): void {
     super.ngAfterViewInit();
+    this._canvas.width = Math.floor(this._canvas.width / this.game.state.gridSize) * this.game.state.gridSize;
+    this._canvas.height = Math.floor(this._canvas.height / this.game.state.gridSize) * this.game.state.gridSize;
     this._gridWidth = Math.floor(this._canvas.width / this.game.state.gridSize);
     this._gridHeight = Math.floor(this._canvas.height / this.game.state.gridSize);
     this.resetGame();
@@ -77,6 +77,8 @@ export class SnakeGameWindowComponent
     
     this.game.state.segments = [{ x: centerX, y: centerY }];
     this.game.state.direction = 'none';
+    this.game.state.velocity = 0;
+    this._moveInterval = 100;
     this.game.state.score = 0;
     this.game.state.isGameStarted = false;
     this.game.state.isGameOver = false;
@@ -139,6 +141,12 @@ export class SnakeGameWindowComponent
 
     if (newHead.x === this.game.state.foodItem.x && newHead.y === this.game.state.foodItem.y) {
         this.game.state.score += 1;
+        this._iterationCount += 1;
+        if (this._moveInterval > 25 && this._iterationCount == 5) {
+          this.game.state.velocity += 3;
+          this._moveInterval -= 2;
+          this._iterationCount = 0;
+        }
         this.game.state.segments.unshift(newHead);
         this.generateFood();
     } else {
@@ -216,7 +224,7 @@ private isCollisionWithSelf(head: ISnakeSegment): boolean {
     const gridWidth = Math.floor(this._canvas.width / this.game.state.gridSize);
     const gridHeight = Math.floor(this._canvas.height / this.game.state.gridSize);
 
-    let newFoodPosition: ISnakeSegment;
+    let newFoodPosition: ISnakeFood;
     do {
         newFoodPosition = {
             x: Math.floor(Math.random() * gridWidth),
@@ -227,7 +235,7 @@ private isCollisionWithSelf(head: ISnakeSegment): boolean {
     this.game.state.foodItem = newFoodPosition;
 }
 
-private isFoodOnSnake(position: ISnakeSegment): boolean {
+private isFoodOnSnake(position: ISnakeFood): boolean {
     return this.game.state.segments.some(segment => segment.x === position.x && segment.y === position.y);
 }
 }

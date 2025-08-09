@@ -1,20 +1,21 @@
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
-
-export interface ISnakeSegment {
-    x: number;
-    y: number;
-  }
+import { ISnakeSegment } from '../../../games/snake/models/snake.segments';
+import { ISnakeFood } from '../../../games/snake/models/snake.food';
 
 export class SnakeState implements TGameState {
     public score = 0;
     public segments: ISnakeSegment[] = [{ x: 10, y: 10 }];
     public isGameStarted = false;
     public direction = 'none';
-    public gridSize = 20;
+    public velocity = 0;
+    public gridSize = 30;
     public isGameOver = false;
-    public foodItem: ISnakeSegment = { x: 15, y: 15 };
+        public foodItem: ISnakeFood = {
+        x: Math.floor(Math.random() * 50),
+        y: Math.floor(Math.random() * 30),
+    };
 }
 
 export class Snake extends Game {
@@ -26,6 +27,7 @@ export class Snake extends Game {
         output:
             segments: [{ x: int, <0, 49>, y: int, <0, 29> }];
             direction: string, {'up', 'down', 'left', 'right', 'none'};
+            velocity: int, <0, 75>;
             isGameStarted: boolean;
             score: int, <0, inf>;
             gridSize: int, <10, 30>;
@@ -35,6 +37,7 @@ export class Snake extends Game {
         default values:
             segments: [{ x: 10, y: 10 }];
             direction: 'none';
+            velocity: 0;
             isGameStarted: false;
             score: 0;
             gridSize: 20;
