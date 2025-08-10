@@ -7,7 +7,7 @@ export class SpaceinvadersState implements TGameState {
     public playerSpeed = 5;
     public laserX = -1;
     public laserY = -1;
-    public laserSpeed = 15;
+    public laserSpeed = 25;
     public difficulty = 1;
     public alienCount = this.difficulty*5;
 
@@ -81,13 +81,13 @@ export class Spaceinvaders extends Game {
             0,
             true,
             'Player 1',
-            { left: 0, right: 0, shoot: 0 },
+            { move: 0, shoot: 0 },
             {
                 a: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
                 d: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
                 ' ': { variableName: 'shoot', pressedValue: 1, releasedValue: 0 },
             },
-            '<move>: value of {-1, 0, 1}, -1: left, 0: stop, 1: right; <shoot>: value of {0, 1}, 0: not shoot, 1: shoot',
+            '<move>: value of {-1, 0, 1}; <shoot>: value of {0, 1}, 0: not shoot, 1: shoot',
             { left: '[A]', right: '[D]', shoot: '[SPACE]' }
         ),
     ];
