@@ -4,14 +4,20 @@ import { Player } from '../../../models/player.class';
 
 export class SpaceinvadersState implements TGameState {
     public playerX = 300;
-    public playerSpeed = 5;
+    public playerSpeed = 8;
     public laserX = -1;
     public laserY = -1;
-    public laserSpeed = 25;
+    public laserSpeed = 30;
     public difficulty = 1;
     public alienCount = this.difficulty*5;
+    public laserWidthPowerupActive = false;
+    public modSpeed = 8;
+    public modChance = 0.2;
+    public laserAmount = 0;
 
     public aliens: { x: number; y: number; alive: boolean }[] = [];
+
+    public mods: { x: number; y: number; alive: boolean }[] = [];
 
     private readonly _cols = 10;
     private readonly _spacingX = 80;
@@ -36,9 +42,17 @@ export class SpaceinvadersState implements TGameState {
         });
     }
 
+    public generateMod(): void {
+        this.mods.push({
+            x: Math.floor(Math.random() * (500) + 50),
+            y: 0,
+            alive: true,
+        });
+}
+
 
     public alienDirection = 1;
-    public alienSpeed = 2;
+    public alienSpeed = 3;
     public score = 0;
     public isGameStarted = false;
     public failCounter = 0;
@@ -53,12 +67,16 @@ export class Spaceinvaders extends Game {
         playerX: int, <0, 600>;
         playerSpeed: int, <1, 10>;
         laserY: int, <-1, 600>; # -1 means no laser
-        laserSpeed: int, <1, 20>;
+        laserSpeed: int, <1, 50>;
         aliens: [{x: int, <0, 600>, y: int, <0, 400>, alive: boolean}];
         difficulty: int, <1,10>;
         alienDirection: int, {-1, 1};
         alienSpeed: int, <1, 5>;
         alienCount; int, <0,50>;
+        mods: [{x: int, <0, 600>, y: int, <0, 400>, alive: boolean}];
+        modSpeed: int, <1, 10>;
+        modChance: float, <0, 1>;
+        laserAmount = int, <0, 100>;
         score: int, <0, inf>;
         isGameStarted: boolean;
         failCounter: int, <0, inf>;
@@ -67,11 +85,14 @@ export class Spaceinvaders extends Game {
         playerX: 300;
         playerSpeed: 5;
         laserY: -1;
-        laserSpeed: 10;
+        laserSpeed: 30;
         difficulty: 1;
         alienDirection: 1;
-        alienSpeed: 2;
+        alienSpeed: 3;
         alienCount: 5;
+        modSpeed: 8;
+        modChance: 0.2;
+        laserAmount: 0;
         score: 0;
         isGameStarted: false;
         failCounter: 0;

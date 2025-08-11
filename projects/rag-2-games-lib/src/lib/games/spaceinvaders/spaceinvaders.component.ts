@@ -27,8 +27,10 @@ export class SpaceinvadersGameWindowComponent
   private _playerWidth = 40;
   private _playerHeight = 20;
   private _alienSize = 30;
+  private _modSize = 10;
   private _laserWidth = 4;
   private _laserHeight = 15;
+
 
   public override ngOnInit(): void {
     super.ngOnInit();
@@ -49,7 +51,10 @@ export class SpaceinvadersGameWindowComponent
 
     this.handleInput();
     this.updateLaser();
+    this.checkWideLaserStatus();
     this.moveAliens();
+    this.moveMods();
+    this.checkModPickup();
     this.difficulty();
     this.checkLossCondition();
 
@@ -71,6 +76,9 @@ export class SpaceinvadersGameWindowComponent
     if (input['shoot'] && this.game.state.laserY < 0) {
       this.game.state.laserX = this.game.state.playerX + (this._playerWidth - this._laserWidth) / 2;
       this.game.state.laserY = this._canvas.height - this._playerHeight - this._laserHeight;
+      if (this.game.state.laserWidthPowerupActive === true) {
+        this.game.state.laserAmount = this.game.state.laserAmount - 1;
+      }
     }
   }
 
@@ -90,22 +98,33 @@ export class SpaceinvadersGameWindowComponent
   }
 
   private checkLaserCollision(): void {
-    const laserCenterX = this.game.state.laserX + this._laserWidth / 2;
+    const laserLeft = this.game.state.laserX;
+    const laserRight = this.game.state.laserX + this._laserWidth;
+    const laserTop = this.game.state.laserY;
+    const laserBottom = this.game.state.laserY + this._laserHeight;
 
     for (const alien of this.game.state.aliens) {
       if (!alien.alive) continue;
 
+      const alienLeft = alien.x;
+      const alienRight = alien.x + this._alienSize;
+      const alienTop = alien.y;
+      const alienBottom = alien.y + this._alienSize;
+
       const isHit =
-        this.game.state.laserY < alien.y + this._alienSize &&
-        this.game.state.laserY + this._laserHeight > alien.y &&
-        laserCenterX > alien.x &&
-        laserCenterX < alien.x + this._alienSize;
+        laserRight > alienLeft &&
+        laserLeft < alienRight &&
+        laserBottom > alienTop &&
+        laserTop < alienBottom;
 
       if (isHit) {
         alien.alive = false;
         this.game.state.laserY = -1;
         this.game.state.score += 5;
         this.game.state.alienCount--;
+        if (Math.random() < this.game.state.modChance) {
+          this.game.state.generateMod();
+        }
         break;
       }
     }
@@ -156,6 +175,46 @@ export class SpaceinvadersGameWindowComponent
     }
   }
 
+    private moveMods(): void {
+      for (const mod of this.game.state.mods) {
+          if (!mod.alive) continue;
+          mod.y += this.game.state.modSpeed;
+
+          if (mod.y > this._canvas.height) {
+              mod.alive = false;
+          }
+      }
+  }
+
+    private checkModPickup(): void {
+      for (const mod of this.game.state.mods) {
+          if (!mod.alive) continue;
+
+          const isPicked =
+              mod.y + this._modSize > this._canvas.height - this._playerHeight &&
+              mod.x < this.game.state.playerX + this._playerWidth &&
+              mod.x + this._modSize > this.game.state.playerX;
+
+          if (isPicked) {
+              mod.alive = false;
+              this.activateWideLaser();
+          }
+      }
+  }
+
+    private activateWideLaser(): void {
+      this.game.state.laserWidthPowerupActive = true;
+      this._laserWidth = 50;
+      this.game.state.laserAmount += 10; 
+  }
+
+    private checkWideLaserStatus(): void {
+      if (this.game.state.laserWidthPowerupActive && this.game.state.laserAmount <= -1) {
+        this.game.state.laserWidthPowerupActive = false;
+        this._laserWidth = 4;
+      }
+    }
+
   private render(): void {
     const context = this._canvas.getContext('2d');
     if (context) {
@@ -181,12 +240,22 @@ export class SpaceinvadersGameWindowComponent
       );
     }
 
+    
+
     //alien
     context.fillStyle = 'purple';
     for (const alien of this.game.state.aliens) {
       if (alien.alive) {
         context.fillRect(alien.x, alien.y, this._alienSize, this._alienSize);
       }
+    }
+
+    //mod
+    context.fillStyle = 'blue';
+    for (const mod of this.game.state.mods) {
+        if (mod.alive) {
+            context.fillRect(mod.x, mod.y, this._modSize, this._modSize);
+        }
     }
 
     }
