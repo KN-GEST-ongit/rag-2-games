@@ -4,8 +4,7 @@ import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Snake, SnakeState } from './models/snake.class';
-import { ISnakeSegment } from './models/snake.segments';
-import { ISnakeFood } from './models/snake.food';
+import { ISnakeObject } from './models/snake.object';
 
 @Component({
   selector: 'app-snake',
@@ -13,7 +12,9 @@ import { ISnakeFood } from './models/snake.food';
   imports: [CanvasComponent],
   template: `
     <div>
-      score: <b>{{ game.state.score }}</b>
+      score: <b>{{ game.state.score }}</b
+      >, current velocity: <b>{{ game.state.velocity }}</b
+      >, velocity increases by <b>5</b> every <b>5</b> score points.
     </div>
 
     <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
@@ -159,8 +160,8 @@ export class SnakeGameWindowComponent
       this.game.state.score += 1;
       this._iterationCount += 1;
       if (this._moveInterval > 25 && this._iterationCount == 5) {
-        this.game.state.velocity += 3;
-        this._moveInterval -= 2;
+        this.game.state.velocity += 5;
+        this._moveInterval -= 5;
         this._iterationCount = 0;
       }
       this.game.state.segments.unshift(newHead);
@@ -171,7 +172,7 @@ export class SnakeGameWindowComponent
     }
   }
 
-  private calculateNewHeadPosition(): ISnakeSegment {
+  private calculateNewHeadPosition(): ISnakeObject {
     const head = { ...this.game.state.segments[0] };
 
     switch (this.game.state.direction) {
@@ -192,7 +193,7 @@ export class SnakeGameWindowComponent
     return head;
   }
 
-  private isCollisionWithWall(head: ISnakeSegment): boolean {
+  private isCollisionWithWall(head: ISnakeObject): boolean {
     return (
       head.x < 0 ||
       head.y < 0 ||
@@ -201,7 +202,7 @@ export class SnakeGameWindowComponent
     );
   }
 
-  private isCollisionWithSelf(head: ISnakeSegment): boolean {
+  private isCollisionWithSelf(head: ISnakeObject): boolean {
     for (let i = 1; i < this.game.state.segments.length; i++) {
       const segment = this.game.state.segments[i];
       if (segment.x === head.x && segment.y === head.y) {
@@ -242,7 +243,7 @@ export class SnakeGameWindowComponent
       this._canvas.height / this.game.state.gridSize
     );
 
-    let newFoodPosition: ISnakeFood;
+    let newFoodPosition: ISnakeObject;
     do {
       newFoodPosition = {
         x: Math.floor(Math.random() * gridWidth),
@@ -253,7 +254,7 @@ export class SnakeGameWindowComponent
     this.game.state.foodItem = newFoodPosition;
   }
 
-  private isFoodOnSnake(position: ISnakeFood): boolean {
+  private isFoodOnSnake(position: ISnakeObject): boolean {
     return this.game.state.segments.some(
       segment => segment.x === position.x && segment.y === position.y
     );

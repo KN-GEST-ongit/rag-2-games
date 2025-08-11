@@ -1,18 +1,17 @@
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
-import { ISnakeSegment } from '../../../games/snake/models/snake.segments';
-import { ISnakeFood } from '../../../games/snake/models/snake.food';
+import { ISnakeObject } from '../../../games/snake/models/snake.object';
 
 export class SnakeState implements TGameState {
   public score = 0;
-  public segments: ISnakeSegment[] = [{ x: 10, y: 10 }];
+  public segments: ISnakeObject[] = [{ x: 10, y: 10 }];
   public isGameStarted = false;
   public direction = 'none';
   public velocity = 0;
   public gridSize = 30;
   public isGameOver = false;
-  public foodItem: ISnakeFood = {
+  public foodItem: ISnakeObject = {
     x: Math.floor(Math.random() * 50),
     y: Math.floor(Math.random() * 30),
   };
