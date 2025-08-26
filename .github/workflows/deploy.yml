@@ -15,11 +15,11 @@ jobs:
           github-token: ${{ secrets.GAMES_REPO_TOKEN }}
           script: |
             await github.rest.repos.createDispatchEvent({
-              owner: 'KN-GEST-ongit',
-              repo: 'rag-2-games',
+              owner: 'theimmortalcoders',
+              repo: 'rag-2-frontend',
               event_type: 'ci-from-games',
               client_payload: {
-                triggered_by: 'rag-2-frontend',
+                triggered_by: 'rag-2-games',
                 sha: process.env.GITHUB_SHA
               }
             });
