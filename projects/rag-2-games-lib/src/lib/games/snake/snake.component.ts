@@ -12,7 +12,8 @@ import { ISnakeObject } from './models/snake.object';
   imports: [CanvasComponent],
   template: `
     <div>
-      score: <b>{{ game.state.score }}</b
+      previous score: <b>{{ game.state.previousScore }}</b
+      >, current score: <b>{{ game.state.currentScore }}</b
       >, current velocity: <b>{{ game.state.velocity }}</b
       >, velocity increases by <b>5</b> every <b>5</b> score points.
     </div>
@@ -86,7 +87,8 @@ export class SnakeGameWindowComponent
     this.game.state.direction = 'none';
     this.game.state.velocity = 0;
     this._moveInterval = 100;
-    this.game.state.score = 0;
+    this.game.state.previousScore = this.game.state.currentScore;
+    this.game.state.currentScore = 0;
     this.game.state.isGameOver = false;
 
     this.generateFood();
@@ -142,7 +144,7 @@ export class SnakeGameWindowComponent
       newHead.x === this.game.state.foodItem.x &&
       newHead.y === this.game.state.foodItem.y
     ) {
-      this.game.state.score += 1;
+      this.game.state.currentScore += 1;
       this._iterationCount += 1;
       if (this._moveInterval > 25 && this._iterationCount == 5) {
         this.game.state.velocity += 5;

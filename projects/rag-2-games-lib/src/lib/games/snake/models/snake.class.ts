@@ -4,7 +4,8 @@ import { Player } from '../../../models/player.class';
 import { ISnakeObject } from '../../../games/snake/models/snake.object';
 
 export class SnakeState implements TGameState {
-  public score = 0;
+  public currentScore = 0;
+  public previousScore = 0;
   public segments: ISnakeObject[] = [{ x: 10, y: 10 }];
   public direction = 'none';
   public velocity = 0;
@@ -26,7 +27,8 @@ export class Snake extends Game {
             segments: [{ x: int, <0, 49>, y: int, <0, 29> }];
             direction: string, {'up', 'down', 'left', 'right', 'none'};
             velocity: int, <0, 75>;
-            score: int, <0, inf>;
+            currentScore: int, <0, inf>;
+            previousScore: int, <0, inf>;
             gridSize: int, <10, 30>;
             foodItem: { x: int, <0, 49>, y: int, <0, 29> };
             isGameOver: boolean;
@@ -35,7 +37,8 @@ export class Snake extends Game {
             segments: [{ x: 10, y: 10 }];
             direction: 'none';
             velocity: 0;
-            score: 0;
+            currentScore: 0;
+            previousScore: 0;
             gridSize: 20;
             foodItem: { x: 15, y: 15 };
             isGameOver: false;
