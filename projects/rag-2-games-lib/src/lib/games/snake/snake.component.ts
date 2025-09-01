@@ -31,6 +31,8 @@ export class SnakeGameWindowComponent
   private _gridWidth = 0;
   private _gridHeight = 0;
   private _iterationCount = 0;
+  private _lastDirectionChangeTime = 0;
+  private _directionChangeCooldown = 150;
 
   public override game!: Snake;
 
@@ -97,29 +99,46 @@ export class SnakeGameWindowComponent
   private updateDirection(): void {
     if (this.game.state.isGameOver) return;
 
+    const currentTime = performance.now();
+    if (
+      currentTime - this._lastDirectionChangeTime <
+      this._directionChangeCooldown
+    ) {
+      return;
+    }
+
     const moveValue = Number(this.game.players[0].inputData['move']);
+    let hasDirectionChanged = false;
 
     switch (moveValue) {
       case 1:
         if (this.game.state.direction !== 'left') {
           this.game.state.direction = 'right';
+          hasDirectionChanged = true;
         }
         break;
       case 2:
         if (this.game.state.direction !== 'right') {
           this.game.state.direction = 'left';
+          hasDirectionChanged = true;
         }
         break;
       case 3:
         if (this.game.state.direction !== 'up') {
           this.game.state.direction = 'down';
+          hasDirectionChanged = true;
         }
         break;
       case 4:
         if (this.game.state.direction !== 'down') {
           this.game.state.direction = 'up';
+          hasDirectionChanged = true;
         }
         break;
+    }
+
+    if (hasDirectionChanged) {
+      this._lastDirectionChangeTime = currentTime;
     }
   }
 
