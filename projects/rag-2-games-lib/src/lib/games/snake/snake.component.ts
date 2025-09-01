@@ -56,7 +56,6 @@ export class SnakeGameWindowComponent
 
   public override restart(): void {
     this.game.state = new SnakeState();
-    this.game.state.isGameStarted = false;
     this.resetGame();
   }
 
@@ -65,13 +64,12 @@ export class SnakeGameWindowComponent
 
     super.update();
 
-    this.gameStart();
     this.updateDirection();
 
     if (
       !this.isPaused &&
-      this.game.state.isGameStarted &&
       !this.game.state.isGameOver &&
+      this.game.state.direction !== 'none' &&
       currentTime - this._lastMoveTime > this._moveInterval
     ) {
       this.moveSnake();
@@ -89,24 +87,9 @@ export class SnakeGameWindowComponent
     this.game.state.velocity = 0;
     this._moveInterval = 100;
     this.game.state.score = 0;
-    this.game.state.isGameStarted = false;
     this.game.state.isGameOver = false;
 
     this.generateFood();
-  }
-
-  private gameStart(): void {
-    if (
-      !this.game.state.isGameStarted &&
-      this.game.players[0].inputData['start'] === 1
-    ) {
-      this.game.state.isGameStarted = true;
-    } else if (
-      this.game.state.isGameOver &&
-      this.game.players[0].inputData['start'] === 1
-    ) {
-      this.resetGame();
-    }
   }
 
   private updateDirection(): void {
@@ -145,11 +128,13 @@ export class SnakeGameWindowComponent
 
     if (this.isCollisionWithWall(newHead)) {
       this.game.state.isGameOver = true;
+      this.resetGame();
       return;
     }
 
     if (this.isCollisionWithSelf(newHead)) {
       this.game.state.isGameOver = true;
+      this.resetGame();
       return;
     }
 
