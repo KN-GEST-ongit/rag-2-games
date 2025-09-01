@@ -70,18 +70,33 @@ export class Snake extends Game {
           pressedValue: 1,
           releasedValue: 0,
         },
-        ' ': {
-          variableName: 'start',
+        w: {
+          variableName: 'move',
+          pressedValue: 4,
+          releasedValue: 0,
+        },
+        s: {
+          variableName: 'move',
+          pressedValue: 3,
+          releasedValue: 0,
+        },
+        a: {
+          variableName: 'move',
+          pressedValue: 2,
+          releasedValue: 0,
+        },
+        d: {
+          variableName: 'move',
           pressedValue: 1,
           releasedValue: 0,
         },
       },
       '<move>: value of {0, 1, 2, 3, 4}, 0: stop, 1: right, 2: left, 3: down, 4: up;',
       {
-        up: '[ARROW_UP]',
-        down: '[ARROW_DOWN]',
-        left: '[ARROW_LEFT]',
-        right: '[ARROW_RIGHT]',
+        up: '[ARROW_UP]/[W]',
+        down: '[ARROW_DOWN]/[S]',
+        left: '[ARROW_LEFT]/[A]',
+        right: '[ARROW_RIGHT]/[D]',
       }
     ),
   ];
