@@ -12,7 +12,8 @@ import { ISnakeObject } from './models/snake.object';
   imports: [CanvasComponent],
   template: `
     <div>
-      score: <b>{{ game.state.score }}</b
+      previous score: <b>{{ game.state.previousScore }}</b
+      >, current score: <b>{{ game.state.currentScore }}</b
       >, current velocity: <b>{{ game.state.velocity }}</b
       >, velocity increases by <b>5</b> every <b>5</b> score points.
     </div>
@@ -30,6 +31,8 @@ export class SnakeGameWindowComponent
   private _gridWidth = 0;
   private _gridHeight = 0;
   private _iterationCount = 0;
+  private _lastDirectionChangeTime = 0;
+  private _directionChangeCooldown = 150;
 
   public override game!: Snake;
 
@@ -56,7 +59,6 @@ export class SnakeGameWindowComponent
 
   public override restart(): void {
     this.game.state = new SnakeState();
-    this.game.state.isGameStarted = false;
     this.resetGame();
   }
 
@@ -65,13 +67,12 @@ export class SnakeGameWindowComponent
 
     super.update();
 
-    this.gameStart();
     this.updateDirection();
 
     if (
       !this.isPaused &&
-      this.game.state.isGameStarted &&
       !this.game.state.isGameOver &&
+      this.game.state.direction !== 'none' &&
       currentTime - this._lastMoveTime > this._moveInterval
     ) {
       this.moveSnake();
@@ -88,53 +89,56 @@ export class SnakeGameWindowComponent
     this.game.state.direction = 'none';
     this.game.state.velocity = 0;
     this._moveInterval = 100;
-    this.game.state.score = 0;
-    this.game.state.isGameStarted = false;
+    this.game.state.previousScore = this.game.state.currentScore;
+    this.game.state.currentScore = 0;
     this.game.state.isGameOver = false;
 
     this.generateFood();
   }
 
-  private gameStart(): void {
-    if (
-      !this.game.state.isGameStarted &&
-      this.game.players[0].inputData['start'] === 1
-    ) {
-      this.game.state.isGameStarted = true;
-    } else if (
-      this.game.state.isGameOver &&
-      this.game.players[0].inputData['start'] === 1
-    ) {
-      this.resetGame();
-    }
-  }
-
   private updateDirection(): void {
     if (this.game.state.isGameOver) return;
 
+    const currentTime = performance.now();
+    if (
+      currentTime - this._lastDirectionChangeTime <
+      this._directionChangeCooldown
+    ) {
+      return;
+    }
+
     const moveValue = Number(this.game.players[0].inputData['move']);
+    let hasDirectionChanged = false;
 
     switch (moveValue) {
       case 1:
         if (this.game.state.direction !== 'left') {
           this.game.state.direction = 'right';
+          hasDirectionChanged = true;
         }
         break;
       case 2:
         if (this.game.state.direction !== 'right') {
           this.game.state.direction = 'left';
+          hasDirectionChanged = true;
         }
         break;
       case 3:
         if (this.game.state.direction !== 'up') {
           this.game.state.direction = 'down';
+          hasDirectionChanged = true;
         }
         break;
       case 4:
         if (this.game.state.direction !== 'down') {
           this.game.state.direction = 'up';
+          hasDirectionChanged = true;
         }
         break;
+    }
+
+    if (hasDirectionChanged) {
+      this._lastDirectionChangeTime = currentTime;
     }
   }
 
@@ -145,11 +149,13 @@ export class SnakeGameWindowComponent
 
     if (this.isCollisionWithWall(newHead)) {
       this.game.state.isGameOver = true;
+      this.resetGame();
       return;
     }
 
     if (this.isCollisionWithSelf(newHead)) {
       this.game.state.isGameOver = true;
+      this.resetGame();
       return;
     }
 
@@ -157,7 +163,7 @@ export class SnakeGameWindowComponent
       newHead.x === this.game.state.foodItem.x &&
       newHead.y === this.game.state.foodItem.y
     ) {
-      this.game.state.score += 1;
+      this.game.state.currentScore += 1;
       this._iterationCount += 1;
       if (this._moveInterval > 25 && this._iterationCount == 5) {
         this.game.state.velocity += 5;
