@@ -43,6 +43,8 @@ export class TowerDefenseState implements TGameState {
 
   public selectedTowerType: keyof typeof TowerTypes = 'BASIC';
 
+  public enemiesToSpawn = 0;
+
   public constructor(map?: number[][]) {
     this.map = map ?? TowerDefenseMaps[0];
   }

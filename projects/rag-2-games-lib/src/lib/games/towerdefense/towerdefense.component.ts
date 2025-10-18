@@ -149,6 +149,11 @@ export class TowerDefenseGameWindowComponent
 
     state.isWaveActive = true;
     let totalDelay = 0;
+    
+    state.enemiesToSpawn = 0;
+    for (const group of waveData) {
+      state.enemiesToSpawn += group.count;
+    }
 
     for (const group of waveData) {
       const enemyData = EnemyTypes[group.type as keyof typeof EnemyTypes];
@@ -169,6 +174,7 @@ export class TowerDefenseGameWindowComponent
             color: enemyData.color,
             pathIndex: 1,
           });
+          state.enemiesToSpawn--;
         }, totalDelay);
         totalDelay += 500;
       }
@@ -181,11 +187,11 @@ export class TowerDefenseGameWindowComponent
     this.towersAttack();
     this.cleanupEnemies();
 
-    if (this.game.state.enemies.length === 0) {
-        const waveIsTrulyOver = document.querySelectorAll('app-towerdefense').length > 0;
-        if (waveIsTrulyOver) {
-             this.game.state.isWaveActive = false;
-        }
+    const state = this.game.state;
+
+    if (state.enemies.length === 0 && state.enemiesToSpawn === 0 && state.isWaveActive) {
+      state.isWaveActive = false;
+      state.waveNumber++;
     }
   }
 
