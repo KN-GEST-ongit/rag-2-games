@@ -163,6 +163,7 @@ export class TowerDefenseGameWindowComponent
           state.enemies.push({
             x: startX, y: startY,
             health: enemyData.health,
+            maxHealth: enemyData.health,
             speed: enemyData.speed,
             reward: enemyData.reward,
             color: enemyData.color,
@@ -343,7 +344,7 @@ export class TowerDefenseGameWindowComponent
     const x = cursorX * tileSize;
     const y = cursorY * tileSize;
 
-    context.strokeStyle = gold >= this.BUILD_COST ? 'lime' : 'orange';
+    context.strokeStyle = gold >= this.getSelectedTowerData().cost ? 'lime' : 'orange';
     context.lineWidth = 3;
     context.strokeRect(x + 1.5, y + 1.5, tileSize - 3, tileSize - 3);
   }
@@ -354,7 +355,7 @@ export class TowerDefenseGameWindowComponent
       const centerX = (tower.x + 0.5) * tileSize;
       const centerY = (tower.y + 0.5) * tileSize;
       
-      const towerData = TowerTypes[tower.type as keyof typeof TowerTypes];
+      const towerData = TowerTypes[tower.type.toUpperCase() as keyof typeof TowerTypes];
       context.fillStyle = towerData.color;
 
       if (!isWaveActive) {
@@ -373,7 +374,7 @@ export class TowerDefenseGameWindowComponent
   }
 
   private drawEnemies(context: CanvasRenderingContext2D): void {
-    const { tileSize, enemies, waveNumber } = this.game.state;
+    const { tileSize, enemies } = this.game.state;
     const radius = tileSize / 3;
 
     for (const enemy of enemies) {
@@ -382,8 +383,7 @@ export class TowerDefenseGameWindowComponent
       context.arc(enemy.x, enemy.y, radius, 0, Math.PI * 2);
       context.fill();
 
-      const maxHealth = 50 + waveNumber * 10;
-      const healthPercentage = enemy.health / maxHealth;
+      const healthPercentage = enemy.health / enemy.maxHealth;
       const healthBarWidth = tileSize * 0.8;
       const barX = enemy.x - healthBarWidth / 2;
       const barY = enemy.y - radius - 8;

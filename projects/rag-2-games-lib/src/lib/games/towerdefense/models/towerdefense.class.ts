@@ -19,6 +19,7 @@ export interface IEnemy {
   x: number;
   y: number;
   health: number;
+  maxHealth: number;
   speed: number;
   reward: number;
   color: string;
