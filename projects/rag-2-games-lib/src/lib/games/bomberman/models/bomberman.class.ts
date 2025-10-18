@@ -5,16 +5,16 @@ import { Player } from '../../../models/player.class';
 import { IBombermanBomb, IBombermanWall } from './bomberman.object';
 
 export class BombermanState implements TGameState {
-  public player1x = 1;
-  public player1y = 1;
+  public player1x = 55;
+  public player1y = 55;
   public player1lives = 3;
   public player1score = 0;
   public player1alive = true;
   public player1bombCount = 1;
   public player1bombRange = 1;
 
-  public player2x = 13;
-  public player2y = 11;
+  public player2x = 655;
+  public player2y = 555;
   public player2lives = 3;
   public player2score = 0;
   public player2alive = true;
@@ -23,9 +23,8 @@ export class BombermanState implements TGameState {
 
   public walls: IBombermanWall[] = [];
   public bombs: IBombermanBomb[] = [];
-  public gridSize = 30;
   public isGameOver = false;
-  public winner = 0;
+  public winner = 2;
 }
 
 export class Bomberman extends Game {
@@ -53,21 +52,20 @@ export class Bomberman extends Game {
 
             walls: [{ x: int, <0, 14>, y: int, <0, 12>, destructible: boolean }];
             bombs: [{ playerId: int, <1, 2>, x: int, <0, 14>, y: int, <0, 12>, timer: int, <0, 3000>, range: int, <1, 10> }];
-            gridSize: int, <20, 40>;
             isGameOver: boolean;
             winner: int, <0, 2>;
 
             default values:
-            player1x: 1;
-            player1y: 1;
+            player1x: 55;
+            player1y: 55;
             player1lives: 3;
             player1score: 0;
             player1alive: true;
             player1bombCount: 1;
             player1bombRange: 2;
 
-            player2x: 13;
-            player2y: 11;
+            player2x: 655;
+            player2y: 555;
             player2lives: 3;
             player2score: 0;
             player2alive: true;
@@ -76,13 +74,12 @@ export class Bomberman extends Game {
 
             walls: [];
             bombs: [];
-            gridSize: 30;
             isGameOver: false;
-            winner: 0;  
+            winner: 2;  
             `;
   public override players = [
     new Player(
-      1,
+      0,
       true,
       'Player 1',
       { moveX: 0, moveY: 0, bomb: 0 },
@@ -123,7 +120,7 @@ export class Bomberman extends Game {
       }
     ),
     new Player(
-      2,
+      1,
       true,
       'Player 2',
       { moveX: 0, moveY: 0, bomb: 0 },

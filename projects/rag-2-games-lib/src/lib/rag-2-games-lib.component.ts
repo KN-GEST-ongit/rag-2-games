@@ -19,8 +19,10 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
     SkiJumpGameWindowComponent,
     FlappyBirdGameWindowComponent,
     HappyJumpGameWindowComponent,
-  	SnakeGameWindowComponent,
-  	PacmanGameWindowComponent	BombermanGameWindowComponent],
+    SnakeGameWindowComponent,
+    PacmanGameWindowComponent,
+    BombermanGameWindowComponent,
+  ],
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -59,7 +61,7 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
-			@case ('snake') {
+      @case ('snake') {
         <app-snake
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
@@ -67,8 +69,8 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
           [setAbstractGame]="game"
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
-      } 
-			@case ('pacman') {
+      }
+      @case ('pacman') {
         <app-pacman
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
@@ -77,7 +79,7 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
-			@case ('bomberman') {
+      @case ('bomberman') {
         <app-bomberman
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
