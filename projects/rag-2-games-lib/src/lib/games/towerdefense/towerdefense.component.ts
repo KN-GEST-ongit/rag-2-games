@@ -134,6 +134,7 @@ export class TowerDefenseGameWindowComponent
         damage: selectedTower.damage,
         fireRate: selectedTower.fireRate,
         cooldown: 0,
+        rotation: 0,
       });
       state.gold -= selectedTower.cost;
     }
@@ -169,6 +170,7 @@ export class TowerDefenseGameWindowComponent
             x: startX, y: startY,
             health: enemyData.health,
             maxHealth: enemyData.health,
+            id: state.nextEnemyId++,
             speed: enemyData.speed,
             reward: enemyData.reward,
             color: enemyData.color,
@@ -182,9 +184,33 @@ export class TowerDefenseGameWindowComponent
     }
   }
 
+  private updateBullets(): void {
+    const state = this.game.state;
+    state.bullets = state.bullets.filter(bullet => {
+      const target = state.enemies.find(e => e.id === bullet.targetEnemyId);
+
+      if (!target) {
+        return false;
+      }
+
+      const dx = target.x - bullet.x;
+      const dy = target.y - bullet.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < bullet.speed) {
+        target.health -= bullet.damage;
+        return false;
+      }
+      bullet.x += (dx / distance) * bullet.speed;
+      bullet.y += (dy / distance) * bullet.speed;
+      return true;
+    });
+  }
+
   private updateWave(): void {
     this.moveEnemies();
     this.towersAttack();
+    this.updateBullets();
     this.cleanupEnemies();
 
     const state = this.game.state;
@@ -272,8 +298,21 @@ export class TowerDefenseGameWindowComponent
       if (tower.cooldown >= tower.fireRate) {
         const target = this.findTarget(tower);
         if (target) {
-          target.health -= tower.damage;
           tower.cooldown = 0;
+          const towerCenterX = (tower.x + 0.5) * this.game.state.tileSize;
+          const towerCenterY = (tower.y + 0.5) * this.game.state.tileSize;
+
+          const angle = Math.atan2(target.y - towerCenterY, target.x - towerCenterX);
+          tower.rotation = angle;
+          
+          this.game.state.bullets.push({
+            x: towerCenterX,
+            y: towerCenterY,
+            targetEnemyId: target.id,
+            damage: tower.damage,
+            speed: 8,
+            color: 'white',
+          });
         }
       }
     }
@@ -316,6 +355,7 @@ export class TowerDefenseGameWindowComponent
     this.drawMap(context);
     this.drawTowers(context);
     this.drawEnemies(context);
+    this.drawBullets(context);
     if (!this.game.state.isWaveActive) {
       this.drawCursor(context);
     }
@@ -333,11 +373,11 @@ export class TowerDefenseGameWindowComponent
         context.lineWidth = 1;
         
         switch (tileValue) {
-          case 1: context.fillStyle = '#666'; break; // Ściana
-          case 2: context.fillStyle = '#bbb'; break; // Ścieżka
-          case 3: context.fillStyle = 'yellow'; break; // Start
-          case 4: context.fillStyle = 'red'; break; // Baza
-          default: context.fillStyle = '#111'; // Puste pole
+          case 1: context.fillStyle = '#666'; break;
+          case 2: context.fillStyle = '#bbb'; break;
+          case 3: context.fillStyle = 'yellow'; break;
+          case 4: context.fillStyle = 'red'; break;
+          default: context.fillStyle = '#111';
         }
         context.fillRect(px, py, tileSize, tileSize);
         context.strokeRect(px, py, tileSize, tileSize);
@@ -372,10 +412,22 @@ export class TowerDefenseGameWindowComponent
       }
 
       context.fillStyle = towerData.color;
-      context.fillRect(centerX - tileSize / 4, centerY - tileSize / 4, tileSize / 2, tileSize / 2);
-      context.strokeStyle = 'black';
+      context.fillStyle = '#777';
+      context.fillRect(centerX - tileSize / 3, centerY - tileSize / 3, tileSize * 2 / 3, tileSize * 2 / 3);
+      context.strokeStyle = '#444';
       context.lineWidth = 2;
-      context.strokeRect(centerX - tileSize / 4, centerY - tileSize / 4, tileSize / 2, tileSize / 2);
+      context.strokeRect(centerX - tileSize / 3, centerY - tileSize / 3, tileSize * 2 / 3, tileSize * 2 / 3);
+
+      context.save();
+      context.translate(centerX, centerY);
+      context.rotate(tower.rotation);
+
+      context.fillStyle = towerData.color;
+      context.fillRect(0, -tileSize / 8, tileSize / 2, tileSize / 4);
+      context.strokeStyle = '#333';
+      context.strokeRect(0, -tileSize / 8, tileSize / 2, tileSize / 4);
+
+      context.restore();
     }
   }
 
@@ -398,6 +450,16 @@ export class TowerDefenseGameWindowComponent
       context.fillRect(barX, barY, healthBarWidth, 5);
       context.fillStyle = 'lime';
       context.fillRect(barX, barY, healthBarWidth * healthPercentage, 5);
+    }
+  }
+
+  private drawBullets(context: CanvasRenderingContext2D): void {
+    const { bullets } = this.game.state;
+    for (const bullet of bullets) {
+      context.fillStyle = bullet.color;
+      context.beginPath();
+      context.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
+      context.fill();
     }
   }
 }

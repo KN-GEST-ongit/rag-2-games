@@ -13,17 +13,28 @@ export interface ITower {
   damage: number;
   fireRate: number;
   cooldown: number;
+  rotation: number;
 }
 
 export interface IEnemy {
   x: number;
   y: number;
+  id: number;
   health: number;
   maxHealth: number;
   speed: number;
   reward: number;
   color: string;
   pathIndex: number;
+}
+
+export interface IBullet {
+  x: number;
+  y: number;
+  targetEnemyId: number;
+  damage: number;
+  speed: number;
+  color: string;
 }
 
 export class TowerDefenseState implements TGameState {
@@ -34,10 +45,12 @@ export class TowerDefenseState implements TGameState {
   public isWaveActive = false;
   public cursorX = 1;
   public cursorY = 1;
+  public nextEnemyId = 0;
 
   public towers: ITower[] = [];
   public enemies: IEnemy[] = [];
   public map: number[][];
+  public bullets: IBullet[] = [];
 
   public path: { x: number; y: number }[] = [];
 
