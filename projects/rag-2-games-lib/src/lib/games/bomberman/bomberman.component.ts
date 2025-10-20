@@ -1,8 +1,10 @@
+/* eslint-disable max-lines */
 /* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Bomberman, BombermanState } from './models/bomberman.class';
+import { BombermanMap } from './models/bomberman.map';
 
 @Component({
   selector: 'app-bomberman',
@@ -23,6 +25,8 @@ export class BombermanGameWindowComponent
   private _moveSpeed = 5;
 
   private _playerSize = 0.8 * this._cellSize;
+
+  private _currentMap: number[][] = [];
 
   public override game!: Bomberman;
 
@@ -81,6 +85,36 @@ export class BombermanGameWindowComponent
     this.game.state.bombs = [];
     this.game.state.isGameOver = false;
     this.game.state.winner = 0;
+
+    this.selectMap();
+    this.loadMap();
+  }
+
+  private selectMap(): void {
+    const maps = Object.values(BombermanMap);
+    const randomIndex = Math.floor(Math.random() * maps.length);
+    this._currentMap = maps[randomIndex];
+  }
+
+  private loadMap(): void {
+    for (let row = 0; row < this._gridHeight; row++) {
+      for (let col = 0; col < this._gridWidth; col++) {
+        const cell = this._currentMap[row][col];
+        if (cell === 1) {
+          this.game.state.walls.push({
+            x: col,
+            y: row,
+            destructible: false,
+          });
+        } else if (cell === 2) {
+          this.game.state.walls.push({
+            x: col,
+            y: row,
+            destructible: true,
+          });
+        }
+      }
+    }
   }
 
   private movePlayers(): void {
@@ -142,6 +176,22 @@ export class BombermanGameWindowComponent
       return false;
     }
 
+    for (const wall of this.game.state.walls) {
+      const wallLeft = wall.x * this._cellSize;
+      const wallRight = wallLeft + this._cellSize;
+      const wallTop = wall.y * this._cellSize;
+      const wallBottom = wallTop + this._cellSize;
+
+      if (
+        playerRight > wallLeft &&
+        playerLeft < wallRight &&
+        playerBottom > wallTop &&
+        playerTop < wallBottom
+      ) {
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -154,7 +204,34 @@ export class BombermanGameWindowComponent
 
     context.clearRect(0, 0, this._canvas.width, this._canvas.height);
 
+    this.renderMap(context);
     this.renderPlayers(context);
+  }
+
+  private renderMap(context: CanvasRenderingContext2D): void {
+    this.game.state.walls.forEach(wall => {
+      if (wall.destructible) {
+        context.fillStyle = '#9b6036ff';
+      } else {
+        context.fillStyle = '#585858ff';
+      }
+
+      context.fillRect(
+        wall.x * this._cellSize,
+        wall.y * this._cellSize,
+        this._cellSize,
+        this._cellSize
+      );
+
+      context.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      context.lineWidth = 1;
+      context.strokeRect(
+        wall.x * this._cellSize + 0.5,
+        wall.y * this._cellSize + 0.5,
+        this._cellSize - 1,
+        this._cellSize - 1
+      );
+    });
   }
 
   private renderPlayers(context: CanvasRenderingContext2D): void {
