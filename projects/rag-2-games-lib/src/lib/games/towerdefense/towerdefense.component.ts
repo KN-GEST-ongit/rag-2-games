@@ -198,6 +198,8 @@ export class TowerDefenseGameWindowComponent
             color: enemyData.color,
             pathIndex: 1,
             isFlying: enemyData.isFlying || false,
+            type: group.type,
+            rotation: 0,
           });
           state.enemiesToSpawn--;
         }, totalDelay);
@@ -304,9 +306,13 @@ export class TowerDefenseGameWindowComponent
     const baseTargetY = (baseTile.y + 0.5) * tileSize;
 
     for (const enemy of state.enemies) {
+      let dx: number;
+      let dy: number;
+
       if (enemy.isFlying) {
-        const dx = baseTargetX - enemy.x;
-        const dy = baseTargetY - enemy.y;
+        dx = baseTargetX - enemy.x;
+        dy = baseTargetY - enemy.y;
+        
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < enemy.speed) {
@@ -317,22 +323,27 @@ export class TowerDefenseGameWindowComponent
         }
 
       } else {
-      if (enemy.pathIndex >= state.path.length) continue;
+        if (enemy.pathIndex >= state.path.length) continue;
 
-      const targetPos = state.path[enemy.pathIndex];
-      const targetX = (targetPos.x + 0.5) * tileSize;
-      const targetY = (targetPos.y + 0.5) * tileSize;
+        const targetPos = state.path[enemy.pathIndex];
+        const targetX = (targetPos.x + 0.5) * tileSize;
+        const targetY = (targetPos.y + 0.5) * tileSize;
 
-      const dx = targetX - enemy.x;
-      const dy = targetY - enemy.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+        dx = targetX - enemy.x;
+        dy = targetY - enemy.y;
+        
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < enemy.speed) {
-        enemy.pathIndex++;
-      } else {
-        enemy.x += (dx / distance) * enemy.speed;
-        enemy.y += (dy / distance) * enemy.speed;
+        if (distance < enemy.speed) {
+          enemy.pathIndex++;
+        } else {
+          enemy.x += (dx / distance) * enemy.speed;
+          enemy.y += (dy / distance) * enemy.speed;
+        }
       }
+
+      if (dx !== 0 || dy !== 0) {
+        enemy.rotation = Math.atan2(dy, dx);
       }
     }
   }
@@ -510,21 +521,85 @@ export class TowerDefenseGameWindowComponent
     const radius = tileSize / 3;
 
     for (const enemy of enemies) {
-      context.fillStyle = enemy.color;
-      context.beginPath();
-      context.arc(enemy.x, enemy.y, radius, 0, Math.PI * 2);
-      context.fill();
+      context.save();
+      context.translate(enemy.x, enemy.y);
+      context.rotate(enemy.rotation);
 
+      context.fillStyle = enemy.color;
+      context.strokeStyle = 'black';
+      context.lineWidth = 2;
+
+      switch (enemy.type) {
+        
+        case 'TANK': {
+          const tankWidth = radius * 2;
+          const tankLength = radius * 2.2; 
+          
+          context.fillStyle = '#444';
+          context.fillRect(-tankLength / 2, -tankWidth / 2, tankLength, tankWidth * 0.3); 
+          context.fillRect(-tankLength / 2, tankWidth / 2 - tankWidth * 0.3, tankLength, tankWidth * 0.3); 
+          
+          context.fillStyle = enemy.color;
+          context.fillRect(-tankLength / 2 * 0.8, -tankWidth / 2 * 0.6, tankLength * 0.8, tankWidth * 0.6);
+          
+          context.fillStyle = '#888';
+          context.beginPath();
+          context.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
+          context.fill();
+          
+          context.fillStyle = '#555';
+          context.fillRect(0, -radius * 0.15, radius * 1.5, radius * 0.3);
+          break;
+        }
+
+        case 'HELICOPTER': {
+          const heliLength = radius * 2.2;
+          const heliWidth = radius * 1.6;
+
+          context.fillStyle = enemy.color;
+          context.fillRect(-heliLength / 2, -heliWidth * 0.1, heliLength * 0.4, heliWidth * 0.2);
+
+          context.beginPath();
+          context.ellipse(0, 0, heliLength / 3, heliWidth / 2, 0, 0, Math.PI * 2);
+          context.fill();
+          context.stroke();
+
+          context.fillStyle = '#555';
+          context.beginPath();
+          context.arc(-heliLength / 2, 0, radius * 0.25, 0, Math.PI * 2);
+          context.fill();
+          
+          context.restore();
+
+          this.drawEnemyHealthBar(context, enemy, radius);
+          
+          context.fillStyle = 'rgba(10, 10, 10, 0.4)';
+          context.beginPath();
+          context.arc(enemy.x, enemy.y, radius * 1.8, 0, Math.PI * 2);
+          context.fill();
+          
+          continue;
+        }
+      }
+      
+      if (enemy.type !== 'HELICOPTER') {
+        context.restore();
+      }
+
+      this.drawEnemyHealthBar(context, enemy, radius);
+    }
+  }
+
+  private drawEnemyHealthBar(context: CanvasRenderingContext2D, enemy: IEnemy, radius: number): void {
       const healthPercentage = enemy.health / enemy.maxHealth;
-      const healthBarWidth = tileSize * 0.8;
+      const healthBarWidth = this.game.state.tileSize * 0.8;
       const barX = enemy.x - healthBarWidth / 2;
-      const barY = enemy.y - radius - 8;
+      const barY = enemy.y - radius - 12;
 
       context.fillStyle = 'red';
       context.fillRect(barX, barY, healthBarWidth, 5);
       context.fillStyle = 'lime';
       context.fillRect(barX, barY, healthBarWidth * healthPercentage, 5);
-    }
   }
 
   private drawBullets(context: CanvasRenderingContext2D): void {

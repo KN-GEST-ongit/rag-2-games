@@ -35,20 +35,6 @@ export const TowerTypes = {
 
 //WROGOWIE
 export const EnemyTypes = {
-  'NORMAL': {
-    health: 100,
-    speed: 1.0,
-    reward: 10,
-    color: 'green',
-    isFlying: false
-  },
-  'FAST': {
-    health: 60,
-    speed: 1.8,
-    reward: 15,
-    color: 'yellow',
-    isFlying: false
-  },
   'TANK': {
     health: 350,
     speed: 0.7,
@@ -56,7 +42,7 @@ export const EnemyTypes = {
     color: 'purple',
     isFlying: false
   },
-  'FLYER': {
+  'HELICOPTER': {
     health: 80,
     speed: 1.2,
     reward: 20,
@@ -67,7 +53,7 @@ export const EnemyTypes = {
 
 //FALE
 export const WaveDefinitions = [
-  [ { type: 'NORMAL', count: 8 }, { type: 'FLYER', count: 5 } ],
+  [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 5 } ],
 
   [ { type: 'NORMAL', count: 12 }, { type: 'FAST', count: 3 } ],
 

@@ -27,6 +27,8 @@ export interface IEnemy {
   color: string;
   pathIndex: number;
   isFlying: boolean;
+  type: string;
+  rotation: number;
 }
 
 export interface IBullet {
@@ -39,7 +41,7 @@ export interface IBullet {
 }
 
 export class TowerDefenseState implements TGameState {
-  public tileSize = 35;
+  public tileSize = 40;
   public baseHealth = 20;
   public gold = 200;
   public waveNumber = 0;
