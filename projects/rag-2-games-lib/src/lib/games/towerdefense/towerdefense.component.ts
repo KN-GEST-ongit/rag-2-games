@@ -61,7 +61,16 @@ export class TowerDefenseGameWindowComponent
   protected override update(): void {
     super.update();
 
-    if (!this.isPaused) {
+    if (this.game.state.isGameOver) {
+      const player = this.game.players[0];
+      const action = player.inputData['action'] as number;
+
+      if (action === 1 || action === 2) {
+        this.restart();
+        player.inputData['action'] = 0;
+      }
+    }
+    else if (!this.isPaused) {
       //logika do budowania
       if (!this.game.state.isWaveActive) {
         this.handleInput();
@@ -332,13 +341,21 @@ export class TowerDefenseGameWindowComponent
   }
 
   private cleanupEnemies(): void {
-    this.game.state.enemies = this.game.state.enemies.filter(enemy => {
-      if (enemy.pathIndex >= this.game.state.path.length) {
-        this.game.state.baseHealth--;
+    const state = this.game.state;
+    state.enemies = state.enemies.filter(enemy => {
+      if (enemy.pathIndex >= state.path.length) {
+        state.baseHealth--;
+
+        if (state.baseHealth <= 0) {
+          state.baseHealth = 0;
+          state.isGameOver = true;
+          state.isWaveActive = false;
+        }
         return false;
       }
+      
       if (enemy.health <= 0) {
-        this.game.state.gold += enemy.reward;
+        state.gold += enemy.reward;
         return false;
       }
       return true;
@@ -356,8 +373,13 @@ export class TowerDefenseGameWindowComponent
     this.drawTowers(context);
     this.drawEnemies(context);
     this.drawBullets(context);
-    if (!this.game.state.isWaveActive) {
+
+    if (!this.game.state.isWaveActive && !this.game.state.isGameOver) {
       this.drawCursor(context);
+    }
+
+    if (this.game.state.isGameOver) {
+      this.drawGameOver(context);
     }
   }
 
@@ -461,5 +483,18 @@ export class TowerDefenseGameWindowComponent
       context.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
       context.fill();
     }
+  }
+
+  private drawGameOver(context: CanvasRenderingContext2D): void {
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+    context.fillStyle = 'white';
+    context.font = '36px sans-serif';
+    context.textAlign = 'center';
+    context.fillText('GAME OVER', this._canvas.width / 2, this._canvas.height / 2 - 30);
+
+    context.font = '12px sans-serif';
+    context.fillText('Naciśnij Enter lub Spację, aby zrestartować', this._canvas.width / 2, this._canvas.height / 2 + 20);
   }
 }

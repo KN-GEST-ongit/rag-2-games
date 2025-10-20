@@ -12,7 +12,7 @@ export const TowerTypes = {
   'BASIC': {
     name: 'Działko',
     cost: 100,
-    damage: 12,
+    damage: 36,
     range: 2.5,
     fireRate: 30,
     color: 'brown'
@@ -20,7 +20,7 @@ export const TowerTypes = {
   'CANNON': {
     name: 'Armata',
     cost: 250,
-    damage: 40,
+    damage: 72,
     range: 3.5,
     fireRate: 90,
     color: '#444'
