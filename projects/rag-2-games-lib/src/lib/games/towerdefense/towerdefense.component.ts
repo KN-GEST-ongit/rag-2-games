@@ -301,9 +301,25 @@ export class TowerDefenseGameWindowComponent
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < bullet.speed) {
-        target.health -= bullet.damage;
+        if (bullet.splashRadius > 0) {
+          for (const enemy of state.enemies) {
+            const distToExplosion = Math.sqrt(Math.pow(enemy.x - bullet.x, 2) + Math.pow(enemy.y - bullet.y, 2));
+            
+            if (distToExplosion <= bullet.splashRadius) {
+              if (enemy.isFlying && bullet.canHitAir) {
+                enemy.health -= bullet.damage;
+              } else if (!enemy.isFlying && bullet.canHitGround) {
+                enemy.health -= bullet.damage;
+              }
+            }
+          }
+        } else {
+          target.health -= bullet.damage;
+        }
+
         return false;
       }
+
       bullet.x += (dx / distance) * bullet.speed;
       bullet.y += (dy / distance) * bullet.speed;
       return true;
@@ -427,27 +443,34 @@ export class TowerDefenseGameWindowComponent
   }
 
   private towersAttack(): void {
-    for (const tower of this.game.state.towers) {
+    const state = this.game.state;
+    for (const tower of state.towers) {
       tower.cooldown++;
-      if (tower.cooldown >= tower.fireRate) {
         const target = this.findTarget(tower);
         if (target) {
-          tower.cooldown = 0;
-          const towerCenterX = (tower.x + 0.5) * this.game.state.tileSize;
-          const towerCenterY = (tower.y + 0.5) * this.game.state.tileSize;
-
+          const towerCenterX = (tower.x + 0.5) * state.tileSize;
+          const towerCenterY = (tower.y + 0.5) * state.tileSize;
           const angle = Math.atan2(target.y - towerCenterY, target.x - towerCenterX);
           tower.rotation = angle;
-          
-          this.game.state.bullets.push({
-            x: towerCenterX,
-            y: towerCenterY,
-            targetEnemyId: target.id,
-            damage: tower.damage,
-            speed: 8,
-            color: 'white',
-          });
-        }
+      }
+      if (target && tower.cooldown >= tower.fireRate) {
+        tower.cooldown = 0;
+        const towerCenterX = (tower.x + 0.5) * state.tileSize;
+        const towerCenterY = (tower.y + 0.5) * state.tileSize;
+
+        const towerData = TowerTypes[tower.type.toUpperCase() as keyof typeof TowerTypes];
+
+        this.game.state.bullets.push({
+          x: towerCenterX,
+          y: towerCenterY,
+          targetEnemyId: target.id,
+          damage: tower.damage,
+          speed: 8,
+          color: 'white',
+          splashRadius: (towerData.splashRadius || 0) * this.game.state.tileSize,
+          canHitAir: towerData.canHitAir,
+          canHitGround: towerData.canHitGround,
+        });
       }
     }
   }
@@ -698,10 +721,17 @@ export class TowerDefenseGameWindowComponent
   private drawBullets(context: CanvasRenderingContext2D): void {
     const { bullets } = this.game.state;
     for (const bullet of bullets) {
-      context.fillStyle = bullet.color;
-      context.beginPath();
-      context.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
-      context.fill();
+      if (bullet.splashRadius > 0) {
+        context.fillStyle = 'black';
+        context.beginPath();
+        context.arc(bullet.x, bullet.y, 6, 0, Math.PI * 2);
+        context.fill();
+      } else {
+        context.fillStyle = bullet.color;
+        context.beginPath();
+        context.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
+        context.fill();
+      }
     }
   }
 

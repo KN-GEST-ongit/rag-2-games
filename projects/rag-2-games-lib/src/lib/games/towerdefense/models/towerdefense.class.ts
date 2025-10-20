@@ -39,6 +39,9 @@ export interface IBullet {
   damage: number;
   speed: number;
   color: string;
+  splashRadius: number;
+  canHitAir: boolean;
+  canHitGround: boolean;
 }
 
 export class TowerDefenseState implements TGameState {

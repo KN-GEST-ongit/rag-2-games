@@ -9,6 +9,7 @@ export interface ITowerData {
   canHitGround: boolean;
   upgradeCost?: number;
   upgradesTo?: string;
+  splashRadius?: number;
 }
 
 //WIEŻE
@@ -23,7 +24,8 @@ export const TowerTypes: Record<string, ITowerData> = {
     canHitAir: true,
     canHitGround: true,
     upgradeCost: 100,
-    upgradesTo: 'BASIC_L2'
+    upgradesTo: 'BASIC_L2',
+    splashRadius: 0
   },
   'BASIC_L2': {
     name: 'Działko Lvl 2',
@@ -34,6 +36,7 @@ export const TowerTypes: Record<string, ITowerData> = {
     color: '#D2691E',
     canHitAir: true,
     canHitGround: true,
+    splashRadius: 0
   },
 
   'CANNON': {
@@ -46,7 +49,8 @@ export const TowerTypes: Record<string, ITowerData> = {
     canHitAir: false,
     canHitGround: true,
     upgradeCost: 300,
-    upgradesTo: 'CANNON_L2'
+    upgradesTo: 'CANNON_L2',
+    splashRadius: 1.5
   },
   'CANNON_L2': {
     name: 'Armata Lvl 2',
@@ -57,6 +61,7 @@ export const TowerTypes: Record<string, ITowerData> = {
     color: '#222',
     canHitAir: false,
     canHitGround: true,
+    splashRadius: 2.0
   },
 };
 
