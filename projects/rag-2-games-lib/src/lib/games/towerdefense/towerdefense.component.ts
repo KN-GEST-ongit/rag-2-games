@@ -16,7 +16,7 @@ import { TowerTypes, EnemyTypes, WaveDefinitions, ITowerData } from './models/to
       Życie Bazy: <b>{{ game.state.baseHealth }}</b> | 
       Złoto: <b>{{ game.state.gold }}</b> | 
       Fala: <b>{{ game.state.waveNumber + 1 }}</b> |
-      Wybrana wieża: <b>{{ getSelectedTowerData().name }} (Koszt: {{ getSelectedTowerData().cost }})</b> [Q]
+      <b>{{ getCursorActionText() }}</b>
     </div>
     <app-canvas
       [displayMode]="'horizontal'"
@@ -56,6 +56,27 @@ export class TowerDefenseGameWindowComponent
 
   public getSelectedTowerData(): ITowerData {
     return TowerTypes[this.game.state.selectedTowerType];
+  }
+
+  public getCursorActionText(): string {
+    const state = this.game.state;
+    if (!state) return '';
+
+    const tower = state.towers.find(t => t.x === state.cursorX && t.y === state.cursorY);
+
+    if (tower) {
+      const towerData = TowerTypes[tower.type.toUpperCase() as keyof typeof TowerTypes];
+      if (towerData.upgradesTo && towerData.upgradeCost) {
+        const nextTowerData = TowerTypes[towerData.upgradesTo];
+        return `Ulepsz do: ${nextTowerData.name} (Koszt: ${towerData.upgradeCost}) [Spacja]`;
+      } 
+      return `${towerData.name} (Maks. Poziom)`;
+    }
+      const selectedData = this.getSelectedTowerData();
+      if (selectedData.cost > 0) {
+         return `Wybrana wieża: ${selectedData.name} (Koszt: ${selectedData.cost}) [Q]`;
+      }
+      return `Wybierz inną wieżę [Q]`;
   }
 
   private handleGlobalInput(): void {
@@ -123,19 +144,28 @@ export class TowerDefenseGameWindowComponent
     const player = this.game.players[0];
     const action = player.inputData['action'] as number;
     const cycleTower = player.inputData['cycleTower'] as number;
+    const state = this.game.state;
 
     if (action === 1) {
-      this.tryPlaceTower(this.game.state.cursorX, this.game.state.cursorY);
+      const towerOnTile = state.towers.find(t => t.x === state.cursorX && t.y === state.cursorY);
+      
+      if (towerOnTile) {
+        this.tryUpgradeTower(towerOnTile);
+      } else {
+        this.tryPlaceTower(state.cursorX, state.cursorY);
+      }
     } else if (action === 2) {
       this.startWave();
     }
     
-    //przełączanie wież
     if (cycleTower === 1) {
       const availableTowers = Object.keys(TowerTypes) as (keyof typeof TowerTypes)[];
-      const currentIndex = availableTowers.indexOf(this.game.state.selectedTowerType);
-      const nextIndex = (currentIndex + 1) % availableTowers.length;
-      this.game.state.selectedTowerType = availableTowers[nextIndex];
+      let currentIndex = availableTowers.indexOf(this.game.state.selectedTowerType);
+      
+      do {
+        currentIndex = (currentIndex + 1) % availableTowers.length;
+        this.game.state.selectedTowerType = availableTowers[currentIndex];
+      } while (TowerTypes[this.game.state.selectedTowerType].cost === 0);
     }
 
     player.inputData['action'] = 0;
@@ -148,10 +178,10 @@ export class TowerDefenseGameWindowComponent
     const isFreeTile = state.map[y]?.[x] === 0;
     const isTowerAlreadyHere = state.towers.some(t => t.x === x && t.y === y);
 
-    if (isFreeTile && !isTowerAlreadyHere && state.gold >= selectedTower.cost) {
+    if (isFreeTile && !isTowerAlreadyHere && state.gold >= selectedTower.cost && selectedTower.cost > 0) {
       state.towers.push({
         x: x, y: y,
-        type: state.selectedTowerType.toLowerCase() as ITower['type'],
+        type: state.selectedTowerType.toLowerCase(),
         range: selectedTower.range * state.tileSize,
         damage: selectedTower.damage,
         fireRate: selectedTower.fireRate,
@@ -160,6 +190,32 @@ export class TowerDefenseGameWindowComponent
       });
       state.gold -= selectedTower.cost;
     }
+  }
+
+  private tryUpgradeTower(towerToUpgrade: ITower): void {
+    const state = this.game.state;
+    const currentTowerData = TowerTypes[towerToUpgrade.type.toUpperCase() as keyof typeof TowerTypes];
+
+    if (!currentTowerData.upgradesTo || !currentTowerData.upgradeCost) {
+      return;
+    }
+    if (state.gold < currentTowerData.upgradeCost) {
+      return;
+    }
+
+    const nextTowerKey = currentTowerData.upgradesTo;
+    const nextTowerData = TowerTypes[nextTowerKey];
+    if (!nextTowerData) {
+      console.error(`Błąd: Nie znaleziono danych dla ulepszenia: ${nextTowerKey}`);
+      return;
+    }
+
+    state.gold -= currentTowerData.upgradeCost;
+    towerToUpgrade.type = nextTowerKey.toLowerCase();
+    
+    towerToUpgrade.damage = nextTowerData.damage;
+    towerToUpgrade.range = nextTowerData.range * state.tileSize;
+    towerToUpgrade.fireRate = nextTowerData.fireRate;
   }
 
   private startWave(): void {
@@ -382,7 +438,7 @@ export class TowerDefenseGameWindowComponent
 
     for (const enemy of this.game.state.enemies) {
         const distance = Math.sqrt(Math.pow(enemy.x - towerCenterX, 2) + Math.pow(enemy.y - towerCenterY, 2));
-        if (distance <= tower.range) {
+        if (distance > tower.range) {
             continue
         }
         if (enemy.isFlying && !towerData.canHitAir) {
@@ -475,7 +531,22 @@ export class TowerDefenseGameWindowComponent
     const x = cursorX * tileSize;
     const y = cursorY * tileSize;
 
-    context.strokeStyle = gold >= this.getSelectedTowerData().cost ? 'lime' : 'orange';
+    let canAfford = false;
+    const towerOnTile = this.game.state.towers.find(t => t.x === cursorX && t.y === cursorY);
+
+    if (towerOnTile) {
+      const towerData = TowerTypes[towerOnTile.type.toUpperCase() as keyof typeof TowerTypes];
+      if (towerData.upgradeCost) {
+        canAfford = gold >= towerData.upgradeCost;
+      }
+    } else {
+      const selectedData = this.getSelectedTowerData();
+      if (selectedData.cost > 0) {
+         canAfford = gold >= selectedData.cost;
+      }
+    }
+
+    context.strokeStyle = canAfford ? 'lime' : 'orange';
     context.lineWidth = 3;
     context.strokeRect(x + 1.5, y + 1.5, tileSize - 3, tileSize - 3);
   }

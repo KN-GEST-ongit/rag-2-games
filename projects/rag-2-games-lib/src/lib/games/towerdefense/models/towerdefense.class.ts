@@ -8,7 +8,7 @@ import { TowerTypes } from './towerdefense.data';
 export interface ITower {
   x: number;
   y: number;
-  type: 'basic' | 'cannon';
+  type: string;
   range: number;
   damage: number;
   fireRate: number;
