@@ -21,7 +21,6 @@ export class BombermanGameWindowComponent
   private _gridHeight = 13;
   private _cellSize = 50;
   private _moveSpeed = 5;
-  private _lastMoveTime = 0;
 
   private _playerSize = 0.8 * this._cellSize;
 
@@ -89,12 +88,16 @@ export class BombermanGameWindowComponent
       const moveX = Number(this.game.players[0].inputData['moveX']);
       const moveY = Number(this.game.players[0].inputData['moveY']);
 
-      if (moveX !== 0 || moveY !== 0) {
+      if (moveX !== 0) {
         const newX = this.game.state.player1x + moveX * this._moveSpeed;
+
+        if (this.canMove(newX, this.game.state.player1y)) {
+          this.game.state.player1x = newX;
+        }
+      } else if (moveY !== 0) {
         const newY = this.game.state.player1y + moveY * this._moveSpeed;
 
-        if (this.canMove(newX, newY)) {
-          this.game.state.player1x = newX;
+        if (this.canMove(this.game.state.player1x, newY)) {
           this.game.state.player1y = newY;
         }
       }
@@ -104,12 +107,15 @@ export class BombermanGameWindowComponent
       const moveX = Number(this.game.players[1].inputData['moveX']);
       const moveY = Number(this.game.players[1].inputData['moveY']);
 
-      if (moveX !== 0 || moveY !== 0) {
+      if (moveX !== 0) {
         const newX = this.game.state.player2x + moveX * this._moveSpeed;
-        const newY = this.game.state.player2y + moveY * this._moveSpeed;
 
-        if (this.canMove(newX, newY)) {
+        if (this.canMove(newX, this.game.state.player2y)) {
           this.game.state.player2x = newX;
+        }
+      } else if (moveY !== 0) {
+        const newY = this.game.state.player2y + moveY * this._moveSpeed;
+        if (this.canMove(this.game.state.player2x, newY)) {
           this.game.state.player2y = newY;
         }
       }
