@@ -26,6 +26,7 @@ export interface IEnemy {
   reward: number;
   color: string;
   pathIndex: number;
+  isFlying: boolean;
 }
 
 export interface IBullet {

@@ -197,6 +197,7 @@ export class TowerDefenseGameWindowComponent
             reward: enemyData.reward,
             color: enemyData.color,
             pathIndex: 1,
+            isFlying: enemyData.isFlying || false,
           });
           state.enemiesToSpawn--;
         }, totalDelay);
@@ -298,7 +299,24 @@ export class TowerDefenseGameWindowComponent
     const state = this.game.state;
     const tileSize = state.tileSize;
 
+    const baseTile = state.path[state.path.length - 1];
+    const baseTargetX = (baseTile.x + 0.5) * tileSize;
+    const baseTargetY = (baseTile.y + 0.5) * tileSize;
+
     for (const enemy of state.enemies) {
+      if (enemy.isFlying) {
+        const dx = baseTargetX - enemy.x;
+        const dy = baseTargetY - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < enemy.speed) {
+          enemy.pathIndex = state.path.length; 
+        } else {
+          enemy.x += (dx / distance) * enemy.speed;
+          enemy.y += (dy / distance) * enemy.speed;
+        }
+
+      } else {
       if (enemy.pathIndex >= state.path.length) continue;
 
       const targetPos = state.path[enemy.pathIndex];
@@ -314,6 +332,7 @@ export class TowerDefenseGameWindowComponent
       } else {
         enemy.x += (dx / distance) * enemy.speed;
         enemy.y += (dy / distance) * enemy.speed;
+      }
       }
     }
   }
@@ -348,11 +367,21 @@ export class TowerDefenseGameWindowComponent
     const towerCenterX = (tower.x + 0.5) * this.game.state.tileSize;
     const towerCenterY = (tower.y + 0.5) * this.game.state.tileSize;
 
+    const towerData = TowerTypes[tower.type.toUpperCase() as keyof typeof TowerTypes];
+
     for (const enemy of this.game.state.enemies) {
         const distance = Math.sqrt(Math.pow(enemy.x - towerCenterX, 2) + Math.pow(enemy.y - towerCenterY, 2));
         if (distance <= tower.range) {
-            return enemy;
+            continue
         }
+        if (enemy.isFlying && !towerData.canHitAir) {
+            continue;
+        }
+
+        if (!enemy.isFlying && !towerData.canHitGround) {
+            continue;
+        }
+        return enemy;
     }
     return undefined;
   }

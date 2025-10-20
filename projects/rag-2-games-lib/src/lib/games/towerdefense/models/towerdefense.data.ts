@@ -5,6 +5,8 @@ export interface ITowerData {
   range: number;
   fireRate: number;
   color: string;
+  canHitAir: boolean;
+  canHitGround: boolean;
 }
 
 //WIEŻE
@@ -15,15 +17,19 @@ export const TowerTypes = {
     damage: 36,
     range: 2.5,
     fireRate: 30,
-    color: 'brown'
+    color: 'brown',
+    canHitAir: true,
+    canHitGround: true
   },
   'CANNON': {
     name: 'Armata',
-    cost: 250,
+    cost: 200,
     damage: 72,
     range: 3.5,
     fireRate: 90,
-    color: '#444'
+    color: '#444',
+    canHitAir: false,
+    canHitGround: true
   },
 };
 
@@ -33,25 +39,35 @@ export const EnemyTypes = {
     health: 100,
     speed: 1.0,
     reward: 10,
-    color: 'green'
+    color: 'green',
+    isFlying: false
   },
   'FAST': {
     health: 60,
     speed: 1.8,
     reward: 15,
-    color: 'yellow'
+    color: 'yellow',
+    isFlying: false
   },
   'TANK': {
     health: 350,
     speed: 0.7,
     reward: 25,
-    color: 'purple'
+    color: 'purple',
+    isFlying: false
+  },
+  'FLYER': {
+    health: 80,
+    speed: 1.2,
+    reward: 20,
+    color: '#00BFFF',
+    isFlying: true
   }
 };
 
 //FALE
 export const WaveDefinitions = [
-  [ { type: 'NORMAL', count: 8 } ],
+  [ { type: 'NORMAL', count: 8 }, { type: 'FLYER', count: 5 } ],
 
   [ { type: 'NORMAL', count: 12 }, { type: 'FAST', count: 3 } ],
 
