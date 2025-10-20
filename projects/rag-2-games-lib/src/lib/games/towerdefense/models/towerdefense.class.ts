@@ -14,6 +14,7 @@ export interface ITower {
   fireRate: number;
   cooldown: number;
   rotation: number;
+  totalInvestedCost: number;
 }
 
 export interface IEnemy {
@@ -107,7 +108,7 @@ export class TowerDefense extends Game {
       0,
       true,
       'Player 1',
-      { moveX: 0, moveY: 0, action: 0, cycleTower: 0, pause: 0 },
+      { moveX: 0, moveY: 0, action: 0, cycleTower: 0, pause: 0, sell: 0 },
       {
         w: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
         s: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
@@ -122,6 +123,7 @@ export class TowerDefense extends Game {
 
         q: { variableName: 'cycleTower', pressedValue: 1, releasedValue: 0 },
         p: { variableName: 'pause', pressedValue: 1, releasedValue: 0 },
+        e: { variableName: 'sell', pressedValue: 1, releasedValue: 0 },
       },
       `
       ...
@@ -133,7 +135,9 @@ export class TowerDefense extends Game {
         right: '[D]/[→]',
         build: '[SPACE]',
         startWave: '[ENTER]',
-        cycleTower: '[Q]'
+        pause: '[P]',
+        cycleTower: '[Q]',
+        sell: '[E]'
       }
     ),
   ];

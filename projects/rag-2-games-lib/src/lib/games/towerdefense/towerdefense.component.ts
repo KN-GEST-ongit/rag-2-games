@@ -66,11 +66,12 @@ export class TowerDefenseGameWindowComponent
 
     if (tower) {
       const towerData = TowerTypes[tower.type.toUpperCase() as keyof typeof TowerTypes];
+      const refund = Math.floor(tower.totalInvestedCost * 0.8);
       if (towerData.upgradesTo && towerData.upgradeCost) {
         const nextTowerData = TowerTypes[towerData.upgradesTo];
-        return `Ulepsz do: ${nextTowerData.name} (Koszt: ${towerData.upgradeCost}) [Spacja]`;
+        return `Ulepsz do: ${nextTowerData.name} (Koszt: ${towerData.upgradeCost}) [Spacja] | Sprzedaj [E] (Zysk: ${refund})`;
       } 
-      return `${towerData.name} (Maks. Poziom)`;
+      return `${towerData.name} (Maks. Poziom)| Sprzedaj [E] (Zysk: ${refund})`;
     }
       const selectedData = this.getSelectedTowerData();
       if (selectedData.cost > 0) {
@@ -144,6 +145,7 @@ export class TowerDefenseGameWindowComponent
     const player = this.game.players[0];
     const action = player.inputData['action'] as number;
     const cycleTower = player.inputData['cycleTower'] as number;
+    const sellAction = player.inputData['sell'] as number;
     const state = this.game.state;
 
     if (action === 1) {
@@ -168,8 +170,26 @@ export class TowerDefenseGameWindowComponent
       } while (TowerTypes[this.game.state.selectedTowerType].cost === 0);
     }
 
+    if (sellAction === 1) {
+      this.trySellTower(state.cursorX, state.cursorY);
+    }
+
     player.inputData['action'] = 0;
     player.inputData['cycleTower'] = 0;
+    player.inputData['sell'] = 0;
+  }
+
+  private trySellTower(x: number, y: number): void {
+    const state = this.game.state;
+    const towerIndex = state.towers.findIndex(t => t.x === x && t.y === y);
+
+    if (towerIndex !== -1) {
+      const tower = state.towers[towerIndex];
+      const refundAmount = Math.floor(tower.totalInvestedCost * 0.8); 
+      
+      state.gold += refundAmount;
+      state.towers.splice(towerIndex, 1);
+    }
   }
 
   private tryPlaceTower(x: number, y: number): void {
@@ -187,6 +207,7 @@ export class TowerDefenseGameWindowComponent
         fireRate: selectedTower.fireRate,
         cooldown: 0,
         rotation: 0,
+        totalInvestedCost: selectedTower.cost,
       });
       state.gold -= selectedTower.cost;
     }
@@ -216,6 +237,7 @@ export class TowerDefenseGameWindowComponent
     towerToUpgrade.damage = nextTowerData.damage;
     towerToUpgrade.range = nextTowerData.range * state.tileSize;
     towerToUpgrade.fireRate = nextTowerData.fireRate;
+    towerToUpgrade.totalInvestedCost += currentTowerData.upgradeCost;
   }
 
   private startWave(): void {
