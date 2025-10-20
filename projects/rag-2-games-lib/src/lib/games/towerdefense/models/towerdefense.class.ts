@@ -47,6 +47,7 @@ export class TowerDefenseState implements TGameState {
   public cursorY = 1;
   public nextEnemyId = 0;
   public isGameOver = false;
+  public isGameWon = false;
 
   public towers: ITower[] = [];
   public enemies: IEnemy[] = [];
@@ -83,6 +84,7 @@ export class TowerDefense extends Game {
     cursorY: int, <0, ${this.mapHeight - 1}>;
     map: int[${this.mapHeight}][${this.mapWidth}] (0: wolne, 1: ściana, 2: ścieżka, 3: start, 4: baza);
     isGameOver: boolean;
+    isGameWon: boolean;
 
   default values:
     tileSize: ${this.state.tileSize};
@@ -94,6 +96,7 @@ export class TowerDefense extends Game {
     cursorY: ${this.state.cursorY};
     map: [[...]];
     isGameOver: ${this.state.isGameOver};
+    isGameWon: ${this.state.isGameWon};
     `;
     
    public override players = [
@@ -101,7 +104,7 @@ export class TowerDefense extends Game {
       0,
       true,
       'Player 1',
-      { moveX: 0, moveY: 0, action: 0, cycleTower: 0 },
+      { moveX: 0, moveY: 0, action: 0, cycleTower: 0, pause: 0 },
       {
         w: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
         s: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
@@ -115,6 +118,7 @@ export class TowerDefense extends Game {
         Enter: { variableName: 'action', pressedValue: 2, releasedValue: 0 },
 
         q: { variableName: 'cycleTower', pressedValue: 1, releasedValue: 0 },
+        p: { variableName: 'pause', pressedValue: 1, releasedValue: 0 },
       },
       `
       ...

@@ -58,10 +58,23 @@ export class TowerDefenseGameWindowComponent
     return TowerTypes[this.game.state.selectedTowerType];
   }
 
+  private handleGlobalInput(): void {
+    const player = this.game.players[0];
+    const pauseAction = player.inputData['pause'] as number;
+
+    if (pauseAction === 1) {
+      if (!this.game.state.isGameOver && !this.game.state.isGameWon) {
+        this.isPaused = !this.isPaused;
+      }
+      player.inputData['pause'] = 0;
+    }
+  }
+
   protected override update(): void {
+    this.handleGlobalInput();
     super.update();
 
-    if (this.game.state.isGameOver) {
+    if (this.game.state.isGameOver || this.game.state.isGameWon) {
       const player = this.game.players[0];
       const action = player.inputData['action'] as number;
 
@@ -226,7 +239,11 @@ export class TowerDefenseGameWindowComponent
 
     if (state.enemies.length === 0 && state.enemiesToSpawn === 0 && state.isWaveActive) {
       state.isWaveActive = false;
-      state.waveNumber++;
+      if (state.waveNumber + 1 >= WaveDefinitions.length) {
+        state.isGameWon = true;
+      } else {
+        state.waveNumber++;
+      }
     }
   }
 
@@ -380,6 +397,12 @@ export class TowerDefenseGameWindowComponent
 
     if (this.game.state.isGameOver) {
       this.drawGameOver(context);
+    } else if (this.game.state.isGameWon) {
+      this.drawGameWon(context);
+    }
+
+    if (this.isPaused && !this.game.state.isGameOver && !this.game.state.isGameWon && this.game.state.isWaveActive) {
+      this.drawPauseScreen(context);
     }
   }
 
@@ -496,5 +519,28 @@ export class TowerDefenseGameWindowComponent
 
     context.font = '12px sans-serif';
     context.fillText('Naciśnij Enter lub Spację, aby zrestartować', this._canvas.width / 2, this._canvas.height / 2 + 20);
+  }
+
+  private drawGameWon(context: CanvasRenderingContext2D): void {
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+    context.fillStyle = 'white';
+    context.font = '36px sans-serif';
+    context.textAlign = 'center';
+    context.fillText('WIN!', this._canvas.width / 2, this._canvas.height / 2 - 30);
+
+    context.font = '12px sans-serif';
+    context.fillText('Naciśnij Enter lub Spację, aby kontynuować', this._canvas.width / 2, this._canvas.height / 2 + 20);
+  }
+
+  private drawPauseScreen(context: CanvasRenderingContext2D): void {
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+    context.fillStyle = 'white';
+    context.font = '36px sans-serif';
+    context.textAlign = 'center';
+    context.fillText('PAUZA', this._canvas.width / 2, this._canvas.height / 2);
   }
 }
