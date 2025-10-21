@@ -351,7 +351,7 @@ export class TowerDefenseGameWindowComponent
 
     for (let y = 0; y < map.length; y++) {
       for (let x = 0; x < map[y].length; x++) {
-        if (map[y][x] === 3) {
+        if (map[y][x] === 2) {
           startPos = { x, y };
           break;
         }
@@ -367,7 +367,7 @@ export class TowerDefenseGameWindowComponent
     let currentPos = startPos;
     let prevPos = { x: -1, y: -1 };
 
-    while (map[currentPos.y][currentPos.x] !== 4) {
+    while (map[currentPos.y][currentPos.x] !== 3) {
       path.push(currentPos);
       const { x, y } = currentPos;
       const neighbors = [ { x, y: y - 1 }, { x, y: y + 1 }, { x: x - 1, y }, { x: x + 1, y }];
@@ -378,7 +378,7 @@ export class TowerDefenseGameWindowComponent
         if (nextPos.x === prevPos.x && nextPos.y === prevPos.y) continue;
 
         const tileValue = map[nextPos.y][nextPos.x];
-        if (tileValue === 2 || tileValue === 4) {
+        if (tileValue === 1 || tileValue === 3) {
           prevPos = currentPos;
           currentPos = nextPos;
           foundNext = true;
@@ -559,11 +559,10 @@ export class TowerDefenseGameWindowComponent
         context.lineWidth = 1;
         
         switch (tileValue) {
-          case 1: context.fillStyle = '#666'; break;
-          case 2: context.fillStyle = '#bbb'; break;
-          case 3: context.fillStyle = 'yellow'; break;
-          case 4: context.fillStyle = 'red'; break;
-          default: context.fillStyle = '#111';
+          case 1: context.fillStyle = '#bbb'; break;
+          case 2: context.fillStyle = 'yellow'; break;
+          case 3: context.fillStyle = 'red'; break;
+          default: context.fillStyle = '#072000ff';
         }
         context.fillRect(px, py, tileSize, tileSize);
         context.strokeRect(px, py, tileSize, tileSize);
