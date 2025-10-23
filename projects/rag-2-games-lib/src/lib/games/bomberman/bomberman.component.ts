@@ -55,6 +55,8 @@ export class BombermanGameWindowComponent
 
     if (!this.isPaused && !this.game.state.isGameOver) {
       this.movePlayers();
+      this.handleBombPlacement();
+      this.updateBombs();
     }
 
     this.render();
@@ -195,6 +197,152 @@ export class BombermanGameWindowComponent
     return true;
   }
 
+  private handleBombPlacement(): void {
+    if (this.game.state.player1alive) {
+      const bombInput = Number(this.game.players[0].inputData['bomb']);
+      if (bombInput === 1 && this.canPlaceBomb(1)) {
+        this.placeBomb(1);
+        this.game.players[0].inputData['bomb'] = 0;
+      }
+    }
+
+    if (this.game.state.player2alive) {
+      const bombInput = Number(this.game.players[1].inputData['bomb']);
+      if (bombInput === 1 && this.canPlaceBomb(2)) {
+        this.placeBomb(2);
+        this.game.players[1].inputData['bomb'] = 0;
+      }
+    }
+  }
+
+  private canPlaceBomb(playerId: number): boolean {
+    let playerX;
+    if (playerId === 1) {
+      playerX = this.game.state.player1x;
+    } else {
+      playerX = this.game.state.player2x;
+    }
+
+    let playerY;
+    if (playerId === 1) {
+      playerY = this.game.state.player1y;
+    } else {
+      playerY = this.game.state.player2y;
+    }
+
+    let maxBombs;
+    if (playerId === 1) {
+      maxBombs = this.game.state.player1bombCount;
+    } else {
+      maxBombs = this.game.state.player2bombCount;
+    }
+
+    const gridX = Math.floor((playerX + this._playerSize / 2) / this._cellSize);
+    const gridY = Math.floor((playerY + this._playerSize / 2) / this._cellSize);
+
+    let playerBombs = 0;
+    for (const bomb of this.game.state.bombs) {
+      if (bomb.playerId === playerId) {
+        playerBombs++;
+      }
+    }
+
+    if (playerBombs >= maxBombs) {
+      return false;
+    }
+
+    for (const bomb of this.game.state.bombs) {
+      if (bomb.x === gridX && bomb.y === gridY) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private placeBomb(playerId: number): void {
+    let playerX;
+    if (playerId === 1) {
+      playerX = this.game.state.player1x;
+    } else {
+      playerX = this.game.state.player2x;
+    }
+
+    let playerY;
+    if (playerId === 1) {
+      playerY = this.game.state.player1y;
+    } else {
+      playerY = this.game.state.player2y;
+    }
+
+    let range;
+    if (playerId === 1) {
+      range = this.game.state.player1bombRange;
+    } else {
+      range = this.game.state.player2bombRange;
+    }
+
+    const gridX = Math.floor((playerX + this._playerSize / 2) / this._cellSize);
+    const gridY = Math.floor((playerY + this._playerSize / 2) / this._cellSize);
+
+    this.game.state.bombs.push({
+      playerId: playerId,
+      x: gridX,
+      y: gridY,
+      range: range,
+      timer: 3000,
+    });
+  }
+
+  private updateBombs(): void {
+    const deltaTime = 1000 / 60;
+
+    for (let i = this.game.state.bombs.length - 1; i >= 0; i--) {
+      const bomb = this.game.state.bombs[i];
+      bomb.timer -= deltaTime;
+
+      if (bomb.timer <= 0) {
+        this.explodeBomb(bomb);
+        this.game.state.bombs.splice(i, 1);
+      }
+    }
+  }
+
+  private explodeBomb(bomb: { x: number; y: number; range: number }): void {
+    const directions = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ];
+
+    for (const dir of directions) {
+      for (let i = 1; i <= bomb.range; i++) {
+        const checkX = bomb.x + dir.x * i;
+        const checkY = bomb.y + dir.y * i;
+
+        let wallIndex = -1;
+        for (let w = 0; w < this.game.state.walls.length; w++) {
+          if (
+            this.game.state.walls[w].x === checkX &&
+            this.game.state.walls[w].y === checkY
+          ) {
+            wallIndex = w;
+            break;
+          }
+        }
+
+        if (wallIndex !== -1) {
+          const wall = this.game.state.walls[wallIndex];
+          if (wall.destructible) {
+            this.game.state.walls.splice(wallIndex, 1);
+          }
+          break;
+        }
+      }
+    }
+  }
+
   private render(): void {
     const context = this._canvas.getContext('2d');
 
@@ -232,6 +380,33 @@ export class BombermanGameWindowComponent
         this._cellSize - 1
       );
     });
+
+    for (const bomb of this.game.state.bombs) {
+      context.fillStyle = '#000000';
+      context.beginPath();
+      context.arc(
+        bomb.x * this._cellSize + this._cellSize / 2,
+        bomb.y * this._cellSize + this._cellSize / 2,
+        this._cellSize / 3,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+
+      const blinkRate = bomb.timer < 1000 ? 100 : 500;
+      if (Math.floor(bomb.timer / blinkRate) % 2 === 0) {
+        context.fillStyle = '#ff0000';
+        context.beginPath();
+        context.arc(
+          bomb.x * this._cellSize + this._cellSize / 2,
+          bomb.y * this._cellSize + this._cellSize / 2,
+          this._cellSize / 6,
+          0,
+          Math.PI * 2
+        );
+        context.fill();
+      }
+    }
   }
 
   private renderPlayers(context: CanvasRenderingContext2D): void {
