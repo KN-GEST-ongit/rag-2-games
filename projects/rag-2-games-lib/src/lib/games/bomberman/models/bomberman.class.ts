@@ -50,10 +50,11 @@ export class Bomberman extends Game {
             player2bombCount: int, <1, 10>;
             player2bombRange: int, <1, 10>;
 
-            walls: [{ x: int, <0, 14>, y: int, <0, 12>, destructible: boolean }];
-            bombs: [{ playerId: int, <1, 2>, x: int, <0, 14>, y: int, <0, 12>, timer: int, <0, 3000>, range: int, <1, 10> }];
+            bombs: [{ playerId: int, <0, 1>, x: int, <0, 14>, y: int, <0, 12>, timer: int, <0, 3000>, range: int, <1, 10> }];
             isGameOver: boolean;
             winner: int, <0, 2>;
+
+            walls: [{ x: int, <0, 14>, y: int, <0, 12>, destructible: boolean }];
 
             default values:
             player1x: 55;

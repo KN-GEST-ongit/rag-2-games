@@ -200,16 +200,16 @@ export class BombermanGameWindowComponent
   private handleBombPlacement(): void {
     if (this.game.state.player1alive) {
       const bombInput = Number(this.game.players[0].inputData['bomb']);
-      if (bombInput === 1 && this.canPlaceBomb(1)) {
-        this.placeBomb(1);
+      if (bombInput === 1 && this.canPlaceBomb(0)) {
+        this.placeBomb(0);
         this.game.players[0].inputData['bomb'] = 0;
       }
     }
 
     if (this.game.state.player2alive) {
       const bombInput = Number(this.game.players[1].inputData['bomb']);
-      if (bombInput === 1 && this.canPlaceBomb(2)) {
-        this.placeBomb(2);
+      if (bombInput === 1 && this.canPlaceBomb(1)) {
+        this.placeBomb(1);
         this.game.players[1].inputData['bomb'] = 0;
       }
     }
@@ -217,21 +217,21 @@ export class BombermanGameWindowComponent
 
   private canPlaceBomb(playerId: number): boolean {
     let playerX;
-    if (playerId === 1) {
+    if (playerId === 0) {
       playerX = this.game.state.player1x;
     } else {
       playerX = this.game.state.player2x;
     }
 
     let playerY;
-    if (playerId === 1) {
+    if (playerId === 0) {
       playerY = this.game.state.player1y;
     } else {
       playerY = this.game.state.player2y;
     }
 
     let maxBombs;
-    if (playerId === 1) {
+    if (playerId === 0) {
       maxBombs = this.game.state.player1bombCount;
     } else {
       maxBombs = this.game.state.player2bombCount;
@@ -262,21 +262,21 @@ export class BombermanGameWindowComponent
 
   private placeBomb(playerId: number): void {
     let playerX;
-    if (playerId === 1) {
+    if (playerId === 0) {
       playerX = this.game.state.player1x;
     } else {
       playerX = this.game.state.player2x;
     }
 
     let playerY;
-    if (playerId === 1) {
+    if (playerId === 0) {
       playerY = this.game.state.player1y;
     } else {
       playerY = this.game.state.player2y;
     }
 
     let range;
-    if (playerId === 1) {
+    if (playerId === 0) {
       range = this.game.state.player1bombRange;
     } else {
       range = this.game.state.player2bombRange;
