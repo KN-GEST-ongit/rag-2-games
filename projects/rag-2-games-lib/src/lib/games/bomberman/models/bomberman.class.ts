@@ -23,8 +23,6 @@ export class BombermanState implements TGameState {
 
   public walls: IBombermanWall[] = [];
   public bombs: IBombermanBomb[] = [];
-  public isGameOver = false;
-  public winner = 2;
 }
 
 export class Bomberman extends Game {
@@ -51,8 +49,6 @@ export class Bomberman extends Game {
             player2bombRange: int, <1, 10>;
 
             bombs: [{ playerId: int, <0, 1>, x: int, <0, 14>, y: int, <0, 12>, timer: int, <0, 3000>, range: int, <1, 10> }];
-            isGameOver: boolean;
-            winner: int, <0, 2>;
 
             walls: [{ x: int, <0, 14>, y: int, <0, 12>, destructible: boolean }];
 
@@ -75,8 +71,6 @@ export class Bomberman extends Game {
 
             walls: [];
             bombs: [];
-            isGameOver: false;
-            winner: 2;  
             `;
   public override players = [
     new Player(

@@ -53,7 +53,7 @@ export class BombermanGameWindowComponent
   protected override update(): void {
     super.update();
 
-    if (!this.isPaused && !this.game.state.isGameOver) {
+    if (!this.isPaused) {
       this.movePlayers();
       this.handleBombPlacement();
       this.updateBombs();
@@ -72,21 +72,17 @@ export class BombermanGameWindowComponent
     this.game.state.player2y = (this._gridHeight - 2) * this._cellSize + offset;
 
     this.game.state.player1lives = 3;
-    this.game.state.player1score = 0;
     this.game.state.player1alive = true;
     this.game.state.player1bombCount = 1;
     this.game.state.player1bombRange = 1;
 
     this.game.state.player2lives = 3;
-    this.game.state.player2score = 0;
     this.game.state.player2alive = true;
     this.game.state.player2bombCount = 1;
     this.game.state.player2bombRange = 1;
 
     this.game.state.walls = [];
     this.game.state.bombs = [];
-    this.game.state.isGameOver = false;
-    this.game.state.winner = 0;
 
     this.selectMap();
     this.loadMap();
@@ -309,6 +305,8 @@ export class BombermanGameWindowComponent
   }
 
   private explodeBomb(bomb: { x: number; y: number; range: number }): void {
+    this.checkPlayerHit(bomb.x, bomb.y);
+
     const directions = [
       { x: 1, y: 0 },
       { x: -1, y: 0 },
@@ -320,6 +318,8 @@ export class BombermanGameWindowComponent
       for (let i = 1; i <= bomb.range; i++) {
         const checkX = bomb.x + dir.x * i;
         const checkY = bomb.y + dir.y * i;
+
+        this.checkPlayerHit(checkX, checkY);
 
         let wallIndex = -1;
         for (let w = 0; w < this.game.state.walls.length; w++) {
@@ -340,6 +340,62 @@ export class BombermanGameWindowComponent
           break;
         }
       }
+    }
+  }
+
+  private checkPlayerHit(gridX: number, gridY: number): void {
+    if (this.game.state.player1alive) {
+      const p1GridX = Math.floor(
+        (this.game.state.player1x + this._playerSize / 2) / this._cellSize
+      );
+      const p1GridY = Math.floor(
+        (this.game.state.player1y + this._playerSize / 2) / this._cellSize
+      );
+
+      if (gridX === p1GridX && gridY === p1GridY) {
+        this.game.state.player1lives--;
+        if (this.game.state.player1lives <= 0) {
+          this.game.state.player1alive = false;
+          this.game.state.player2score += 1;
+          this.resetGame();
+        } else {
+          this.respawnPlayer(0);
+        }
+      }
+    }
+
+    if (this.game.state.player2alive) {
+      const p2GridX = Math.floor(
+        (this.game.state.player2x + this._playerSize / 2) / this._cellSize
+      );
+      const p2GridY = Math.floor(
+        (this.game.state.player2y + this._playerSize / 2) / this._cellSize
+      );
+
+      if (gridX === p2GridX && gridY === p2GridY) {
+        this.game.state.player2lives--;
+        if (this.game.state.player2lives <= 0) {
+          this.game.state.player2alive = false;
+          this.game.state.player1score += 1;
+          this.resetGame();
+        } else {
+          this.respawnPlayer(1);
+        }
+      }
+    }
+  }
+
+  private respawnPlayer(playerId: number): void {
+    const offset = (this._cellSize - this._playerSize) / 2;
+
+    if (playerId === 0) {
+      this.game.state.player1x = 1 * this._cellSize + offset;
+      this.game.state.player1y = 1 * this._cellSize + offset;
+    } else {
+      this.game.state.player2x =
+        (this._gridWidth - 2) * this._cellSize + offset;
+      this.game.state.player2y =
+        (this._gridHeight - 2) * this._cellSize + offset;
     }
   }
 
