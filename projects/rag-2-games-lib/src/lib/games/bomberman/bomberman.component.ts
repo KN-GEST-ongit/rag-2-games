@@ -11,6 +11,16 @@ import { BombermanMap } from './models/bomberman.map';
   standalone: true,
   imports: [CanvasComponent],
   template: `
+    <div>
+      Player 1 - Lives: <b>{{ game.state.player1lives }}</b
+      >, Score:
+      <b>{{ game.state.player1score }}</b>
+      &nbsp;&nbsp;|&nbsp;&nbsp; Player 2 - Lives:
+      <b>{{ game.state.player2lives }}</b
+      >, Score:
+      <b>{{ game.state.player2score }}</b>
+    </div>
+
     <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b>
   `,
@@ -345,14 +355,14 @@ export class BombermanGameWindowComponent
 
   private checkPlayerHit(gridX: number, gridY: number): void {
     if (this.game.state.player1alive) {
-      const p1GridX = Math.floor(
-        (this.game.state.player1x + this._playerSize / 2) / this._cellSize
-      );
-      const p1GridY = Math.floor(
-        (this.game.state.player1y + this._playerSize / 2) / this._cellSize
-      );
-
-      if (gridX === p1GridX && gridY === p1GridY) {
+      if (
+        this.isPlayerOnCell(
+          gridX,
+          gridY,
+          this.game.state.player1x,
+          this.game.state.player1y
+        )
+      ) {
         this.game.state.player1lives--;
         if (this.game.state.player1lives <= 0) {
           this.game.state.player1alive = false;
@@ -365,14 +375,14 @@ export class BombermanGameWindowComponent
     }
 
     if (this.game.state.player2alive) {
-      const p2GridX = Math.floor(
-        (this.game.state.player2x + this._playerSize / 2) / this._cellSize
-      );
-      const p2GridY = Math.floor(
-        (this.game.state.player2y + this._playerSize / 2) / this._cellSize
-      );
-
-      if (gridX === p2GridX && gridY === p2GridY) {
+      if (
+        this.isPlayerOnCell(
+          gridX,
+          gridY,
+          this.game.state.player2x,
+          this.game.state.player2y
+        )
+      ) {
         this.game.state.player2lives--;
         if (this.game.state.player2lives <= 0) {
           this.game.state.player2alive = false;
@@ -383,6 +393,30 @@ export class BombermanGameWindowComponent
         }
       }
     }
+  }
+
+  private isPlayerOnCell(
+    gridX: number,
+    gridY: number,
+    playerX: number,
+    playerY: number
+  ): boolean {
+    const cellLeft = gridX * this._cellSize;
+    const cellRight = cellLeft + this._cellSize;
+    const cellTop = gridY * this._cellSize;
+    const cellBottom = cellTop + this._cellSize;
+
+    const playerLeft = playerX;
+    const playerRight = playerX + this._playerSize;
+    const playerTop = playerY;
+    const playerBottom = playerY + this._playerSize;
+
+    return (
+      playerRight > cellLeft &&
+      playerLeft < cellRight &&
+      playerBottom > cellTop &&
+      playerTop < cellBottom
+    );
   }
 
   private respawnPlayer(playerId: number): void {
