@@ -80,6 +80,13 @@ export const EnemyTypes = {
     reward: 20,
     color: '#00BFFF',
     isFlying: true
+  },
+  'BOSS_TANK': {
+    health: 2500,
+    speed: 0.5,
+    reward: 500,
+    color: '#FF4500',
+    isFlying: false,
   }
 };
 
@@ -97,6 +104,6 @@ export const WaveDefinitions = {
     [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 4 } ], 
   ],
   map1: [
-    [ { type: 'HELICOPTER', count: 5 } ], 
+    [ { type: 'HELICOPTER', count: 5 }, { type: 'BOSS_TANK', count: 1 } ], 
   ],
 };

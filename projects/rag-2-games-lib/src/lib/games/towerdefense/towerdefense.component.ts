@@ -508,7 +508,11 @@ export class TowerDefenseGameWindowComponent
     const state = this.game.state;
     state.enemies = state.enemies.filter(enemy => {
       if (enemy.pathIndex >= state.path.length) {
-        state.baseHealth--;
+        if (enemy.type === 'BOSS_TANK') {
+          state.baseHealth -= 10;
+        } else {
+          state.baseHealth -= 1;
+        }
 
         if (state.baseHealth <= 0) {
           state.baseHealth = 0;
@@ -700,6 +704,28 @@ export class TowerDefenseGameWindowComponent
           context.fill();
           
           continue;
+        }
+
+        case 'BOSS_TANK': {
+          const bossWidth = radius * 4; 
+          const bossLength = radius * 3; 
+          
+          context.fillStyle = '#222';
+          context.fillRect(-bossLength / 2, -bossWidth / 2, bossLength, bossWidth * 0.3); 
+          context.fillRect(-bossLength / 2, bossWidth / 2 - bossWidth * 0.3, bossLength, bossWidth * 0.3); 
+          
+          context.fillStyle = enemy.color;
+          context.fillRect(-bossLength / 2 * 0.8, -bossWidth / 2 * 0.6, bossLength * 0.8, bossWidth * 0.6);
+          
+          context.fillStyle = '#FFA500';
+          context.beginPath();
+          context.arc(0, 0, radius * 0.7, 0, Math.PI * 2);
+          context.fill();
+          
+          context.fillStyle = '#FF0000';
+          context.fillRect(0, -radius * 0.25, radius * 1.5, radius * 0.15);
+          context.fillRect(0, radius * 0.1, radius * 1.5, radius * 0.15);
+          break;
         }
       }
       
