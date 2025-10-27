@@ -49,8 +49,8 @@ export class TowerDefenseGameWindowComponent
     this.calculatePath();
   }
 
-  public override restart(): void {
-    this.game.state = new TowerDefenseState();
+  public override restart(): void { 
+    this.game.state = new TowerDefenseState(); 
     this.setupGame();
   }
 
@@ -103,6 +103,7 @@ export class TowerDefenseGameWindowComponent
       if (action === 1 || action === 2) {
         this.restart();
         player.inputData['action'] = 0;
+        return;
       }
     }
     else if (!this.isPaused) {
@@ -245,39 +246,39 @@ export class TowerDefenseGameWindowComponent
     if (state.isWaveActive) return;
     if (state.path.length === 0) return;
     
-    const waveIndex = state.waveNumber % WaveDefinitions.length;
-    const waveData = WaveDefinitions[waveIndex];
+    const mapKey = `map${state.currentMapIndex}` as keyof typeof WaveDefinitions;
+    const wavesForThisMap = WaveDefinitions[mapKey];
+
+    if (!wavesForThisMap || state.waveNumber >= wavesForThisMap.length) {
+      console.error(`Błąd: Brak definicji fali ${state.waveNumber} dla mapy ${state.currentMapIndex}.`);
+      state.isGameWon = true;
+      return;
+    }
+    const waveData = wavesForThisMap[state.waveNumber];
 
     state.isWaveActive = true;
     let totalDelay = 0;
-    
-    state.enemiesToSpawn = 0;
-    for (const group of waveData) {
-      state.enemiesToSpawn += group.count;
-    }
+    let enemiesToSpawnThisWave = 0; 
 
     for (const group of waveData) {
       const enemyData = EnemyTypes[group.type as keyof typeof EnemyTypes];
+      if (!enemyData) {
+        console.error(`Błąd: Nie znaleziono wroga typu '${group.type}' w EnemyTypes`);
+        continue; 
+      }
+      enemiesToSpawnThisWave += group.count; 
+
       for (let i = 0; i < group.count; i++) {
         setTimeout(() => {
           if (!state.isWaveActive) return;
-
           const startPoint = state.path[0];
           const startX = (startPoint.x + 0.5) * state.tileSize;
           const startY = (startPoint.y + 0.5) * state.tileSize;
-
           state.enemies.push({
-            x: startX, y: startY,
-            health: enemyData.health,
-            maxHealth: enemyData.health,
-            id: state.nextEnemyId++,
-            speed: enemyData.speed,
-            reward: enemyData.reward,
-            color: enemyData.color,
-            pathIndex: 1,
-            isFlying: enemyData.isFlying || false,
-            type: group.type,
-            rotation: 0,
+            x: startX, y: startY, health: enemyData.health, maxHealth: enemyData.health,
+            id: state.nextEnemyId++, speed: enemyData.speed, reward: enemyData.reward,
+            color: enemyData.color, pathIndex: 1, isFlying: enemyData.isFlying || false,
+            type: group.type, rotation: 0,
           });
           state.enemiesToSpawn--;
         }, totalDelay);
@@ -285,6 +286,7 @@ export class TowerDefenseGameWindowComponent
       }
       totalDelay += 2000;
     }
+    state.enemiesToSpawn = enemiesToSpawnThisWave;
   }
 
   private updateBullets(): void {
@@ -335,11 +337,15 @@ export class TowerDefenseGameWindowComponent
     const state = this.game.state;
 
     if (state.enemies.length === 0 && state.enemiesToSpawn === 0 && state.isWaveActive) {
-      state.isWaveActive = false;
-      if (state.waveNumber + 1 >= WaveDefinitions.length) {
-        state.isGameWon = true;
+      state.isWaveActive = false; 
+      
+      const mapKey = `map${state.currentMapIndex}` as keyof typeof WaveDefinitions;
+      const wavesForThisMap = WaveDefinitions[mapKey];
+      
+      if (!wavesForThisMap || state.waveNumber + 1 >= wavesForThisMap.length) { 
+        state.isGameWon = true; 
       } else {
-        state.waveNumber++;
+        state.waveNumber++; 
       }
     }
   }

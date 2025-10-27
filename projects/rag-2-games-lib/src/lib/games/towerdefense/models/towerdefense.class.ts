@@ -66,9 +66,19 @@ export class TowerDefenseState implements TGameState {
   public selectedTowerType: keyof typeof TowerTypes = 'BASIC';
 
   public enemiesToSpawn = 0;
+  public currentMapIndex = 0;
 
-  public constructor(map?: number[][]) {
-    this.map = map ?? TowerDefenseMaps[0];
+  public constructor(mapIndex?: number) {
+    let chosenMapIndex: number;
+
+    if (mapIndex !== undefined && mapIndex >= 0 && mapIndex < TowerDefenseMaps.length) {
+      chosenMapIndex = mapIndex;
+    } else {
+      chosenMapIndex = Math.floor(Math.random() * TowerDefenseMaps.length);
+    }
+
+    this.map = TowerDefenseMaps[chosenMapIndex];
+    this.currentMapIndex = chosenMapIndex; 
   }
 }
 
@@ -89,7 +99,7 @@ export class TowerDefense extends Game {
     isWaveActive: boolean;
     cursorX: int, <0, ${this.mapWidth - 1}>;
     cursorY: int, <0, ${this.mapHeight - 1}>;
-    map: int[${this.mapHeight}][${this.mapWidth}] (0: wolne, 1: ściana, 2: start, 3: baza);
+    map: int[${this.mapHeight}][${this.mapWidth}] (0: wolne, 1: ścieżka, 2: start, 3: baza);
     isGameOver: boolean;
     isGameWon: boolean;
 

@@ -84,14 +84,19 @@ export const EnemyTypes = {
 };
 
 //FALE
-export const WaveDefinitions = [
-  [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 5 } ],
+export const WaveDefinitions = {
+  map0: [
+    [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 5 } ], 
 
-  [ { type: 'TANK', count: 12 }, { type: 'HELICOPTER', count: 3 } ],
+    [ { type: 'TANK', count: 12 }, { type: 'HELICOPTER', count: 3 } ],
 
-  [ { type: 'TANK', count: 15 }, { type: 'HELICOPTER', count: 6 } ],
+    [ { type: 'TANK', count: 15 }, { type: 'HELICOPTER', count: 6 } ],
 
-  [ { type: 'TANK', count: 2 }, { type: 'HELICOPTER', count: 10 } ],
+    [ { type: 'TANK', count: 2 }, { type: 'HELICOPTER', count: 10 } ],
 
-  [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 4 } ],
-];
+    [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 4 } ], 
+  ],
+  map1: [
+    [ { type: 'HELICOPTER', count: 5 } ], 
+  ],
+};
