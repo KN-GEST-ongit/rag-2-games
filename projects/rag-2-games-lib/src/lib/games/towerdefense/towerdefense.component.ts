@@ -13,9 +13,9 @@ import { TowerTypes, EnemyTypes, WaveDefinitions, ITowerData } from './models/to
   imports: [CanvasComponent],
   template: `
     <div>
-      Życie Bazy: <b>{{ game.state.baseHealth }}</b> | 
-      Złoto: <b>{{ game.state.gold }}</b> | 
-      Fala: <b>{{ game.state.waveNumber + 1 }}</b> |
+      Base Health: <b>{{ game.state.baseHealth }}</b> | 
+      Gold: <b>{{ game.state.gold }}</b> | 
+      Wave: <b>{{ game.state.waveNumber + 1 }}</b> |
       <b>{{ getCursorActionText() }}</b>
     </div>
     <app-canvas
@@ -69,15 +69,15 @@ export class TowerDefenseGameWindowComponent
       const refund = Math.floor(tower.totalInvestedCost * 0.8);
       if (towerData.upgradesTo && towerData.upgradeCost) {
         const nextTowerData = TowerTypes[towerData.upgradesTo];
-        return `Ulepsz do: ${nextTowerData.name} (Koszt: ${towerData.upgradeCost}) [Spacja] | Sprzedaj [E] (Zysk: ${refund})`;
-      } 
-      return `${towerData.name} (Maks. Poziom)| Sprzedaj [E] (Zysk: ${refund})`;
+        return `Upgrade to: ${nextTowerData.name} (Cost: ${towerData.upgradeCost}) [Space] | Sell [E] (Profit: ${refund})`;
+      }
+      return `${towerData.name} (Max Level)| Sell [E] (Profit: ${refund})`;
     }
       const selectedData = this.getSelectedTowerData();
       if (selectedData.cost > 0) {
-         return `Wybrana wieża: ${selectedData.name} (Koszt: ${selectedData.cost}) [Q]`;
+         return `Selected tower: ${selectedData.name} (Cost: ${selectedData.cost}) [Q]`;
       }
-      return `Wybierz inną wieżę [Q]`;
+      return `Choose another tower [Q]`;
   }
 
   private handleGlobalInput(): void {
@@ -228,7 +228,7 @@ export class TowerDefenseGameWindowComponent
     const nextTowerKey = currentTowerData.upgradesTo;
     const nextTowerData = TowerTypes[nextTowerKey];
     if (!nextTowerData) {
-      console.error(`Błąd: Nie znaleziono danych dla ulepszenia: ${nextTowerKey}`);
+      console.error(`Error: Did not find data for upgrade: ${nextTowerKey}`);
       return;
     }
 
@@ -250,7 +250,7 @@ export class TowerDefenseGameWindowComponent
     const wavesForThisMap = WaveDefinitions[mapKey];
 
     if (!wavesForThisMap || state.waveNumber >= wavesForThisMap.length) {
-      console.error(`Błąd: Brak definicji fali ${state.waveNumber} dla mapy ${state.currentMapIndex}.`);
+      console.error(`Error: No wave definition found for wave ${state.waveNumber} on map ${state.currentMapIndex}.`);
       state.isGameWon = true;
       return;
     }
@@ -263,7 +263,7 @@ export class TowerDefenseGameWindowComponent
     for (const group of waveData) {
       const enemyData = EnemyTypes[group.type as keyof typeof EnemyTypes];
       if (!enemyData) {
-        console.error(`Błąd: Nie znaleziono wroga typu '${group.type}' w EnemyTypes`);
+        console.error(`Error: Did not find enemy data for type: ${group.type}`);
         continue; 
       }
       enemiesToSpawnThisWave += group.count; 
@@ -365,7 +365,7 @@ export class TowerDefenseGameWindowComponent
     }
 
     if (!startPos) {
-      console.error("Błąd: Nie znaleziono punktu startowego na mapie!");
+      console.error("Error: Did not find start position (tile value 2) on the map.");
       return;
     }
 
@@ -771,25 +771,25 @@ export class TowerDefenseGameWindowComponent
     context.fillRect(0, 0, this._canvas.width, this._canvas.height);
 
     context.fillStyle = 'white';
-    context.font = '36px sans-serif';
+    context.font = '100px sans-serif';
     context.textAlign = 'center';
     context.fillText('GAME OVER', this._canvas.width / 2, this._canvas.height / 2 - 30);
 
-    context.font = '12px sans-serif';
-    context.fillText('Naciśnij Enter lub Spację, aby zrestartować', this._canvas.width / 2, this._canvas.height / 2 + 20);
+    context.font = '18px sans-serif';
+    context.fillText('Click Enter or Space to restart!', this._canvas.width / 2, this._canvas.height / 2 + 20);
   }
 
   private drawGameWon(context: CanvasRenderingContext2D): void {
     context.fillStyle = 'rgba(0, 0, 0, 0.5)';
     context.fillRect(0, 0, this._canvas.width, this._canvas.height);
 
-    context.fillStyle = 'white';
-    context.font = '36px sans-serif';
+    context.fillStyle = 'green';
+    context.font = '100px sans-serif';
     context.textAlign = 'center';
     context.fillText('WIN!', this._canvas.width / 2, this._canvas.height / 2 - 30);
 
-    context.font = '12px sans-serif';
-    context.fillText('Naciśnij Enter lub Spację, aby kontynuować', this._canvas.width / 2, this._canvas.height / 2 + 20);
+    context.font = '18px sans-serif';
+    context.fillText('Click Enter or Space to continue!', this._canvas.width / 2, this._canvas.height / 2 + 20);
   }
 
   private drawPauseScreen(context: CanvasRenderingContext2D): void {
@@ -797,8 +797,8 @@ export class TowerDefenseGameWindowComponent
     context.fillRect(0, 0, this._canvas.width, this._canvas.height);
 
     context.fillStyle = 'white';
-    context.font = '36px sans-serif';
+    context.font = '72px sans-serif';
     context.textAlign = 'center';
-    context.fillText('PAUZA', this._canvas.width / 2, this._canvas.height / 2);
+    context.fillText('PAUSE', this._canvas.width / 2, this._canvas.height / 2);
   }
 }

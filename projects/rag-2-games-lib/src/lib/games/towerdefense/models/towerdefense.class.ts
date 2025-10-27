@@ -99,7 +99,7 @@ export class TowerDefense extends Game {
     isWaveActive: boolean;
     cursorX: int, <0, ${this.mapWidth - 1}>;
     cursorY: int, <0, ${this.mapHeight - 1}>;
-    map: int[${this.mapHeight}][${this.mapWidth}] (0: wolne, 1: ścieżka, 2: start, 3: baza);
+    map: int[${this.mapHeight}][${this.mapWidth}] (0: free, 1: path, 2: start, 3: base);
     isGameOver: boolean;
     isGameWon: boolean;
 

@@ -15,7 +15,7 @@ export interface ITowerData {
 //WIEŻE
 export const TowerTypes: Record<string, ITowerData> = {
   'BASIC': {
-    name: 'Działko Lvl 1',
+    name: 'Turret Lvl 1',
     cost: 100,
     damage: 36,
     range: 2.5,
@@ -28,7 +28,7 @@ export const TowerTypes: Record<string, ITowerData> = {
     splashRadius: 0
   },
   'BASIC_L2': {
-    name: 'Działko Lvl 2',
+    name: 'Turret Lvl 2',
     cost: 0,
     damage: 50,
     range: 3.0,
@@ -40,7 +40,7 @@ export const TowerTypes: Record<string, ITowerData> = {
   },
 
   'CANNON': {
-    name: 'Armata Lvl 1',
+    name: 'Cannon Lvl 1',
     cost: 200,
     damage: 72,
     range: 3.5,
@@ -53,7 +53,7 @@ export const TowerTypes: Record<string, ITowerData> = {
     splashRadius: 1.5
   },
   'CANNON_L2': {
-    name: 'Armata Lvl 2',
+    name: 'Cannon Lvl 2',
     cost: 0,
     damage: 120,
     range: 4.0,
@@ -62,6 +62,30 @@ export const TowerTypes: Record<string, ITowerData> = {
     canHitAir: false,
     canHitGround: true,
     splashRadius: 2.0
+  },
+  'AA_GUN': {
+    name: 'Anti-Air Gun Lvl 1',
+    cost: 150,
+    damage: 45,
+    range: 4.0,
+    fireRate: 20,
+    color: '#00FF00',
+    canHitAir: true,
+    canHitGround: false,
+    splashRadius: 0,
+    upgradeCost: 200,
+    upgradesTo: 'AA_GUN_L2'
+  },
+  'AA_GUN_L2': {
+    name: 'Anti-Air Gun Lvl 2',
+    cost: 0,
+    damage: 70,
+    range: 4.5,
+    fireRate: 15,
+    color: '#32CD32',
+    canHitAir: true,
+    canHitGround: false,
+    splashRadius: 0,
   },
 };
 
@@ -101,9 +125,54 @@ export const WaveDefinitions = {
 
     [ { type: 'TANK', count: 2 }, { type: 'HELICOPTER', count: 10 } ],
 
-    [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 4 } ], 
+    [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 4 }, { type: 'BOSS_TANK', count: 1 } ],
+
+    [ { type: 'TANK', count: 20 }, { type: 'HELICOPTER', count: 8 } ],
+
+    [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 15 } ],
+
+    [ { type: 'TANK', count: 25 }, { type: 'HELICOPTER', count: 5 } ],
+
+    [ { type: 'TANK', count: 18 }, { type: 'HELICOPTER', count: 12 } ],
+
+    [ { type: 'TANK', count: 30 }, { type: 'HELICOPTER', count: 15 }, { type: 'BOSS_TANK', count: 2 } ],
   ],
   map1: [
-    [ { type: 'HELICOPTER', count: 5 }, { type: 'BOSS_TANK', count: 1 } ], 
+    [ { type: 'TANK', count: 10 } ],
+    [ { type: 'HELICOPTER', count: 8 } ],
+    [ { type: 'TANK', count: 14 }, { type: 'HELICOPTER', count: 4 } ],
+    [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 10 } ],
+    [ { type: 'TANK', count: 20 }, { type: 'HELICOPTER', count: 5 }, { type: 'BOSS_TANK', count: 1 } ],
+    [ { type: 'HELICOPTER', count: 18 } ],
+    [ { type: 'TANK', count: 22 } ],
+    [ { type: 'TANK', count: 15 }, { type: 'HELICOPTER', count: 15 } ],
+    [ { type: 'HELICOPTER', count: 25 }, { type: 'TANK', count: 5 } ],
+    [ { type: 'TANK', count: 25 }, { type: 'HELICOPTER', count: 10 }, { type: 'BOSS_TANK', count: 2 } ],
+  ],
+
+  map2: [
+    [ { type: 'HELICOPTER', count: 6 } ],
+    [ { type: 'TANK', count: 10 }, { type: 'HELICOPTER', count: 4 } ],
+    [ { type: 'TANK', count: 18 } ],
+    [ { type: 'HELICOPTER', count: 12 }, { type: 'TANK', count: 5 } ],
+    [ { type: 'TANK', count: 15 }, { type: 'HELICOPTER', count: 10 }, { type: 'BOSS_TANK', count: 1 } ],
+    [ { type: 'TANK', count: 22 }, { type: 'HELICOPTER', count: 6 } ],
+    [ { type: 'HELICOPTER', count: 20 } ],
+    [ { type: 'TANK', count: 28 } ],
+    [ { type: 'TANK', count: 15 }, { type: 'HELICOPTER', count: 18 } ],
+    [ { type: 'TANK', count: 20 }, { type: 'HELICOPTER', count: 20 }, { type: 'BOSS_TANK', count: 2 } ],
+  ],
+
+  map3: [
+    [ { type: 'TANK', count: 12 } ],
+    [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 6 } ],
+    [ { type: 'HELICOPTER', count: 14 } ],
+    [ { type: 'TANK', count: 18 }, { type: 'HELICOPTER', count: 5 } ],
+    [ { type: 'TANK', count: 12 }, { type: 'HELICOPTER', count: 12 }, { type: 'BOSS_TANK', count: 1 } ],
+    [ { type: 'TANK', count: 25 }, { type: 'HELICOPTER', count: 8 } ],
+    [ { type: 'HELICOPTER', count: 22 }, { type: 'TANK', count: 5 } ],
+    [ { type: 'TANK', count: 30 } ],
+    [ { type: 'TANK', count: 20 }, { type: 'HELICOPTER', count: 15 } ],
+    [ { type: 'TANK', count: 25 }, { type: 'HELICOPTER', count: 20 }, { type: 'BOSS_TANK', count: 3 } ],
   ],
 };
