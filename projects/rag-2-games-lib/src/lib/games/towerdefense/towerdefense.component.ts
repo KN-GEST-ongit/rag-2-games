@@ -108,10 +108,8 @@ export class TowerDefenseGameWindowComponent
     }
     else if (!this.isPaused) {
       //logika do budowania
-      if (!this.game.state.isWaveActive) {
-        this.handleInput();
-        this.handleActions();
-      }
+      this.handleInput();
+      this.handleActions();
 
       //logika podczas fali
       if (this.game.state.isWaveActive) {
@@ -157,7 +155,7 @@ export class TowerDefenseGameWindowComponent
       } else {
         this.tryPlaceTower(state.cursorX, state.cursorY);
       }
-    } else if (action === 2) {
+    } else if (action === 2 && !state.isWaveActive) {
       this.startWave();
     }
     
@@ -573,7 +571,7 @@ export class TowerDefenseGameWindowComponent
     this.drawEnemies(context);
     this.drawBullets(context);
 
-    if (!this.game.state.isWaveActive && !this.game.state.isGameOver) {
+    if (!this.game.state.isGameOver && !this.game.state.isGameWon && !this.isPaused) {
       this.drawCursor(context);
     }
 
