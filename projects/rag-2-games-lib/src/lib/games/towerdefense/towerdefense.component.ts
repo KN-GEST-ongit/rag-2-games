@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
@@ -28,8 +27,6 @@ export class TowerDefenseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
   public override game!: TowerDefense;
-
-  private readonly BUILD_COST = 100;
 
   public override ngOnInit(): void {
     super.ngOnInit();

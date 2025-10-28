@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
@@ -87,8 +86,8 @@ export class TowerDefense extends Game {
   public override author = 'Norbert Mazur';
   public override state = new TowerDefenseState();
 
-  private mapWidth = this.state.map[0].length;
-  private mapHeight = this.state.map.length;
+  private _mapWidth = this.state.map[0].length;
+  private _mapHeight = this.state.map.length;
 
   public override outputSpec = `
     output:
@@ -97,9 +96,9 @@ export class TowerDefense extends Game {
     gold: int, <0, inf>;
     waveNumber: int, <0, inf>;
     isWaveActive: boolean;
-    cursorX: int, <0, ${this.mapWidth - 1}>;
-    cursorY: int, <0, ${this.mapHeight - 1}>;
-    map: int[${this.mapHeight}][${this.mapWidth}] (0: free, 1: path, 2: start, 3: base);
+    cursorX: int, <0, ${this._mapWidth - 1}>;
+    cursorY: int, <0, ${this._mapHeight - 1}>;
+    map: int[${this._mapHeight}][${this._mapWidth}] (0: free, 1: path, 2: start, 3: base);
     isGameOver: boolean;
     isGameWon: boolean;
 
