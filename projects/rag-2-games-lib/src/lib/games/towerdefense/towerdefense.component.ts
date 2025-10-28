@@ -353,47 +353,78 @@ export class TowerDefenseGameWindowComponent
   //logika ruchu oraz ścieżka
   private calculatePath(): void {
     const map = this.game.state.map;
+    const mapHeight = map.length;
+    const mapWidth = map[0].length;
     let startPos: { x: number; y: number } | null = null;
+    let endPos: { x: number; y: number } | null = null;
 
-    for (let y = 0; y < map.length; y++) {
-      for (let x = 0; x < map[y].length; x++) {
-        if (map[y][x] === 2) {
-          startPos = { x, y };
-          break;
-        }
+    for (let y = 0; y < mapHeight; y++) {
+      for (let x = 0; x < mapWidth; x++) {
+        if (map[y][x] === 2) startPos = { x, y };
+        else if (map[y][x] === 3) endPos = { x, y };
       }
     }
 
-    if (!startPos) {
-      console.error("Error: Did not find start position (tile value 2) on the map.");
+    if (!startPos || !endPos) {
+      console.error("Error: Start (2) or End (3) not found on map!");
+      this.game.state.path = [];
       return;
     }
 
-    const path: { x: number; y: number }[] = [];
-    let currentPos = startPos;
-    let prevPos = { x: -1, y: -1 };
+    const queue: { x: number; y: number }[] = [startPos]; 
+    const cameFrom = new Map<string, { x: number; y: number } | null>();
+    cameFrom.set(`${startPos.y},${startPos.x}`, null); 
 
-    while (map[currentPos.y][currentPos.x] !== 3) {
-      path.push(currentPos);
-      const { x, y } = currentPos;
-      const neighbors = [ { x, y: y - 1 }, { x, y: y + 1 }, { x: x - 1, y }, { x: x + 1, y }];
+    let finalEndPos: { x: number; y: number } | null = null;
 
-      let foundNext = false;
-      for (const nextPos of neighbors) {
-        if (nextPos.x < 0 || nextPos.y < 0 || nextPos.y >= map.length || nextPos.x >= map[0].length) continue;
-        if (nextPos.x === prevPos.x && nextPos.y === prevPos.y) continue;
+    while (queue.length > 0) {
+      const current = queue.shift(); 
 
-        const tileValue = map[nextPos.y][nextPos.x];
-        if (tileValue === 1 || tileValue === 3) {
-          prevPos = currentPos;
-          currentPos = nextPos;
-          foundNext = true;
-          break;
+      if (!current) { 
+        console.error("BFS Error: Queue shift returned undefined unexpectedly.");
+        break;
+      }
+
+      if (current.x === endPos.x && current.y === endPos.y) {
+        finalEndPos = current;
+        break; 
+      }
+
+      const neighbors = [
+        { x: current.x, y: current.y - 1 }, { x: current.x, y: current.y + 1 },
+        { x: current.x - 1, y: current.y }, { x: current.x + 1, y: current.y },
+      ];
+
+      for (const next of neighbors) {
+        const nextKey = `${next.y},${next.x}`;
+
+        if (next.x < 0 || next.x >= mapWidth || next.y < 0 || next.y >= mapHeight) {
+          continue;
+        }
+
+        const tileValue = map[next.y][next.x];
+        if ((tileValue === 1 || tileValue === 3) && !cameFrom.has(nextKey)) {
+          queue.push(next); 
+          cameFrom.set(nextKey, current); 
         }
       }
-      if (!foundNext) break;
     }
-    path.push(currentPos);
+
+    const path: { x: number; y: number }[] = [];
+    if (finalEndPos) {
+      let current: { x: number; y: number } | null = finalEndPos; 
+      let currentKey: string | null = null; 
+      
+      while (current !== null) {
+        path.push(current); 
+        currentKey = `${current.y},${current.x}`;
+        current = cameFrom.get(currentKey) ?? null; 
+      }
+      path.reverse(); 
+    } else {
+      console.error("Error: BFS could not find a path from Start to End!");
+    }
+
     this.game.state.path = path;
   }
 
@@ -770,7 +801,7 @@ export class TowerDefenseGameWindowComponent
     context.fillStyle = 'rgba(0, 0, 0, 0.5)';
     context.fillRect(0, 0, this._canvas.width, this._canvas.height);
 
-    context.fillStyle = 'white';
+    context.fillStyle = 'red';
     context.font = '100px sans-serif';
     context.textAlign = 'center';
     context.fillText('GAME OVER', this._canvas.width / 2, this._canvas.height / 2 - 30);
