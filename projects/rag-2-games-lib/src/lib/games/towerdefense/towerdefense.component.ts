@@ -15,6 +15,7 @@ import { TowerTypes, EnemyTypes, WaveDefinitions, ITowerData } from './models/to
       Base Health: <b>{{ game.state.baseHealth }}</b> | 
       Gold: <b>{{ game.state.gold }}</b> | 
       Wave: <b>{{ game.state.waveNumber + 1 }}</b> |
+      Maps Completed: <b>{{ game.state.mapsCompleted }}</b> |
       <b>{{ getCursorActionText() }}</b>
     </div>
     <app-canvas
@@ -98,6 +99,11 @@ export class TowerDefenseGameWindowComponent
       const action = player.inputData['action'] as number;
 
       if (action === 1 || action === 2) {
+        let mapsDone = this.game.state.mapsCompleted; 
+        if (this.game.state.isGameWon) {
+          mapsDone++; 
+        }
+        this.game.state.mapsCompleted = mapsDone;
         this.restart();
         player.inputData['action'] = 0;
         return;
@@ -751,6 +757,52 @@ export class TowerDefenseGameWindowComponent
           context.fillStyle = '#FF0000';
           context.fillRect(0, -radius * 0.25, radius * 1.5, radius * 0.15);
           context.fillRect(0, radius * 0.1, radius * 1.5, radius * 0.15);
+          break;
+        }
+        
+        case 'JET': {
+          const jetLength = radius * 2.5;
+          const jetWidth = radius * 2.8;
+
+          context.beginPath();
+          context.moveTo(jetLength / 2, 0);
+          context.lineTo(-jetLength / 2, -jetWidth / 2);
+          context.lineTo(-jetLength / 2 * 0.8, 0);
+          context.lineTo(-jetLength / 2, jetWidth / 2);
+          context.closePath();
+          context.fill();
+          context.stroke();
+          break;
+        }
+        
+        case 'VEHICLE': {
+          const vehicleWidth = radius * 1.6;
+          const vehicleLength = radius * 2.8;
+          const wheelRadius = radius * 0.3;
+
+          context.fillStyle = enemy.color;
+          context.fillRect(-vehicleLength / 2, -vehicleWidth / 2, vehicleLength, vehicleWidth);
+          context.strokeRect(-vehicleLength / 2, -vehicleWidth / 2, vehicleLength, vehicleWidth);
+
+          context.fillStyle = '#696969';
+
+          context.beginPath();
+          context.arc(vehicleLength * 0.35, -vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
+          context.arc(vehicleLength * 0.35, vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
+          context.fill();
+
+          context.beginPath();
+          context.arc(-vehicleLength * 0.35, -vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
+          context.arc(-vehicleLength * 0.35, vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
+          context.fill();
+          
+          context.fillStyle = '#A9A9A9'; 
+          context.beginPath();
+          context.arc(vehicleLength * 0.1, 0, radius * 0.4, 0, Math.PI * 2);
+          context.fill();
+          
+          context.fillStyle = '#696969';
+          context.fillRect(vehicleLength * 0.1 + radius * 0.3, -radius * 0.08, radius * 0.6, radius * 0.16);
           break;
         }
       }

@@ -66,6 +66,7 @@ export class TowerDefenseState implements TGameState {
 
   public enemiesToSpawn = 0;
   public currentMapIndex = 0;
+  public mapsCompleted = 0;
 
   public constructor(mapIndex?: number) {
     let chosenMapIndex: number;
