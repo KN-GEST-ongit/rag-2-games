@@ -104,8 +104,8 @@ export class TowerDefenseGameWindowComponent
         if (this.game.state.isGameWon) {
           mapsDone++; 
         }
+        this.restart()
         this.game.state.mapsCompleted = mapsDone;
-        this.restart();
         player.inputData['action'] = 0;
         return;
       }
