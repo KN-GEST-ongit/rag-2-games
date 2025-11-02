@@ -1,16 +1,4 @@
-export interface ITowerData {
-  name: string;
-  cost: number;
-  damage: number;
-  range: number;
-  fireRate: number;
-  color: string;
-  canHitAir: boolean;
-  canHitGround: boolean;
-  upgradeCost?: number;
-  upgradesTo?: string;
-  splashRadius?: number;
-}
+import { ITowerData } from "./towerdefense.interfaces";
 
 //WIEŻE
 export const TowerTypes: Record<string, ITowerData> = {

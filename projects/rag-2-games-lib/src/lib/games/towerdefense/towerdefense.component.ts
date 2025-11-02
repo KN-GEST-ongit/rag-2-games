@@ -3,8 +3,9 @@
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { TowerDefense, TowerDefenseState, ITower, IEnemy } from './models/towerdefense.class';
-import { TowerTypes, EnemyTypes, WaveDefinitions, ITowerData } from './models/towerdefense.data';
+import { TowerDefense, TowerDefenseState } from './models/towerdefense.class';
+import { TowerTypes, EnemyTypes, WaveDefinitions } from './models/towerdefense.data';
+import { ITower, IEnemy, ITowerData } from './models/towerdefense.interfaces';
 
 @Component({
   selector: 'app-towerdefense',
@@ -125,12 +126,21 @@ export class TowerDefenseGameWindowComponent
   //logika gry
   private handleInput(): void {
     const player = this.game.players[0];
-    const moveX = player.inputData['moveX'] as number;
-    const moveY = player.inputData['moveY'] as number;
+    const move = player.inputData['move'] as number;
     const state = this.game.state;
 
-    const newCursorX = state.cursorX + moveX;
-    const newCursorY = state.cursorY + moveY;
+    let newCursorX = state.cursorX;
+    let newCursorY = state.cursorY;
+
+    if (move === 1) {
+      newCursorY--;
+    } else if (move === 2) {
+      newCursorY++;
+    } else if (move === 3) {
+      newCursorX--;
+    } else if (move === 4) {
+      newCursorX++;
+    }
 
     if (newCursorX >= 0 && newCursorX < state.map[0].length) {
       state.cursorX = newCursorX;
@@ -139,8 +149,7 @@ export class TowerDefenseGameWindowComponent
       state.cursorY = newCursorY;
     }
 
-    player.inputData['moveX'] = 0;
-    player.inputData['moveY'] = 0;
+    player.inputData['move'] = 0;
   }
 
   private handleActions(): void {

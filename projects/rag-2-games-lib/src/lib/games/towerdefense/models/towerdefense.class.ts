@@ -3,45 +3,7 @@ import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 import { TowerDefenseMaps } from './towerdefense.maps';
 import { TowerTypes } from './towerdefense.data';
-
-export interface ITower {
-  x: number;
-  y: number;
-  type: string;
-  range: number;
-  damage: number;
-  fireRate: number;
-  cooldown: number;
-  rotation: number;
-  totalInvestedCost: number;
-}
-
-export interface IEnemy {
-  x: number;
-  y: number;
-  id: number;
-  health: number;
-  maxHealth: number;
-  speed: number;
-  reward: number;
-  color: string;
-  pathIndex: number;
-  isFlying: boolean;
-  type: string;
-  rotation: number;
-}
-
-export interface IBullet {
-  x: number;
-  y: number;
-  targetEnemyId: number;
-  damage: number;
-  speed: number;
-  color: string;
-  splashRadius: number;
-  canHitAir: boolean;
-  canHitGround: boolean;
-}
+import { IEnemy, ITower, IBullet } from './towerdefense.interfaces';
 
 export class TowerDefenseState implements TGameState {
   public tileSize = 40;
@@ -121,16 +83,16 @@ export class TowerDefense extends Game {
       0,
       true,
       'Player 1',
-      { moveX: 0, moveY: 0, action: 0, cycleTower: 0, pause: 0, sell: 0 },
+      { move: 0, action: 0, cycleTower: 0, pause: 0, sell: 0 },
       {
-        w: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
-        s: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
-        a: { variableName: 'moveX', pressedValue: -1, releasedValue: 0 },
-        d: { variableName: 'moveX', pressedValue: 1, releasedValue: 0 },
-        ArrowUp: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
-        ArrowDown: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
-        ArrowLeft: { variableName: 'moveX', pressedValue: -1, releasedValue: 0 },
-        ArrowRight: { variableName: 'moveX', pressedValue: 1, releasedValue: 0 },
+        w: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        s: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        a: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+        d: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+        ArrowUp: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        ArrowDown: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        ArrowLeft: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+        ArrowRight: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
         ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
         Enter: { variableName: 'action', pressedValue: 2, releasedValue: 0 },
 
