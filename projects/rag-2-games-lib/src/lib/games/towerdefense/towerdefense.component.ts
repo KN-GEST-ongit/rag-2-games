@@ -6,6 +6,8 @@ import { BaseGameWindowComponent } from '../base-game.component';
 import { TowerDefense, TowerDefenseState } from './models/towerdefense.class';
 import { TowerTypes, EnemyTypes, WaveDefinitions } from './models/towerdefense.data';
 import { ITower, IEnemy, ITowerData } from './models/towerdefense.interfaces';
+import { findShortestPath } from './models/towerdefense.pathfinding.helper';
+import * as Drawing from './models/towerdefense.drawing.helper';
 
 @Component({
   selector: 'app-towerdefense',
@@ -360,82 +362,8 @@ export class TowerDefenseGameWindowComponent
     }
   }
 
-  //logika ruchu oraz ścieżka
   private calculatePath(): void {
-    const map = this.game.state.map;
-    const mapHeight = map.length;
-    const mapWidth = map[0].length;
-    let startPos: { x: number; y: number } | null = null;
-    let endPos: { x: number; y: number } | null = null;
-
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        if (map[y][x] === 2) startPos = { x, y };
-        else if (map[y][x] === 3) endPos = { x, y };
-      }
-    }
-
-    if (!startPos || !endPos) {
-      console.error("Error: Start (2) or End (3) not found on map!");
-      this.game.state.path = [];
-      return;
-    }
-
-    const queue: { x: number; y: number }[] = [startPos]; 
-    const cameFrom = new Map<string, { x: number; y: number } | null>();
-    cameFrom.set(`${startPos.y},${startPos.x}`, null); 
-
-    let finalEndPos: { x: number; y: number } | null = null;
-
-    while (queue.length > 0) {
-      const current = queue.shift(); 
-
-      if (!current) { 
-        console.error("BFS Error: Queue shift returned undefined unexpectedly.");
-        break;
-      }
-
-      if (current.x === endPos.x && current.y === endPos.y) {
-        finalEndPos = current;
-        break; 
-      }
-
-      const neighbors = [
-        { x: current.x, y: current.y - 1 }, { x: current.x, y: current.y + 1 },
-        { x: current.x - 1, y: current.y }, { x: current.x + 1, y: current.y },
-      ];
-
-      for (const next of neighbors) {
-        const nextKey = `${next.y},${next.x}`;
-
-        if (next.x < 0 || next.x >= mapWidth || next.y < 0 || next.y >= mapHeight) {
-          continue;
-        }
-
-        const tileValue = map[next.y][next.x];
-        if ((tileValue === 1 || tileValue === 3) && !cameFrom.has(nextKey)) {
-          queue.push(next); 
-          cameFrom.set(nextKey, current); 
-        }
-      }
-    }
-
-    const path: { x: number; y: number }[] = [];
-    if (finalEndPos) {
-      let current: { x: number; y: number } | null = finalEndPos; 
-      let currentKey: string | null = null; 
-      
-      while (current !== null) {
-        path.push(current); 
-        currentKey = `${current.y},${current.x}`;
-        current = cameFrom.get(currentKey) ?? null; 
-      }
-      path.reverse(); 
-    } else {
-      console.error("Error: BFS could not find a path from Start to End!");
-    }
-
-    this.game.state.path = path;
+    this.game.state.path = findShortestPath(this.game.state.map);
   }
 
   private moveEnemies(): void {
@@ -576,316 +504,27 @@ export class TowerDefenseGameWindowComponent
   private render(): void {
     const context = this._canvas.getContext('2d');
     if (!context) return;
-    
+    const state = this.game.state;
+
     context.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    this.drawMap(context);
-    this.drawTowers(context);
-    this.drawEnemies(context);
-    this.drawBullets(context);
-
-    if (!this.game.state.isGameOver && !this.game.state.isGameWon && !this.isPaused) {
-      this.drawCursor(context);
+    
+    Drawing.drawMap(context, state);
+    Drawing.drawTowers(context, state);
+    Drawing.drawEnemies(context, state);
+    Drawing.drawBullets(context, state);
+    
+    if (!state.isGameOver && !state.isGameWon && !this.isPaused) {
+      Drawing.drawCursor(context, state, () => this.getSelectedTowerData());
     }
 
-    if (this.game.state.isGameOver) {
-      this.drawGameOver(context);
-    } else if (this.game.state.isGameWon) {
-      this.drawGameWon(context);
+    if (state.isGameOver) {
+      Drawing.drawGameOver(context, this._canvas);
+    } else if (state.isGameWon) {
+      Drawing.drawGameWon(context, this._canvas);
     }
 
-    if (this.isPaused && !this.game.state.isGameOver && !this.game.state.isGameWon && this.game.state.isWaveActive) {
-      this.drawPauseScreen(context);
+    if (this.isPaused && !state.isGameOver && !state.isGameWon && this.game.state.isWaveActive) {
+      Drawing.drawPauseScreen(context, this._canvas);
     }
-  }
-
-  private drawMap(context: CanvasRenderingContext2D): void {
-    const { tileSize, map } = this.game.state;
-    for (let y = 0; y < map.length; y++) {
-      for (let x = 0; x < map[y].length; x++) {
-        const tileValue = map[y][x];
-        const px = x * tileSize;
-        const py = y * tileSize;
-
-        context.strokeStyle = '#333';
-        context.lineWidth = 1;
-        
-        switch (tileValue) {
-          case 1: context.fillStyle = '#bbb'; break;
-          case 2: context.fillStyle = 'yellow'; break;
-          case 3: context.fillStyle = 'red'; break;
-          default: context.fillStyle = '#072000ff';
-        }
-        context.fillRect(px, py, tileSize, tileSize);
-        context.strokeRect(px, py, tileSize, tileSize);
-      }
-    }
-  }
-
-  private drawCursor(context: CanvasRenderingContext2D): void {
-    const { tileSize, cursorX, cursorY, gold } = this.game.state;
-    const x = cursorX * tileSize;
-    const y = cursorY * tileSize;
-
-    let canAfford = false;
-    const towerOnTile = this.game.state.towers.find(t => t.x === cursorX && t.y === cursorY);
-
-    if (towerOnTile) {
-      const towerData = TowerTypes[towerOnTile.type.toUpperCase() as keyof typeof TowerTypes];
-      if (towerData.upgradeCost) {
-        canAfford = gold >= towerData.upgradeCost;
-      }
-    } else {
-      const selectedData = this.getSelectedTowerData();
-      if (selectedData.cost > 0) {
-         canAfford = gold >= selectedData.cost;
-      }
-    }
-
-    context.strokeStyle = canAfford ? 'lime' : 'orange';
-    context.lineWidth = 3;
-    context.strokeRect(x + 1.5, y + 1.5, tileSize - 3, tileSize - 3);
-  }
-
-  private drawTowers(context: CanvasRenderingContext2D): void {
-    const { tileSize, towers, isWaveActive } = this.game.state;
-    for (const tower of towers) {
-      const centerX = (tower.x + 0.5) * tileSize;
-      const centerY = (tower.y + 0.5) * tileSize;
-      
-      const towerData = TowerTypes[tower.type.toUpperCase() as keyof typeof TowerTypes];
-      context.fillStyle = towerData.color;
-
-      if (!isWaveActive) {
-        context.fillStyle = 'rgba(173, 216, 230, 0.2)';
-        context.beginPath();
-        context.arc(centerX, centerY, tower.range, 0, Math.PI * 2);
-        context.fill();
-      }
-
-      context.fillStyle = towerData.color;
-      context.fillStyle = '#777';
-      context.fillRect(centerX - tileSize / 3, centerY - tileSize / 3, tileSize * 2 / 3, tileSize * 2 / 3);
-      context.strokeStyle = '#444';
-      context.lineWidth = 2;
-      context.strokeRect(centerX - tileSize / 3, centerY - tileSize / 3, tileSize * 2 / 3, tileSize * 2 / 3);
-
-      context.save();
-      context.translate(centerX, centerY);
-      context.rotate(tower.rotation);
-
-      context.fillStyle = towerData.color;
-      context.fillRect(0, -tileSize / 8, tileSize / 2, tileSize / 4);
-      context.strokeStyle = '#333';
-      context.strokeRect(0, -tileSize / 8, tileSize / 2, tileSize / 4);
-
-      context.restore();
-    }
-  }
-
-  private drawEnemies(context: CanvasRenderingContext2D): void {
-    const { tileSize, enemies } = this.game.state;
-    const radius = tileSize / 3;
-
-    for (const enemy of enemies) {
-      context.save();
-      context.translate(enemy.x, enemy.y);
-      context.rotate(enemy.rotation);
-
-      context.fillStyle = enemy.color;
-      context.strokeStyle = 'black';
-      context.lineWidth = 2;
-
-      switch (enemy.type) {
-        
-        case 'TANK': {
-          const tankWidth = radius * 2;
-          const tankLength = radius * 2.2; 
-          
-          context.fillStyle = '#444';
-          context.fillRect(-tankLength / 2, -tankWidth / 2, tankLength, tankWidth * 0.3); 
-          context.fillRect(-tankLength / 2, tankWidth / 2 - tankWidth * 0.3, tankLength, tankWidth * 0.3); 
-          
-          context.fillStyle = enemy.color;
-          context.fillRect(-tankLength / 2 * 0.8, -tankWidth / 2 * 0.6, tankLength * 0.8, tankWidth * 0.6);
-          
-          context.fillStyle = '#888';
-          context.beginPath();
-          context.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
-          context.fill();
-          
-          context.fillStyle = '#555';
-          context.fillRect(0, -radius * 0.15, radius * 1.5, radius * 0.3);
-          break;
-        }
-
-        case 'HELICOPTER': {
-          const heliLength = radius * 2.2;
-          const heliWidth = radius * 1.6;
-
-          context.fillStyle = enemy.color;
-          context.fillRect(-heliLength / 2, -heliWidth * 0.1, heliLength * 0.4, heliWidth * 0.2);
-
-          context.beginPath();
-          context.ellipse(0, 0, heliLength / 3, heliWidth / 2, 0, 0, Math.PI * 2);
-          context.fill();
-          context.stroke();
-
-          context.fillStyle = '#555';
-          context.beginPath();
-          context.arc(-heliLength / 2, 0, radius * 0.25, 0, Math.PI * 2);
-          context.fill();
-          
-          context.restore();
-
-          this.drawEnemyHealthBar(context, enemy, radius);
-          
-          context.fillStyle = 'rgba(10, 10, 10, 0.4)';
-          context.beginPath();
-          context.arc(enemy.x, enemy.y, radius * 1.8, 0, Math.PI * 2);
-          context.fill();
-          
-          continue;
-        }
-
-        case 'BOSS_TANK': {
-          const bossWidth = radius * 4; 
-          const bossLength = radius * 3; 
-          
-          context.fillStyle = '#222';
-          context.fillRect(-bossLength / 2, -bossWidth / 2, bossLength, bossWidth * 0.3); 
-          context.fillRect(-bossLength / 2, bossWidth / 2 - bossWidth * 0.3, bossLength, bossWidth * 0.3); 
-          
-          context.fillStyle = enemy.color;
-          context.fillRect(-bossLength / 2 * 0.8, -bossWidth / 2 * 0.6, bossLength * 0.8, bossWidth * 0.6);
-          
-          context.fillStyle = '#FFA500';
-          context.beginPath();
-          context.arc(0, 0, radius * 0.7, 0, Math.PI * 2);
-          context.fill();
-          
-          context.fillStyle = '#FF0000';
-          context.fillRect(0, -radius * 0.25, radius * 1.5, radius * 0.15);
-          context.fillRect(0, radius * 0.1, radius * 1.5, radius * 0.15);
-          break;
-        }
-        
-        case 'JET': {
-          const jetLength = radius * 2.5;
-          const jetWidth = radius * 2.8;
-
-          context.beginPath();
-          context.moveTo(jetLength / 2, 0);
-          context.lineTo(-jetLength / 2, -jetWidth / 2);
-          context.lineTo(-jetLength / 2 * 0.8, 0);
-          context.lineTo(-jetLength / 2, jetWidth / 2);
-          context.closePath();
-          context.fill();
-          context.stroke();
-          break;
-        }
-        
-        case 'VEHICLE': {
-          const vehicleWidth = radius * 1.6;
-          const vehicleLength = radius * 2.8;
-          const wheelRadius = radius * 0.3;
-
-          context.fillStyle = enemy.color;
-          context.fillRect(-vehicleLength / 2, -vehicleWidth / 2, vehicleLength, vehicleWidth);
-          context.strokeRect(-vehicleLength / 2, -vehicleWidth / 2, vehicleLength, vehicleWidth);
-
-          context.fillStyle = '#696969';
-
-          context.beginPath();
-          context.arc(vehicleLength * 0.35, -vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
-          context.arc(vehicleLength * 0.35, vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
-          context.fill();
-
-          context.beginPath();
-          context.arc(-vehicleLength * 0.35, -vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
-          context.arc(-vehicleLength * 0.35, vehicleWidth / 2, wheelRadius, 0, Math.PI * 2);
-          context.fill();
-          
-          context.fillStyle = '#A9A9A9'; 
-          context.beginPath();
-          context.arc(vehicleLength * 0.1, 0, radius * 0.4, 0, Math.PI * 2);
-          context.fill();
-          
-          context.fillStyle = '#696969';
-          context.fillRect(vehicleLength * 0.1 + radius * 0.3, -radius * 0.08, radius * 0.6, radius * 0.16);
-          break;
-        }
-      }
-      
-      if (enemy.type !== 'HELICOPTER') {
-        context.restore();
-      }
-
-      this.drawEnemyHealthBar(context, enemy, radius);
-    }
-  }
-
-  private drawEnemyHealthBar(context: CanvasRenderingContext2D, enemy: IEnemy, radius: number): void {
-      const healthPercentage = enemy.health / enemy.maxHealth;
-      const healthBarWidth = this.game.state.tileSize * 0.8;
-      const barX = enemy.x - healthBarWidth / 2;
-      const barY = enemy.y - radius - 12;
-
-      context.fillStyle = 'red';
-      context.fillRect(barX, barY, healthBarWidth, 5);
-      context.fillStyle = 'lime';
-      context.fillRect(barX, barY, healthBarWidth * healthPercentage, 5);
-  }
-
-  private drawBullets(context: CanvasRenderingContext2D): void {
-    const { bullets } = this.game.state;
-    for (const bullet of bullets) {
-      if (bullet.splashRadius > 0) {
-        context.fillStyle = 'black';
-        context.beginPath();
-        context.arc(bullet.x, bullet.y, 6, 0, Math.PI * 2);
-        context.fill();
-      } else {
-        context.fillStyle = bullet.color;
-        context.beginPath();
-        context.arc(bullet.x, bullet.y, 3, 0, Math.PI * 2);
-        context.fill();
-      }
-    }
-  }
-
-  private drawGameOver(context: CanvasRenderingContext2D): void {
-    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-    context.fillStyle = 'red';
-    context.font = '100px sans-serif';
-    context.textAlign = 'center';
-    context.fillText('GAME OVER', this._canvas.width / 2, this._canvas.height / 2 - 30);
-
-    context.font = '18px sans-serif';
-    context.fillText('Click Enter or Space to restart!', this._canvas.width / 2, this._canvas.height / 2 + 20);
-  }
-
-  private drawGameWon(context: CanvasRenderingContext2D): void {
-    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-    context.fillStyle = 'green';
-    context.font = '100px sans-serif';
-    context.textAlign = 'center';
-    context.fillText('WIN!', this._canvas.width / 2, this._canvas.height / 2 - 30);
-
-    context.font = '18px sans-serif';
-    context.fillText('Click Enter or Space to continue!', this._canvas.width / 2, this._canvas.height / 2 + 20);
-  }
-
-  private drawPauseScreen(context: CanvasRenderingContext2D): void {
-    context.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-    context.fillStyle = 'white';
-    context.font = '72px sans-serif';
-    context.textAlign = 'center';
-    context.fillText('PAUSE', this._canvas.width / 2, this._canvas.height / 2);
   }
 }
