@@ -303,11 +303,14 @@ export class TowerDefenseGameWindowComponent
 
   private updateBullets(): void {
     const state = this.game.state;
-    state.bullets = state.bullets.filter(bullet => {
+ 
+    for (let i = state.bullets.length - 1; i >= 0; i--) {
+      const bullet = state.bullets[i];
       const target = state.enemies.find(e => e.id === bullet.targetEnemyId);
 
       if (!target) {
-        return false;
+        state.bullets.splice(i, 1);
+        continue;
       }
 
       const dx = target.x - bullet.x;
@@ -318,7 +321,6 @@ export class TowerDefenseGameWindowComponent
         if (bullet.splashRadius > 0) {
           for (const enemy of state.enemies) {
             const distToExplosion = Math.sqrt(Math.pow(enemy.x - bullet.x, 2) + Math.pow(enemy.y - bullet.y, 2));
-            
             if (distToExplosion <= bullet.splashRadius) {
               if (enemy.isFlying && bullet.canHitAir) {
                 enemy.health -= bullet.damage;
@@ -331,13 +333,12 @@ export class TowerDefenseGameWindowComponent
           target.health -= bullet.damage;
         }
 
-        return false;
+        state.bullets.splice(i, 1);
+      } else {
+        bullet.x += (dx / distance) * bullet.speed;
+        bullet.y += (dy / distance) * bullet.speed;
       }
-
-      bullet.x += (dx / distance) * bullet.speed;
-      bullet.y += (dy / distance) * bullet.speed;
-      return true;
-    });
+    }
   }
 
   private updateWave(): void {
@@ -475,7 +476,10 @@ export class TowerDefenseGameWindowComponent
 
   private cleanupEnemies(): void {
     const state = this.game.state;
-    state.enemies = state.enemies.filter(enemy => {
+
+    for (let i = state.enemies.length - 1; i >= 0; i--) {
+      const enemy = state.enemies[i];
+
       if (enemy.pathIndex >= state.path.length) {
         if (enemy.type === 'BOSS_TANK') {
           state.baseHealth -= 10;
@@ -488,15 +492,17 @@ export class TowerDefenseGameWindowComponent
           state.isGameOver = true;
           state.isWaveActive = false;
         }
-        return false;
+        
+        state.enemies.splice(i, 1);
+        continue;
       }
       
       if (enemy.health <= 0) {
         state.gold += enemy.reward;
-        return false;
+        state.enemies.splice(i, 1);
+        continue;
       }
-      return true;
-    });
+    }
   }
 
 
