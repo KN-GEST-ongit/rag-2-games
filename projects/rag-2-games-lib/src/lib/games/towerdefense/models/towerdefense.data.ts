@@ -30,7 +30,7 @@ export const TowerTypes: Record<string, ITowerData> = {
   'CANNON': {
     name: 'Cannon Lvl 1',
     cost: 200,
-    damage: 120,
+    damage: 72,
     range: 3.5,
     fireRate: 90,
     color: '#444',
@@ -43,7 +43,7 @@ export const TowerTypes: Record<string, ITowerData> = {
   'CANNON_L2': {
     name: 'Cannon Lvl 2',
     cost: 0,
-    damage: 180,
+    damage: 108,
     range: 4.0,
     fireRate: 80,
     color: '#222',
@@ -54,9 +54,9 @@ export const TowerTypes: Record<string, ITowerData> = {
   'AA_GUN': {
     name: 'Anti-Air Gun Lvl 1',
     cost: 150,
-    damage: 130,
+    damage: 105,
     range: 4.0,
-    fireRate: 20,
+    fireRate: 30,
     color: '#00FF00',
     canHitAir: true,
     canHitGround: false,
@@ -67,9 +67,9 @@ export const TowerTypes: Record<string, ITowerData> = {
   'AA_GUN_L2': {
     name: 'Anti-Air Gun Lvl 2',
     cost: 0,
-    damage: 160,
+    damage: 155,
     range: 4.5,
-    fireRate: 15,
+    fireRate: 25,
     color: '#32CD32',
     canHitAir: true,
     canHitGround: false,
@@ -82,14 +82,14 @@ export const EnemyTypes = {
   'TANK': {
     health: 350,
     speed: 0.7,
-    reward: 25,
+    reward: 10,
     color: 'purple',
     isFlying: false
   },
   'HELICOPTER': {
     health: 175,
     speed: 1.2,
-    reward: 20,
+    reward: 15,
     color: '#00BFFF',
     isFlying: true
   },
@@ -101,16 +101,16 @@ export const EnemyTypes = {
     isFlying: false,
   },
   'VEHICLE': {
-    health: 200,
+    health: 180,
     speed: 1.5,
-    reward: 15,
+    reward: 5,
     color: '#0f0904ff',
     isFlying: false,
   },
   'JET': {
-    health: 140,
+    health: 120,
     speed: 2.5,
-    reward: 25,
+    reward: 15,
     color: '#A9A9A9',
     isFlying: true,
   }
@@ -119,7 +119,7 @@ export const EnemyTypes = {
 //FALE
 export const WaveDefinitions = {
   map0: [
-    [ { type: 'TANK', count: 8 }, { type: 'VEHICLE', count: 5 }, { type: 'HELICOPTER', count: 5 } ],
+    [ { type: 'TANK', count: 4 }, { type: 'VEHICLE', count: 3 }, { type: 'HELICOPTER', count: 2 } ],
     [ { type: 'TANK', count: 12 }, { type: 'HELICOPTER', count: 3 } ],
     [ { type: 'TANK', count: 15 }, { type: 'HELICOPTER', count: 6 } ],
     [ { type: 'TANK', count: 2 }, { type: 'HELICOPTER', count: 10 } ],
@@ -131,7 +131,7 @@ export const WaveDefinitions = {
     [ { type: 'TANK', count: 30 }, { type: 'HELICOPTER', count: 15 }, { type: 'BOSS_TANK', count: 2 } ],
   ],
   map1: [
-    [ { type: 'TANK', count: 10 }, { type: 'VEHICLE', count: 5 } ],
+    [ { type: 'TANK', count: 6 }, { type: 'VEHICLE', count: 3 } ],
     [ { type: 'HELICOPTER', count: 8 } ],
     [ { type: 'TANK', count: 14 }, { type: 'HELICOPTER', count: 4 } ],
     [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 10 } ],
@@ -155,7 +155,7 @@ export const WaveDefinitions = {
     [ { type: 'TANK', count: 20 }, { type: 'HELICOPTER', count: 20 }, { type: 'BOSS_TANK', count: 2 } ],
   ],
   map3: [
-    [ { type: 'TANK', count: 12 }, { type: 'VEHICLE', count: 5 } ],
+    [ { type: 'TANK', count: 6 }, { type: 'VEHICLE', count: 4 } ],
     [ { type: 'TANK', count: 8 }, { type: 'HELICOPTER', count: 6 } ],
     [ { type: 'HELICOPTER', count: 14 } ],
     [ { type: 'TANK', count: 18 }, { type: 'HELICOPTER', count: 5 } ],

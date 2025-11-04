@@ -8,7 +8,7 @@ import { IEnemy, ITower, IBullet } from './towerdefense.interfaces';
 export class TowerDefenseState implements TGameState {
   public tileSize = 40;
   public baseHealth = 20;
-  public gold = 200;
+  public gold = 350;
   public waveNumber = 0;
   public isWaveActive = false;
   public cursorX = 1;
