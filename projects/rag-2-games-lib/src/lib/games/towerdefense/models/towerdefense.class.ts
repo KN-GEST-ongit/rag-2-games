@@ -99,6 +99,7 @@ export class TowerDefense extends Game {
         q: { variableName: 'cycleTower', pressedValue: 1, releasedValue: 0 },
         p: { variableName: 'pause', pressedValue: 1, releasedValue: 0 },
         e: { variableName: 'sell', pressedValue: 1, releasedValue: 0 },
+        i: { variableName: 'info', pressedValue: 1, releasedValue: 0 },
       },
       `
       <move>: value of {1: left, 2: right, 3: up, 4: down};
@@ -106,6 +107,7 @@ export class TowerDefense extends Game {
       <cycleTower>: vale of {0: do not cycle, 1: cycle tower type};
       <pause>: value of {0: unpaused, 1: paused};
       <sell>: value of {0: do not sell, 1: sell tower};
+      <info>: value of {0: no info, 1: show info};
       `,
       {
         up: '[W]/[↑]',
@@ -117,7 +119,8 @@ export class TowerDefense extends Game {
         startWave: '[ENTER]',
         pause: '[P]',
         cycleTower: '[Q]',
-        sell: '[E]'
+        sell: '[E]',
+        info: '[I]'
       }
     ),
   ];

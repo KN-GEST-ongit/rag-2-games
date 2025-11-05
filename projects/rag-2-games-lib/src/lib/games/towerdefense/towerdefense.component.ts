@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
+import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -12,25 +14,58 @@ import * as Drawing from './models/towerdefense.drawing.helper';
 @Component({
   selector: 'app-towerdefense',
   standalone: true,
-  imports: [CanvasComponent],
+  imports: [CanvasComponent, CommonModule],
   template: `
     <div>
       Base Health: <b>{{ game.state.baseHealth }}</b> | 
       Gold: <b>{{ game.state.gold }}</b> | 
       Wave: <b>{{ game.state.waveNumber + 1 }}</b> |
-      Maps Completed: <b>{{ game.state.mapsCompleted }}</b> |
+      Maps Cleared: <b>{{ game.state.mapsCompleted }}</b> | 
       <b>{{ getCursorActionText() }}</b>
     </div>
+
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
-    <b>FPS: {{ fps }}</b> `,
+    <b>FPS: {{ fps }}</b>
+    <button (click)="toggleInfo()">Click [I] or HERE to check how to play.</button>
+
+    <div *ngIf="showInfo" class="absolute inset-0 w-full h-full flex justify-center items-center bg-black/85 z-50">
+      <div class="bg-mainGray text-gray-200 p-5 md:p-10 rounded-lg border-2 border-mainOrange max-w-3xl max-h-[80vh] overflow-y-auto relative">
+        
+        <button (click)="toggleInfo()" class="absolute top-2 right-3 w-10 h-10 text-mainOrange text-xl font-bold">X</button>
+        
+        <h2 class="text-center text-2xl text-mainOrange mb-4">Game Guide</h2>
+        
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-darkGray pb-1 mb-2">Objective</h3>
+        <p class="mb-4">Stop the enemy waves before they reach your base (red tile). Build towers on empty fields (dark green) to destroy them. Earn gold for every enemy defeated.</p>
+        
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-darkGray pb-1 mb-2">Your Towers</h3>
+        <ul>
+          <li class="mb-2"><b>Turret</b>: Versatile tower. Attacks <strong>ground and air</strong> targets. Good against everything.</li>
+          <li class="mb-2"><b>Cannon</b>: Heavy cannon. Attacks <strong>GROUND targets ONLY</strong>. Deals area-of-effect (splash) damage - ideal against groups of Tanks and Vehicles.</li>
+          <li class="mb-2"><b>AA Gun</b>: Specialist tower. Attacks <strong>AIR targets ONLY</strong>. Fires very fast. Essential for dealing with Helicopters and Jets.</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-darkGray pb-1 mb-2">Enemy Units</h3>
+        <ul>
+          <li class="mb-2"><b>Vehicle (VEHICLE)</b>: Basic, fast ground unit.</li>
+          <li class="mb-2"><b>Tank (TANK)</b>: Slow but durable ground target.</li>
+          <li class="mb-2"><b>Helicopter (HELICOPTER)</b>: Basic flying unit. Ignores the path. <strong>Cannons cannot hit it.</strong></li>
+          <li class="mb-2"><b>Jet (JET)</b>: Very fast flying unit. Low health, but hard to hit. <strong>Requires AA Guns.</strong></li>
+          <li class="mb-2"><b>Boss (BOSS_TANK)</b>: Huge ground tank. Extremely durable and takes 5 base lives. <strong>Ignored by AA Guns.</strong></li>
+        </ul>
+      </div>
+    </div>
+  `,
 })
 export class TowerDefenseGameWindowComponent
   extends BaseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
   public override game!: TowerDefense;
+  
+  public showInfo = false;
 
   public override ngOnInit(): void {
     super.ngOnInit();
@@ -53,6 +88,21 @@ export class TowerDefenseGameWindowComponent
   public override restart(): void { 
     this.game.state = new TowerDefenseState(); 
     this.setupGame();
+  }
+
+  public toggleInfo(): void {
+    this.showInfo = !this.showInfo;
+    this.isPaused = this.showInfo;
+  }
+
+  public togglePause(): void {
+    if (this.isPaused && this.showInfo) {
+      return;
+    }
+
+    if (this.game.state.isWaveActive){
+      this.isPaused = !this.isPaused;
+    }
   }
 
   public getSelectedTowerData(): ITowerData {
@@ -84,12 +134,18 @@ export class TowerDefenseGameWindowComponent
   private handleGlobalInput(): void {
     const player = this.game.players[0];
     const pauseAction = player.inputData['pause'] as number;
+    const infoAction = player.inputData['info'] as number;
 
     if (pauseAction === 1) {
       if (!this.game.state.isGameOver && !this.game.state.isGameWon) {
-        this.isPaused = !this.isPaused;
+        this.togglePause();
+        player.inputData['pause'] = 0;
       }
-      player.inputData['pause'] = 0;
+    }
+
+    if (infoAction === 1) {
+      this.toggleInfo();
+      player.inputData['info'] = 0;
     }
   }
 
