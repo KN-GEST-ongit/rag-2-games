@@ -11,7 +11,7 @@ export const TowerTypes: Record<string, ITowerData> = {
     color: 'brown',
     canHitAir: true,
     canHitGround: true,
-    upgradeCost: 100,
+    upgradeCost: 200,
     upgradesTo: 'BASIC_L2',
     splashRadius: 0
   },
@@ -61,7 +61,7 @@ export const TowerTypes: Record<string, ITowerData> = {
     canHitAir: true,
     canHitGround: false,
     splashRadius: 0,
-    upgradeCost: 200,
+    upgradeCost: 230,
     upgradesTo: 'AA_GUN_L2'
   },
   'AA_GUN_L2': {
@@ -94,14 +94,14 @@ export const EnemyTypes = {
     isFlying: true
   },
   'BOSS_TANK': {
-    health: 2500,
+    health: 4000,
     speed: 0.5,
-    reward: 500,
+    reward: 200,
     color: '#FF4500',
     isFlying: false,
   },
   'VEHICLE': {
-    health: 180,
+    health: 220,
     speed: 1.5,
     reward: 5,
     color: '#0f0904ff',
@@ -164,6 +164,6 @@ export const WaveDefinitions = {
     [ { type: 'HELICOPTER', count: 22 }, { type: 'TANK', count: 5 } ],
     [ { type: 'TANK', count: 30 } ],
     [ { type: 'TANK', count: 20 }, { type: 'HELICOPTER', count: 15 } ],
-    [ { type: 'TANK', count: 25 }, { type: 'HELICOPTER', count: 20 }, { type: 'BOSS_TANK', count: 3 } ],
+    [ { type: 'TANK', count: 25 }, { type: 'HELICOPTER', count: 20 }, { type: 'BOSS_TANK', count: 2 } ],
   ],
 };
