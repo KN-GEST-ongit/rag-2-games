@@ -6,4 +6,5 @@ export abstract class Game {
   public abstract players: Player[];
   public abstract state: TGameState;
   public abstract outputSpec: string;
+  public abstract author: string;
 }
