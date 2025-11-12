@@ -49,6 +49,7 @@ export class SpaceinvadersGameWindowComponent
   protected override update(): void {
     super.update();
 
+    if (!this.isPaused) { 
     this.handleInput();
     this.updateLaser();
     this.checkWideLaserStatus();
@@ -59,6 +60,7 @@ export class SpaceinvadersGameWindowComponent
     this.checkLossCondition();
 
     this.render();
+    }
   }
 
    private handleInput(): void {
