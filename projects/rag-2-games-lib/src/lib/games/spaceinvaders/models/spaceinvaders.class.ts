@@ -60,6 +60,7 @@ export class SpaceinvadersState implements TGameState {
 
 export class Spaceinvaders extends Game {
     public override name = 'spaceinvaders';
+    public override author = 'Jakub Skibicki';
     public override state = new SpaceinvadersState();
 
     public override outputSpec = `
