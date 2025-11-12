@@ -159,6 +159,8 @@ export class SpaceinvadersGameWindowComponent
       this.game.state.difficulty++;
       this.game.state.score += 100;
       this.game.state.generateAliens();
+
+      this.game.state.modChance = Math.min(this.game.state.modChance + (this.game.state.difficulty - 1) * 0.05, (this.game.state.modChance + 0.2));
     }
   }
 
