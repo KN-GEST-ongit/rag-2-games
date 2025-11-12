@@ -107,6 +107,8 @@ export class Spaceinvaders extends Game {
             {
                 a: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
                 d: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+                ArrowLeft: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
+                ArrowRight: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
                 ' ': { variableName: 'shoot', pressedValue: 1, releasedValue: 0 },
             },
             '<move>: value of {-1, 0, 1}; <shoot>: value of {0, 1}, 0: not shoot, 1: shoot',
