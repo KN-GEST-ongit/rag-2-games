@@ -10,6 +10,7 @@ import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.compon
 import { SpaceinvadersGameWindowComponent } from './games/spaceinvaders/spaceinvaders.component';
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
 import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
+import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefense.component';
 
 
 @Component({
@@ -22,8 +23,9 @@ import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
     HappyJumpGameWindowComponent,
   	SpaceinvadersGameWindowComponent,
   	SnakeGameWindowComponent,
-  	PacmanGameWindowComponent],
-
+  	PacmanGameWindowComponent,
+    TowerDefenseGameWindowComponent],
+    
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -82,6 +84,15 @@ import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
       } 
 			@case ('pacman') {
         <app-pacman
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+			@case ('towerdefense') {
+        <app-towerdefense
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
