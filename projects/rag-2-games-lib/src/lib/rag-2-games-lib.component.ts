@@ -7,8 +7,10 @@ import { PongGameWindowComponent } from './games/pong/pong.component';
 import { SkiJumpGameWindowComponent } from './games/skijump/skijump.component';
 import { FlappyBirdGameWindowComponent } from './games/flappybird/flappybird.component';
 import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.component';
+import { SpaceinvadersGameWindowComponent } from './games/spaceinvaders/spaceinvaders.component';
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
 import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
+
 
 @Component({
   selector: 'rag-2-games-lib',
@@ -18,8 +20,10 @@ import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
     SkiJumpGameWindowComponent,
     FlappyBirdGameWindowComponent,
     HappyJumpGameWindowComponent,
+  	SpaceinvadersGameWindowComponent,
   	SnakeGameWindowComponent,
   	PacmanGameWindowComponent],
+
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -52,6 +56,15 @@ import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
       @case ('happyjump') {
         <app-happyjump
           class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+			@case ('spaceinvaders') {
+        <app-spaceinvaders
+        class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
           [setAbstractGame]="game"
