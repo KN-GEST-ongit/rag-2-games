@@ -95,18 +95,16 @@ export class TowerDefense extends Game {
         ArrowRight: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
         ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
         Enter: { variableName: 'action', pressedValue: 2, releasedValue: 0 },
+        q: { variableName: 'action', pressedValue: 3, releasedValue: 0 },
+        e: { variableName: 'action', pressedValue: 4, releasedValue: 0 },
 
-        q: { variableName: 'cycleTower', pressedValue: 1, releasedValue: 0 },
         p: { variableName: 'pause', pressedValue: 1, releasedValue: 0 },
-        e: { variableName: 'sell', pressedValue: 1, releasedValue: 0 },
         i: { variableName: 'info', pressedValue: 1, releasedValue: 0 },
       },
       `
       <move>: value of {1: left, 2: right, 3: up, 4: down};
-      <action>: value of {1: build/upgrade tower, 2: start wave};
-      <cycleTower>: vale of {0: do not cycle, 1: cycle tower type};
+      <action>: value of {1: build/upgrade tower, 2: start wave, 3: cycle tower type, 4: sell tower};
       <pause>: value of {0: unpaused, 1: paused};
-      <sell>: value of {0: do not sell, 1: sell tower};
       <info>: value of {0: no info, 1: show info};
       `,
       {

@@ -213,8 +213,6 @@ export class TowerDefenseGameWindowComponent
   private handleActions(): void {
     const player = this.game.players[0];
     const action = player.inputData['action'] as number;
-    const cycleTower = player.inputData['cycleTower'] as number;
-    const sellAction = player.inputData['sell'] as number;
     const state = this.game.state;
 
     if (action === 1) {
@@ -229,7 +227,7 @@ export class TowerDefenseGameWindowComponent
       this.startWave();
     }
     
-    if (cycleTower === 1) {
+    if (action === 3) {
       const availableTowers = Object.keys(TowerTypes) as (keyof typeof TowerTypes)[];
       let currentIndex = availableTowers.indexOf(this.game.state.selectedTowerType);
       
@@ -239,13 +237,11 @@ export class TowerDefenseGameWindowComponent
       } while (TowerTypes[this.game.state.selectedTowerType].cost === 0);
     }
 
-    if (sellAction === 1) {
+    if (action === 4) {
       this.trySellTower(state.cursorX, state.cursorY);
     }
 
     player.inputData['action'] = 0;
-    player.inputData['cycleTower'] = 0;
-    player.inputData['sell'] = 0;
   }
 
   private trySellTower(x: number, y: number): void {
