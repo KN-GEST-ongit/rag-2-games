@@ -104,6 +104,8 @@ export class TowerDefense extends Game {
       `
       <move>: value of {1: left, 2: right, 3: up, 4: down};
       <action>: value of {1: build/upgrade tower, 2: start wave, 3: cycle tower type, 4: sell tower};
+      <pause>: value of {1: pause/unpause game};
+      <info>: value of {1: show/hide info};
       `,
       {
         up: '[W]/[↑]',
