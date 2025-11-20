@@ -27,33 +27,35 @@ import * as Drawing from './models/towerdefense.drawing.helper';
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
+    
+    <b>Next wave: <span class="text-lightOragne">{{ getNextWaveInfo() }}</span></b>
     <b>FPS: {{ fps }}</b>
     <button (click)="toggleInfo()">Click [I] or HERE to check how to play.</button>
 
-    <div *ngIf="showInfo" class="absolute inset-0 w-full h-full flex justify-center items-center bg-black/85 z-50">
+    <div *ngIf="showInfo" class="absolute inset-0 w-full h-full flex justify-center items-center bg-darkGray bg-opacity-90 z-50">
       <div class="bg-mainGray text-gray-200 p-5 md:p-10 rounded-lg border-2 border-mainOrange max-w-3xl max-h-[80vh] overflow-y-auto relative">
         
         <button (click)="toggleInfo()" class="absolute top-2 right-3 w-10 h-10 text-mainOrange text-xl font-bold">X</button>
         
         <h2 class="text-center text-2xl text-mainOrange mb-4">Game Guide</h2>
         
-        <h3 class="text-xl font-semibold text-mainOrange border-b border-darkGray pb-1 mb-2">Objective</h3>
-        <p class="mb-4">Stop the enemy waves before they reach your base (red tile). Build towers on empty fields (dark green) to destroy them. Earn gold for every enemy defeated.</p>
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Objective</h3>
+        <p class="mb-4 text-mainCreme">Stop the enemy waves before they reach your base (red tile). Build towers on empty fields (dark green) to destroy them. Earn gold for every enemy defeated.</p>
         
-        <h3 class="text-xl font-semibold text-mainOrange border-b border-darkGray pb-1 mb-2">Your Towers</h3>
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Your Towers</h3>
         <ul>
-          <li class="mb-2"><b>Turret</b>: Versatile tower. Attacks <strong>ground and air</strong> targets. Good against everything.</li>
-          <li class="mb-2"><b>Cannon</b>: Heavy cannon. Attacks <strong>GROUND targets ONLY</strong>. Deals area-of-effect (splash) damage - ideal against groups of Tanks and Vehicles.</li>
-          <li class="mb-2"><b>AA Gun</b>: Specialist tower. Attacks <strong>AIR targets ONLY</strong>. Fires very fast. Essential for dealing with Helicopters and Jets.</li>
+          <li class="mb-2 text-mainCreme"><b>Turret</b>: Versatile tower. Attacks <strong>ground and air</strong> targets. Good against everything.</li>
+          <li class="mb-2 text-mainCreme"><b>Cannon</b>: Heavy cannon. Attacks <strong>GROUND targets ONLY</strong>. Deals area-of-effect (splash) damage - ideal against groups of Tanks and Vehicles.</li>
+          <li class="mb-2 text-mainCreme"><b>AA Gun</b>: Specialist tower. Attacks <strong>AIR targets ONLY</strong>. Fires very fast. Essential for dealing with Helicopters and Jets.</li>
         </ul>
 
-        <h3 class="text-xl font-semibold text-mainOrange border-b border-darkGray pb-1 mb-2">Enemy Units</h3>
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Enemy Units</h3>
         <ul>
-          <li class="mb-2"><b>Vehicle (VEHICLE)</b>: Basic, fast ground unit.</li>
-          <li class="mb-2"><b>Tank (TANK)</b>: Slow but durable ground target.</li>
-          <li class="mb-2"><b>Helicopter (HELICOPTER)</b>: Basic flying unit. Ignores the path. <strong>Cannons cannot hit it.</strong></li>
-          <li class="mb-2"><b>Jet (JET)</b>: Very fast flying unit. Low health, but hard to hit. <strong>Requires AA Guns.</strong></li>
-          <li class="mb-2"><b>Boss (BOSS_TANK)</b>: Huge ground tank. Extremely durable and takes 5 base lives. <strong>Ignored by AA Guns.</strong></li>
+          <li class="mb-2 text-mainCreme"><b>Vehicle (VEHICLE)</b>: Basic, fast ground unit.</li>
+          <li class="mb-2 text-mainCreme"><b>Tank (TANK)</b>: Slow but durable ground target.</li>
+          <li class="mb-2 text-mainCreme"><b>Helicopter (HELICOPTER)</b>: Basic flying unit. Ignores the path. <strong>Cannons cannot hit it.</strong></li>
+          <li class="mb-2 text-mainCreme"><b>Jet (JET)</b>: Very fast flying unit. Low health, but hard to hit. <strong>Requires AA Guns.</strong></li>
+          <li class="mb-2 text-mainCreme"><b>Boss (BOSS_TANK)</b>: Huge ground tank. Extremely durable and takes 5 base lives. <strong>Ignored by AA Guns.</strong></li>
         </ul>
       </div>
     </div>
@@ -107,6 +109,23 @@ export class TowerDefenseGameWindowComponent
 
   public getSelectedTowerData(): ITowerData {
     return TowerTypes[this.game.state.selectedTowerType];
+  }
+
+  protected getNextWaveInfo(): string {
+    const state = this.game.state;
+
+    const mapKey = `map${state.currentMapIndex}` as keyof typeof WaveDefinitions;
+    const waves = WaveDefinitions[mapKey];
+
+    if (!waves || state.waveNumber >= waves.length) {
+      return 'No more waves';
+    }
+
+    const nextWaveData = waves[state.waveNumber];
+
+    return nextWaveData
+      .map(group => `${group.count}x ${group.type}`)
+      .join(', ');
   }
 
   public getCursorActionText(): string {
