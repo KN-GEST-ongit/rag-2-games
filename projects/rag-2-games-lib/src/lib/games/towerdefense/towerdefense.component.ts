@@ -27,6 +27,8 @@ import * as Drawing from './models/towerdefense.drawing.helper';
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
+    
+    <b>Next wave: <span class="text-lightOragne">{{ getNextWaveInfo() }}</span></b>
     <b>FPS: {{ fps }}</b>
     <button (click)="toggleInfo()">Click [I] or HERE to check how to play.</button>
 
@@ -107,6 +109,23 @@ export class TowerDefenseGameWindowComponent
 
   public getSelectedTowerData(): ITowerData {
     return TowerTypes[this.game.state.selectedTowerType];
+  }
+
+  protected getNextWaveInfo(): string {
+    const state = this.game.state;
+
+    const mapKey = `map${state.currentMapIndex}` as keyof typeof WaveDefinitions;
+    const waves = WaveDefinitions[mapKey];
+
+    if (!waves || state.waveNumber >= waves.length) {
+      return 'No more waves';
+    }
+
+    const nextWaveData = waves[state.waveNumber];
+
+    return nextWaveData
+      .map(group => `${group.count}x ${group.type}`)
+      .join(', ');
   }
 
   public getCursorActionText(): string {
