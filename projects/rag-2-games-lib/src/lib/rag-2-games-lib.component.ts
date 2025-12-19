@@ -7,9 +7,11 @@ import { PongGameWindowComponent } from './games/pong/pong.component';
 import { SkiJumpGameWindowComponent } from './games/skijump/skijump.component';
 import { FlappyBirdGameWindowComponent } from './games/flappybird/flappybird.component';
 import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.component';
+import { SpaceinvadersGameWindowComponent } from './games/spaceinvaders/spaceinvaders.component';
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
 import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
 import { BombermanGameWindowComponent } from './games/bomberman/bomberman.component';
+import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefense.component';
 
 @Component({
   selector: 'rag-2-games-lib',
@@ -22,7 +24,10 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
     SnakeGameWindowComponent,
     PacmanGameWindowComponent,
     BombermanGameWindowComponent,
+    SpaceinvadersGameWindowComponent,
+    TowerDefenseGameWindowComponent,
   ],
+
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -61,6 +66,15 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
+      @case ('spaceinvaders') {
+        <app-spaceinvaders
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
       @case ('snake') {
         <app-snake
           class="flex flex-col items-center w-3/4"
@@ -72,6 +86,15 @@ import { BombermanGameWindowComponent } from './games/bomberman/bomberman.compon
       }
       @case ('pacman') {
         <app-pacman
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+      @case ('towerdefense') {
+        <app-towerdefense
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
