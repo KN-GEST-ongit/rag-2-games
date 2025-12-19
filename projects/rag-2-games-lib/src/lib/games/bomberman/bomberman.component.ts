@@ -32,7 +32,9 @@ export class BombermanGameWindowComponent
   private _gridWidth = 15;
   private _gridHeight = 13;
   private _cellSize = 50;
-  private _moveSpeed = 5;
+  private _moveSpeed = 4;
+  private _p1LastAxis: 'x' | 'y' = 'y';
+  private _p2LastAxis: 'x' | 'y' = 'y';
 
   private _playerSize = 0.8 * this._cellSize;
 
@@ -99,9 +101,10 @@ export class BombermanGameWindowComponent
   }
 
   private selectMap(): void {
-    const maps = Object.values(BombermanMap);
-    const randomIndex = Math.floor(Math.random() * maps.length);
-    this._currentMap = maps[randomIndex];
+    // const maps = Object.values(BombermanMap);
+    // const randomIndex = Math.floor(Math.random() * maps.length);
+    // this._currentMap = maps[randomIndex];
+    this._currentMap = BombermanMap.map1;
   }
 
   private loadMap(): void {
@@ -127,18 +130,30 @@ export class BombermanGameWindowComponent
 
   private movePlayers(): void {
     if (this.game.state.player1alive) {
-      const moveX = Number(this.game.players[0].inputData['moveX']);
-      const moveY = Number(this.game.players[0].inputData['moveY']);
+      let moveX = Number(this.game.players[0].inputData['moveX']);
+      let moveY = Number(this.game.players[0].inputData['moveY']);
+
+      if (moveX !== 0 && moveY !== 0) {
+        if (this._p1LastAxis === 'y') {
+          moveX = 0;
+        } else {
+          moveY = 0;
+        }
+      }
+
+      if (moveX !== 0) {
+        this._p1LastAxis = 'x';
+      } else if (moveY !== 0) {
+        this._p1LastAxis = 'y';
+      }
 
       if (moveX !== 0) {
         const newX = this.game.state.player1x + moveX * this._moveSpeed;
-
         if (this.canMove(newX, this.game.state.player1y)) {
           this.game.state.player1x = newX;
         }
       } else if (moveY !== 0) {
         const newY = this.game.state.player1y + moveY * this._moveSpeed;
-
         if (this.canMove(this.game.state.player1x, newY)) {
           this.game.state.player1y = newY;
         }
@@ -146,12 +161,25 @@ export class BombermanGameWindowComponent
     }
 
     if (this.game.state.player2alive) {
-      const moveX = Number(this.game.players[1].inputData['moveX']);
-      const moveY = Number(this.game.players[1].inputData['moveY']);
+      let moveX = Number(this.game.players[1].inputData['moveX']);
+      let moveY = Number(this.game.players[1].inputData['moveY']);
+
+      if (moveX !== 0 && moveY !== 0) {
+        if (this._p2LastAxis === 'y') {
+          moveX = 0;
+        } else {
+          moveY = 0;
+        }
+      }
+
+      if (moveX !== 0) {
+        this._p2LastAxis = 'x';
+      } else if (moveY !== 0) {
+        this._p2LastAxis = 'y';
+      }
 
       if (moveX !== 0) {
         const newX = this.game.state.player2x + moveX * this._moveSpeed;
-
         if (this.canMove(newX, this.game.state.player2y)) {
           this.game.state.player2x = newX;
         }
@@ -346,14 +374,19 @@ export class BombermanGameWindowComponent
           const wall = this.game.state.walls[wallIndex];
           if (wall.destructible) {
             this.game.state.walls.splice(wallIndex, 1);
+            continue;
+          } else {
+            break;
           }
-          break;
         }
       }
     }
   }
 
   private checkPlayerHit(gridX: number, gridY: number): void {
+    let didPlayer1Died = false;
+    let didPlayer2Died = false;
+
     if (this.game.state.player1alive) {
       if (
         this.isPlayerOnCell(
@@ -367,7 +400,7 @@ export class BombermanGameWindowComponent
         if (this.game.state.player1lives <= 0) {
           this.game.state.player1alive = false;
           this.game.state.player2score += 1;
-          this.resetGame();
+          didPlayer1Died = true;
         } else {
           this.respawnPlayer(0);
         }
@@ -387,11 +420,15 @@ export class BombermanGameWindowComponent
         if (this.game.state.player2lives <= 0) {
           this.game.state.player2alive = false;
           this.game.state.player1score += 1;
-          this.resetGame();
+          didPlayer2Died = true;
         } else {
           this.respawnPlayer(1);
         }
       }
+    }
+
+    if (didPlayer1Died || didPlayer2Died) {
+      this.resetGame();
     }
   }
 
