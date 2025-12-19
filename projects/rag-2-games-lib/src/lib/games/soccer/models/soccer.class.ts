@@ -6,7 +6,6 @@ import { IEntity } from '../../../games/soccer/models/soccer.object';
 
 
 export class SoccerState implements TGameState {
-    // to implement
     public width = 960;
     public height = 500;
 

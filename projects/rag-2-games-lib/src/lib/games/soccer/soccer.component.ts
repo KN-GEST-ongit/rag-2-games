@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+/* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -71,6 +73,7 @@ export class SoccerGameWindowComponent
       this.drawEntity(context, this.game.state.player1);
       this.drawEntity(context, this.game.state.player2);
 
+      this.drawBall(context, this.game.state.ball);
 
       context.restore();
     }
@@ -134,6 +137,11 @@ export class SoccerGameWindowComponent
   private physicsStep(): void {
     this.moveEntity(this.game.state.player1);
     this.moveEntity(this.game.state.player2);
+
+    this.updateBallPosition();
+
+    this.checkPlayerBallCollision(this.game.state.player1, this.game.state.ball);
+    this.checkPlayerBallCollision(this.game.state.player2, this.game.state.ball);
   }
 
   private moveEntity(entity: IMovableEntity): void {
@@ -177,6 +185,84 @@ export class SoccerGameWindowComponent
     context.strokeRect(topLeftX, topLeftY, sideLength, sideLength);
   }
 
+  private checkPlayerBallCollision(player: IMovableEntity, ball: IMovableEntity): void {
+      const dx = ball.x - player.x;
+      const dy = ball.y - player.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+
+      if (dist < player.radius + ball.radius) {
+          const angle = Math.atan2(dy, dx);
+          const force = this.game.state.kickPower;
+
+          ball.vx = Math.cos(angle) * force + player.vx * 0.5;
+          ball.vy = Math.sin(angle) * force + player.vy * 0.5;
+
+          const overlap = (player.radius + ball.radius) - dist;
+          ball.x += Math.cos(angle) * overlap;
+          ball.y += Math.sin(angle) * overlap;
+      }
+  }
+
+  private updateBallPosition(): void {
+    const ball = this.game.state.ball;
+    
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    ball.vx *= this.game.state.friction;
+    ball.vy *= this.game.state.friction;
+
+    this.checkBallWallCollision();
+  }
+    
+
+  private checkBallWallCollision(): void {
+    const ball = this.game.state.ball;
+    const w = this.game.state.width;
+    const h = this.game.state.height;
+    const r = ball.radius;
+      
+    if (ball.y - r < 0) { ball.y = r; ball.vy *= -this.game.state.wallBounciness; }
+    if (ball.y + r > h) { ball.y = h - r; ball.vy *= -this.game.state.wallBounciness; }
+
+    const goalTop = (h / 2) - 80;
+    const goalBottom = (h / 2) + 80;
+
+    if (ball.x - r < 0) {
+        if (ball.y > goalTop && ball.y < goalBottom) {
+            this.handleGoal('blue');
+        } else {
+            ball.x = r; 
+            ball.vx *= -this.game.state.wallBounciness;
+        }
+    }
+
+    if (ball.x + r > w) {
+        if (ball.y > goalTop && ball.y < goalBottom) {
+            this.handleGoal('red');
+        } else {
+            ball.x = w - r; 
+            ball.vx *= -this.game.state.wallBounciness;
+        }
+    }
+  }
+
+  private handleGoal(scorer: 'red' | 'blue'): void {
+      if (scorer === 'red') this.game.state.scoreRed++;
+      else this.game.state.scoreBlue++;
+
+      this.restart();
+  }
+
+  private drawBall(context: CanvasRenderingContext2D, ball: IMovableEntity): void {
+    context.beginPath();
+    context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    context.fillStyle = ball.color;
+    context.fill();
+    context.strokeStyle = 'black';
+    context.lineWidth = 2;
+    context.stroke();
+  }
 
 }
 
