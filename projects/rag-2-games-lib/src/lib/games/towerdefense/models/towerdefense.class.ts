@@ -1,0 +1,125 @@
+import { TGameState } from '../../../models/game-state.type';
+import { Game } from '../../../models/game.class';
+import { Player } from '../../../models/player.class';
+import { TowerDefenseMaps } from './towerdefense.maps';
+import { TowerTypes } from './towerdefense.data';
+import { IEnemy, ITower, IBullet } from './towerdefense.interfaces';
+
+export class TowerDefenseState implements TGameState {
+  public tileSize = 40;
+  public baseHealth = 20;
+  public gold = 350;
+  public waveNumber = 0;
+  public isWaveActive = false;
+  public cursorX = 1;
+  public cursorY = 1;
+  public nextEnemyId = 0;
+  public isGameOver = false;
+  public isGameWon = false;
+
+  public towers: ITower[] = [];
+  public enemies: IEnemy[] = [];
+  public map: number[][];
+  public bullets: IBullet[] = [];
+
+  public path: { x: number; y: number }[] = [];
+
+  public selectedTowerType: keyof typeof TowerTypes = 'BASIC';
+
+  public enemiesToSpawn = 0;
+  public currentMapIndex = 0;
+  public mapsCompleted = 0;
+
+  public constructor(mapIndex?: number) {
+    let chosenMapIndex: number;
+
+    if (mapIndex !== undefined && mapIndex >= 0 && mapIndex < TowerDefenseMaps.length) {
+      chosenMapIndex = mapIndex;
+    } else {
+      chosenMapIndex = Math.floor(Math.random() * TowerDefenseMaps.length);
+    }
+
+    this.map = TowerDefenseMaps[chosenMapIndex];
+    this.currentMapIndex = chosenMapIndex; 
+  }
+}
+
+export class TowerDefense extends Game {
+  public override name = 'towerdefense';
+  public override author = 'Norbert Mazur';
+  public override state = new TowerDefenseState();
+
+  private _mapWidth = this.state.map[0].length;
+  private _mapHeight = this.state.map.length;
+
+  public override outputSpec = `
+    output:
+    tileSize: int, <1, 100>;
+    baseHealth: int, <0, inf>;
+    gold: int, <0, inf>;
+    waveNumber: int, <0, inf>;
+    isWaveActive: boolean;
+    cursorX: int, <0, ${this._mapWidth - 1}>;
+    cursorY: int, <0, ${this._mapHeight - 1}>;
+    map: int[${this._mapHeight}][${this._mapWidth}] (0: free, 1: path, 2: start, 3: base);
+    isGameOver: boolean;
+    isGameWon: boolean;
+
+  default values:
+    tileSize: ${this.state.tileSize};
+    baseHealth: ${this.state.baseHealth};
+    gold: ${this.state.gold};
+    waveNumber: ${this.state.waveNumber};
+    isWaveActive: ${this.state.isWaveActive};
+    cursorX: ${this.state.cursorX};
+    cursorY: ${this.state.cursorY};
+    map: [[...]];
+    isGameOver: ${this.state.isGameOver};
+    isGameWon: ${this.state.isGameWon};
+    `;
+    
+   public override players = [
+    new Player(
+      0,
+      true,
+      'Player 1',
+      { move: 0, action: 0, pause: 0 },
+      {
+        w: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        s: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        a: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+        d: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+        ArrowUp: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        ArrowDown: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        ArrowLeft: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+        ArrowRight: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+        ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'action', pressedValue: 2, releasedValue: 0 },
+        q: { variableName: 'action', pressedValue: 3, releasedValue: 0 },
+        e: { variableName: 'action', pressedValue: 4, releasedValue: 0 },
+
+        p: { variableName: 'pause', pressedValue: 1, releasedValue: 0 },
+        i: { variableName: 'info', pressedValue: 1, releasedValue: 0 },
+      },
+      `
+      <move>: value of {1: left, 2: right, 3: up, 4: down};
+      <action>: value of {1: build/upgrade tower, 2: start wave, 3: cycle tower type, 4: sell tower};
+      <pause>: value of {1: pause/unpause game};
+      <info>: value of {1: show/hide info};
+      `,
+      {
+        up: '[W]/[↑]',
+        down: '[S]/[↓]',
+        left: '[A]/[←]',
+        right: '[D]/[→]',
+        build: '[SPACE]',
+        upgrade: '[SPACE]',
+        startWave: '[ENTER]',
+        pause: '[P]',
+        cycleTower: '[Q]',
+        sell: '[E]',
+        info: '[I]'
+      }
+    ),
+  ];
+}
