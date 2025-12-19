@@ -24,9 +24,8 @@ import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
   	SpaceinvadersGameWindowComponent,
   	SnakeGameWindowComponent,
   	PacmanGameWindowComponent,
-    TowerDefenseGameWindowComponent],
-    
-  	TetrisGameWindowComponent
+    TowerDefenseGameWindowComponent,
+    TetrisGameWindowComponent,
   ],
   template: `
     @switch (gameName) {
@@ -95,15 +94,6 @@ import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
       }
 			@case ('towerdefense') {
         <app-towerdefense
-          class="flex flex-col items-center w-3/4"
-          [gameRestart]="gameRestart"
-          [gamePause]="gamePause"
-          [setAbstractGame]="game"
-          [setSocketInputDataReceive]="socketInputData"
-          (gameStateDataEmitter)="handleGameStateData($event)" />
-      }
-			@case ('tetris') {
-        <app-tetris
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
