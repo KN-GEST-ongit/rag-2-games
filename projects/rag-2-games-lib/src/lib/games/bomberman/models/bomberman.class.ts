@@ -6,6 +6,7 @@ import {
   IBombermanBomb,
   IBombermanWall,
   IBombermanPowerUp,
+  IBombermanExplosion,
 } from './bomberman.object';
 
 export class BombermanState implements TGameState {
@@ -30,6 +31,7 @@ export class BombermanState implements TGameState {
   public walls: IBombermanWall[] = [];
   public bombs: IBombermanBomb[] = [];
   public powerups: IBombermanPowerUp[] = [];
+  public explosions: IBombermanExplosion[] = [];
 }
 
 export class Bomberman extends Game {

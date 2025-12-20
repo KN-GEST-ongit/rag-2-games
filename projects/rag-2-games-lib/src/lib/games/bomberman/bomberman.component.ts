@@ -76,6 +76,7 @@ export class BombermanGameWindowComponent
       this.movePlayers();
       this.handleBombPlacement();
       this.updateBombs();
+      this.updateExplosions();
     }
 
     this.render();
@@ -103,6 +104,7 @@ export class BombermanGameWindowComponent
     this.game.state.walls = [];
     this.game.state.bombs = [];
     this.game.state.powerups = [];
+    this.game.state.explosions = [];
 
     this.selectMap();
     this.loadMap();
@@ -342,6 +344,7 @@ export class BombermanGameWindowComponent
 
   private explodeBomb(bomb: { x: number; y: number; range: number }): void {
     this.checkPlayerHit(bomb.x, bomb.y);
+    this.createExplosionEffect(bomb.x, bomb.y);
 
     const directions = [
       { x: 1, y: 0 },
@@ -375,10 +378,13 @@ export class BombermanGameWindowComponent
             const wy = wall.y;
             this.game.state.walls.splice(wallIndex, 1);
             this.spawnPowerUp(wx, wy);
+            this.createExplosionEffect(checkX, checkY);
             continue;
           } else {
             break;
           }
+        } else {
+          this.createExplosionEffect(checkX, checkY);
         }
       }
     }
@@ -542,6 +548,26 @@ export class BombermanGameWindowComponent
     }
   }
 
+  private createExplosionEffect(x: number, y: number): void {
+    const hasExplosion = this.game.state.explosions.some(
+      e => e.x === x && e.y === y
+    );
+    if (!hasExplosion) {
+      this.game.state.explosions.push({ x, y, timer: 500 });
+    }
+  }
+
+  private updateExplosions(): void {
+    const deltaTime = 1000 / 60;
+    for (let i = this.game.state.explosions.length - 1; i >= 0; i--) {
+      const explosion = this.game.state.explosions[i];
+      explosion.timer -= deltaTime;
+      if (explosion.timer <= 0) {
+        this.game.state.explosions.splice(i, 1);
+      }
+    }
+  }
+
   private render(): void {
     const context = this._canvas.getContext('2d');
 
@@ -577,6 +603,16 @@ export class BombermanGameWindowComponent
         wall.y * this._cellSize + 0.5,
         this._cellSize - 1,
         this._cellSize - 1
+      );
+    });
+
+    context.fillStyle = '#ff8800';
+    this.game.state.explosions.forEach(explosion => {
+      context.fillRect(
+        explosion.x * this._cellSize + 2.5,
+        explosion.y * this._cellSize + 2.5,
+        this._cellSize - 5,
+        this._cellSize - 5
       );
     });
 

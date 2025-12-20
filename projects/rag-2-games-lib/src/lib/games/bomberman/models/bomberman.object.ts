@@ -17,3 +17,9 @@ export interface IBombermanPowerUp {
   y: number;
   type: 'bombs' | 'range' | 'speed';
 }
+
+export interface IBombermanExplosion {
+  x: number;
+  y: number;
+  timer: number;
+}
