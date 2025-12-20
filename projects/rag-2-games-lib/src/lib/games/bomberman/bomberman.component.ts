@@ -228,6 +228,48 @@ export class BombermanGameWindowComponent
       }
     }
 
+    for (const bomb of this.game.state.bombs) {
+      const bombLeft = bomb.x * this._cellSize;
+      const bombRight = bombLeft + this._cellSize;
+      const bombTop = bomb.y * this._cellSize;
+      const bombBottom = bombTop + this._cellSize;
+
+      if (
+        playerRight > bombLeft &&
+        playerLeft < bombRight &&
+        playerBottom > bombTop &&
+        playerTop < bombBottom
+      ) {
+        const p1Left = this.game.state.player1x;
+        const p1Right = p1Left + this._playerSize;
+        const p1Top = this.game.state.player1y;
+        const p1Bottom = p1Top + this._playerSize;
+
+        const isP1Inside =
+          p1Right > bombLeft &&
+          p1Left < bombRight &&
+          p1Bottom > bombTop &&
+          p1Top < bombBottom;
+
+        const p2Left = this.game.state.player2x;
+        const p2Right = p2Left + this._playerSize;
+        const p2Top = this.game.state.player2y;
+        const p2Bottom = p2Top + this._playerSize;
+
+        const isP2Inside =
+          p2Right > bombLeft &&
+          p2Left < bombRight &&
+          p2Bottom > bombTop &&
+          p2Top < bombBottom;
+
+        if (isP1Inside || isP2Inside) {
+          continue;
+        }
+
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -345,6 +387,7 @@ export class BombermanGameWindowComponent
   private explodeBomb(bomb: { x: number; y: number; range: number }): void {
     this.checkPlayerHit(bomb.x, bomb.y);
     this.createExplosionEffect(bomb.x, bomb.y);
+    this.triggerBombAt(bomb.x, bomb.y);
 
     const directions = [
       { x: 1, y: 0 },
@@ -359,6 +402,12 @@ export class BombermanGameWindowComponent
         const checkY = bomb.y + dir.y * i;
 
         this.checkPlayerHit(checkX, checkY);
+
+        const hasHitBomb = this.triggerBombAt(checkX, checkY);
+        if (hasHitBomb) {
+          this.createExplosionEffect(checkX, checkY);
+          break;
+        }
 
         let wallIndex = -1;
         for (let w = 0; w < this.game.state.walls.length; w++) {
@@ -566,6 +615,15 @@ export class BombermanGameWindowComponent
         this.game.state.explosions.splice(i, 1);
       }
     }
+  }
+
+  private triggerBombAt(x: number, y: number): boolean {
+    const targetBomb = this.game.state.bombs.find(b => b.x === x && b.y === y);
+    if (targetBomb && targetBomb.timer > 0) {
+      targetBomb.timer = 0;
+      return true;
+    }
+    return false;
   }
 
   private render(): void {
