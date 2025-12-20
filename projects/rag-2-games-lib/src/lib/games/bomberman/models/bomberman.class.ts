@@ -2,7 +2,11 @@
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
-import { IBombermanBomb, IBombermanWall } from './bomberman.object';
+import {
+  IBombermanBomb,
+  IBombermanWall,
+  IBombermanPowerUp,
+} from './bomberman.object';
 
 export class BombermanState implements TGameState {
   public player1x = 55;
@@ -12,6 +16,7 @@ export class BombermanState implements TGameState {
   public player1alive = true;
   public player1bombCount = 1;
   public player1bombRange = 1;
+  public player1speed = 4;
 
   public player2x = 655;
   public player2y = 555;
@@ -20,9 +25,11 @@ export class BombermanState implements TGameState {
   public player2alive = true;
   public player2bombCount = 1;
   public player2bombRange = 1;
+  public player2speed = 4;
 
   public walls: IBombermanWall[] = [];
   public bombs: IBombermanBomb[] = [];
+  public powerups: IBombermanPowerUp[] = [];
 }
 
 export class Bomberman extends Game {

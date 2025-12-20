@@ -13,12 +13,18 @@ import { BombermanMap } from './models/bomberman.map';
   template: `
     <div>
       Player 1 - Lives: <b>{{ game.state.player1lives }}</b
-      >, Score:
-      <b>{{ game.state.player1score }}</b>
+      >, Score: <b>{{ game.state.player1score }}</b
+      >, Bombs: <b>{{ game.state.player1bombCount }}</b
+      >, Range: <b>{{ game.state.player1bombRange }}</b> Speed:
+      <b>{{ game.state.player1speed }}</b>
       &nbsp;&nbsp;|&nbsp;&nbsp; Player 2 - Lives:
       <b>{{ game.state.player2lives }}</b
       >, Score:
       <b>{{ game.state.player2score }}</b>
+      , Bombs:
+      <b>{{ game.state.player2bombCount }}</b
+      >, Range: <b>{{ game.state.player2bombRange }}</b> Speed:
+      <b>{{ game.state.player2speed }}</b>
     </div>
 
     <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
@@ -32,9 +38,10 @@ export class BombermanGameWindowComponent
   private _gridWidth = 15;
   private _gridHeight = 13;
   private _cellSize = 50;
-  private _moveSpeed = 4;
-  private _p1LastAxis: 'x' | 'y' = 'y';
-  private _p2LastAxis: 'x' | 'y' = 'y';
+
+  private readonly _maxsSpeed = 8;
+  private readonly _maxBombs = 4;
+  private readonly _maxRange = 5;
 
   private _playerSize = 0.8 * this._cellSize;
 
@@ -95,6 +102,7 @@ export class BombermanGameWindowComponent
 
     this.game.state.walls = [];
     this.game.state.bombs = [];
+    this.game.state.powerups = [];
 
     this.selectMap();
     this.loadMap();
@@ -130,63 +138,53 @@ export class BombermanGameWindowComponent
 
   private movePlayers(): void {
     if (this.game.state.player1alive) {
-      let moveX = Number(this.game.players[0].inputData['moveX']);
-      let moveY = Number(this.game.players[0].inputData['moveY']);
+      const moveX = Number(this.game.players[0].inputData['moveX']);
+      const moveY = Number(this.game.players[0].inputData['moveY']);
+
+      let speed = this.game.state.player1speed;
 
       if (moveX !== 0 && moveY !== 0) {
-        if (this._p1LastAxis === 'y') {
-          moveX = 0;
-        } else {
-          moveY = 0;
-        }
+        speed = speed / Math.sqrt(2);
       }
 
       if (moveX !== 0) {
-        this._p1LastAxis = 'x';
-      } else if (moveY !== 0) {
-        this._p1LastAxis = 'y';
-      }
-
-      if (moveX !== 0) {
-        const newX = this.game.state.player1x + moveX * this._moveSpeed;
+        const newX = this.game.state.player1x + moveX * speed;
         if (this.canMove(newX, this.game.state.player1y)) {
           this.game.state.player1x = newX;
+          this.checkPowerups(0);
         }
-      } else if (moveY !== 0) {
-        const newY = this.game.state.player1y + moveY * this._moveSpeed;
+      }
+      if (moveY !== 0) {
+        const newY = this.game.state.player1y + moveY * speed;
         if (this.canMove(this.game.state.player1x, newY)) {
           this.game.state.player1y = newY;
+          this.checkPowerups(0);
         }
       }
     }
 
     if (this.game.state.player2alive) {
-      let moveX = Number(this.game.players[1].inputData['moveX']);
-      let moveY = Number(this.game.players[1].inputData['moveY']);
+      const moveX = Number(this.game.players[1].inputData['moveX']);
+      const moveY = Number(this.game.players[1].inputData['moveY']);
+
+      let speed = this.game.state.player1speed;
 
       if (moveX !== 0 && moveY !== 0) {
-        if (this._p2LastAxis === 'y') {
-          moveX = 0;
-        } else {
-          moveY = 0;
-        }
+        speed = speed / Math.sqrt(2);
       }
 
       if (moveX !== 0) {
-        this._p2LastAxis = 'x';
-      } else if (moveY !== 0) {
-        this._p2LastAxis = 'y';
-      }
-
-      if (moveX !== 0) {
-        const newX = this.game.state.player2x + moveX * this._moveSpeed;
+        const newX = this.game.state.player2x + moveX * speed;
         if (this.canMove(newX, this.game.state.player2y)) {
           this.game.state.player2x = newX;
+          this.checkPowerups(1);
         }
-      } else if (moveY !== 0) {
-        const newY = this.game.state.player2y + moveY * this._moveSpeed;
+      }
+      if (moveY !== 0) {
+        const newY = this.game.state.player2y + moveY * speed;
         if (this.canMove(this.game.state.player2x, newY)) {
           this.game.state.player2y = newY;
+          this.checkPowerups(1);
         }
       }
     }
@@ -373,7 +371,10 @@ export class BombermanGameWindowComponent
         if (wallIndex !== -1) {
           const wall = this.game.state.walls[wallIndex];
           if (wall.destructible) {
+            const wx = wall.x;
+            const wy = wall.y;
             this.game.state.walls.splice(wallIndex, 1);
+            this.spawnPowerUp(wx, wy);
             continue;
           } else {
             break;
@@ -470,6 +471,77 @@ export class BombermanGameWindowComponent
     }
   }
 
+  private spawnPowerUp(x: number, y: number): void {
+    const chance = Math.random();
+    if (chance > 0.3) return;
+
+    let type: 'bombs' | 'range' | 'speed' = 'bombs';
+    const roll = Math.random();
+
+    if (roll < 0.4) type = 'bombs';
+    else if (roll < 0.8) type = 'range';
+    else type = 'speed';
+
+    this.game.state.powerups.push({ x, y, type });
+  }
+
+  private checkPowerups(playerId: number): void {
+    const px =
+      playerId === 0 ? this.game.state.player1x : this.game.state.player2x;
+    const py =
+      playerId === 0 ? this.game.state.player1y : this.game.state.player2y;
+
+    const centerX = px + this._playerSize / 2;
+    const centerY = py + this._playerSize / 2;
+
+    for (let i = this.game.state.powerups.length - 1; i >= 0; i--) {
+      const p = this.game.state.powerups[i];
+      const pLeft = p.x * this._cellSize;
+      const pTop = p.y * this._cellSize;
+
+      if (
+        centerX > pLeft &&
+        centerX < pLeft + this._cellSize &&
+        centerY > pTop &&
+        centerY < pTop + this._cellSize
+      ) {
+        if (p.type === 'bombs') {
+          if (playerId === 0) {
+            if (this.game.state.player1bombCount < this._maxBombs) {
+              this.game.state.player1bombCount++;
+            }
+          } else {
+            if (this.game.state.player2bombCount < this._maxBombs) {
+              this.game.state.player2bombCount++;
+            }
+          }
+        } else if (p.type === 'range') {
+          if (playerId === 0) {
+            if (this.game.state.player1bombRange < this._maxRange) {
+              this.game.state.player1bombRange++;
+            }
+          } else {
+            if (this.game.state.player2bombRange < this._maxRange) {
+              this.game.state.player2bombRange++;
+            }
+          }
+        } else if (p.type === 'speed') {
+          if (playerId === 0) {
+            if (this.game.state.player1speed < this._maxsSpeed) {
+              this.game.state.player1speed++;
+            }
+          } else {
+            if (this.game.state.player2speed < this._maxsSpeed) {
+              this.game.state.player2speed++;
+            }
+          }
+        }
+
+        this.game.state.powerups.splice(i, 1);
+      }
+    }
+  }
+
   private render(): void {
     const context = this._canvas.getContext('2d');
 
@@ -506,6 +578,31 @@ export class BombermanGameWindowComponent
         this._cellSize - 1,
         this._cellSize - 1
       );
+    });
+
+    this.game.state.powerups.forEach(p => {
+      const x = p.x * this._cellSize + 10;
+      const y = p.y * this._cellSize + 10;
+      const size = this._cellSize - 20;
+
+      context.fillStyle = '#FFD700';
+      context.fillRect(x, y, size, size);
+
+      context.strokeStyle = 'black';
+      context.lineWidth = 2;
+      context.strokeRect(x, y, size, size);
+
+      context.fillStyle = 'black';
+      context.font = '20px Arial';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+
+      let icon = '';
+      if (p.type === 'bombs') icon = '💣';
+      else if (p.type === 'range') icon = '🔥';
+      else if (p.type === 'speed') icon = '⚡';
+
+      context.fillText(icon, x + size / 2, y + size / 2);
     });
 
     for (const bomb of this.game.state.bombs) {

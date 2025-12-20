@@ -11,3 +11,9 @@ export interface IBombermanWall {
   y: number;
   destructible: boolean;
 }
+
+export interface IBombermanPowerUp {
+  x: number;
+  y: number;
+  type: 'bombs' | 'range' | 'speed';
+}
