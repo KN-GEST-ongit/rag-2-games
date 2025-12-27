@@ -7,6 +7,7 @@ import { Spaceinvaders } from '../games/spaceinvaders/models/spaceinvaders.class
 import { Snake } from '../games/snake/models/snake.class';
 import { Pacman } from '../games/pacman/models/pacman.class';
 import { TowerDefense } from '../games/towerdefense/models/towerdefense.class';
+import { Sokoban } from '../games/sokoban/models/sokoban.class';
 export const games: Record<string, Game> = {
   pong: new Pong(),
   skijump: new SkiJump(),
@@ -16,4 +17,5 @@ export const games: Record<string, Game> = {
   snake: new Snake(),
   pacman: new Pacman(),
   towerdefense: new TowerDefense(),
+  sokoban: new Sokoban(),
 };
