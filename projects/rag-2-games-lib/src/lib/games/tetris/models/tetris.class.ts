@@ -2,7 +2,7 @@ import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 
-export class TetrisState implements TGameState {
+export class TetrisSingleBoardState{
     public rows = 20;
     public cols = 10;
     public board: number[][] = [];
@@ -31,7 +31,15 @@ export class TetrisState implements TGameState {
         this.lines = 0;
         this.isGameOver = false;
     }
+}
 
+export class TetrisState implements TGameState {
+    public boards: TetrisSingleBoardState[] = [];
+    public gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+
+    public constructor(){
+        this.boards = [new TetrisSingleBoardState(), new TetrisSingleBoardState()];
+    }
 }
 
 export class Tetris extends Game {
@@ -41,18 +49,10 @@ export class Tetris extends Game {
 
     public override outputSpec = `
         output:
-            playerY: int, <0, 20>;
-            playerX: int, <0, 10>;
-            playerColour: int, <0, 7>;
-            playerType: int, <0, 7>;
-            entityX: int, <0, 10>;
-            entityY: int, <0, 20>;
-            score: int, <0, inf>;
-
-        default values:
-            playerY: 40;
-            playerX: 10;
+            gameMode: string, {singleplayer, multiplayer};
+            boards: list of board objects;
     `;
+
     public override players = [
         new Player(
             0,
@@ -62,17 +62,28 @@ export class Tetris extends Game {
             {
                 a: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
                 d: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-                w: {variableName: 'move', pressedValue: 3, releasedValue: 0 },
+                w: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
                 s: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+                ' ': { variableName: 'start', pressedValue: 1, releasedValue: 0 },
+            },
+            'P1 Controls: WASD to move/rotate, SPACE to start/drop',
+            { left: '[A]', right: '[D]', rotate: '[W]', down: '[S]', drop: '[SPACE]' }
+        ),
+
+        new Player(
+            1,
+            true,
+            'Player 2',
+            { move: 0, start: 0 },
+            {
                 ArrowLeft: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
                 ArrowRight: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
                 ArrowUp: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
                 ArrowDown: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
-                ' ': { variableName: 'start', pressedValue: 1, releasedValue: 0 },
+                Enter: { variableName: 'start', pressedValue: 1, releasedValue: 0 },
             },
-            '<move>: value of {0,1,2,3,4}, 0: start, 1: left, 2: right, 3: rotate, 4: down;',
-            { left: '[ARROW_LEFT]/[A]', right: '[ARROW_RIGHT]/[D]', rotate: '[ARROW_UP]/[W]', down: '[ARROW_DOWN]/[S]', start: '[SPACE]' , forceDrop: '[SPACE]' }
-            
+            'P2 Controls: Arrows to move/rotate, ENTER to start/drop',
+            { left: '[←]', right: '[→]', rotate: '[↑]', down: '[↓]', drop: '[ENTER]' }
         ),
     ];
 }
