@@ -168,6 +168,10 @@ export class TetrisGameWindowComponent
     }));
   }
 
+  private getPlayerInput(playerIndex:number, name:string): number {
+    return (this.game.players[playerIndex].inputData[`${name}${playerIndex}`] as number) || 0;
+  }
+
   public override restart(): void {
     this.isStarted = false;
     this.initPlayerContexts();
@@ -201,15 +205,11 @@ export class TetrisGameWindowComponent
 
   private processStart(): boolean {
     if(this.isStarted) return true;
-
-    const p1Input = this.game.players[0].inputData;
-    const p2Input = this.game.players[1]?.inputData;
-
-    const willStart = (p1Input['start'] as number === 1) || (p2Input?.['start'] as number === 1);
+    const willStart = this.getPlayerInput(0,'start') === 1 || this.getPlayerInput(1,'start') === 1;
     if (willStart) {
       this.isStarted = true;
-      if(p1Input['start'] as number === 1) this._playerContexts[0].isDropDownPressed = true;
-      if(p2Input?.['start'] as number === 1) this._playerContexts[1].isDropDownPressed = true;
+      if (this.getPlayerInput(0,'start') === 1) this._playerContexts[0].isDropDownPressed = true;
+      if (this.getPlayerInput(1,'start') === 1) this._playerContexts[1].isDropDownPressed = true;
       return true;
     }
     return false;
@@ -218,8 +218,7 @@ export class TetrisGameWindowComponent
   private processGameOver(playerIndex:number): boolean {
     const board = this.game.state.boards[playerIndex];
     if (!board.isGameOver) return false;
-
-    const startInput = (this.game.players[playerIndex].inputData['start'] as number) || 0;
+    const startInput = this.getPlayerInput(playerIndex,'start');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyPressed = startInput === 1;
     if (isCurrentlyPressed && !context.isDropDownPressed) {
@@ -234,7 +233,7 @@ export class TetrisGameWindowComponent
   }
 
   private processMovement(playerIndex: number): void {
-    const moveInput = (this.game.players[playerIndex].inputData['move'] as number) || 0;
+    const moveInput = this.getPlayerInput(playerIndex,'move');
     const context = this._playerContexts[playerIndex];
 
     if (context.tickCounter - context.lastMoveTick >= context.moveCooldown) {
@@ -255,7 +254,7 @@ export class TetrisGameWindowComponent
   }
 
   private processRotation(playerIndex: number): void {
-    const moveInput = (this.game.players[playerIndex].inputData['move'] as number) || 0;
+    const moveInput = this.getPlayerInput(playerIndex,'move');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyRotating = moveInput === 3;
     if (isCurrentlyRotating && !context.isRotationPressed) {
@@ -281,7 +280,7 @@ export class TetrisGameWindowComponent
   }
 
   private processHardDrop(playerIndex: number): void {
-    const startInput = (this.game.players[playerIndex].inputData['start'] as number) || 0;
+    const startInput = this.getPlayerInput(playerIndex,'start');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyPressed = startInput === 1;
     if (this.isStarted && !this.game.state.boards[playerIndex].isGameOver) {
