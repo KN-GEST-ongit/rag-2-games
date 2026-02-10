@@ -25,6 +25,7 @@
     "@angular/platform-browser": "^18.0.0",
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/router": "^18.0.0",
+    "@babylonjs/core": "^8.50.2",
     "feather-icons": "^4.29.2",
     "prettier": "^3.3.2",
     "rxjs": "~7.8.0",

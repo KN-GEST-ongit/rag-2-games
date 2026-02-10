@@ -33,6 +33,8 @@ import * as feather from 'feather-icons';
 export class CanvasComponent implements AfterViewInit, OnInit {
   @Input({ required: true }) public displayMode: 'vertical' | 'horizontal' =
     'horizontal';
+    
+  @Input() public is3DEnabled = false;
   private _canvasUtilsService = inject(CanvasUtilsService);
 
   @ViewChild('canvasElement', { static: true })
@@ -70,10 +72,12 @@ export class CanvasComponent implements AfterViewInit, OnInit {
 
   public initializeCanvas(): void {
     const canvas = this.canvasElement.nativeElement;
-    const context = canvas.getContext('2d');
-    if (context) {
-      context.fillStyle = '#151515';
-      context.fillRect(0, 0, canvas.width, canvas.height);
+    if (!this.is3DEnabled){
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.fillStyle = '#151515';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
     this._originalWidth = canvas.width;
     this._originalHeight = canvas.height;
