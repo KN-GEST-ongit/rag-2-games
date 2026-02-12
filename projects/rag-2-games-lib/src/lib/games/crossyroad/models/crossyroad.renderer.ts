@@ -113,36 +113,33 @@ export class CrossyRoadRenderer {
   }
 
   public render(state: CrossyRoadState): void {
-    this.playerMesh.position.x = Scalar.Lerp(
-      this.playerMesh.position.x, 
-      state.playerX, 
-      0.15
-    );
-    this.playerMesh.position.z = Scalar.Lerp(
-      this.playerMesh.position.z, 
-      state.playerZ, 
-      0.15
-    );
+    const diffX = Math.abs(state.playerX - this.playerMesh.position.x);
+    const diffZ = Math.abs(state.playerZ - this.playerMesh.position.z);
+    
+    const distanceToTarget = diffX + diffZ;
 
-    const jumpHeight = Math.abs(
-      Math.sin((this.playerMesh.position.x + this.playerMesh.position.z) * 2)
-    ) * 0.1;
-    this.playerMesh.position.y = 0.45 + jumpHeight;
+    if (distanceToTarget < 0.05) {
+        this.playerMesh.position.x = state.playerX;
+        this.playerMesh.position.z = state.playerZ;
+        this.playerMesh.position.y = 0.4;
+    } else {
+        const speed = 0.35; 
+        
+        this.playerMesh.position.x = Scalar.Lerp(this.playerMesh.position.x, state.playerX, speed);
+        this.playerMesh.position.z = Scalar.Lerp(this.playerMesh.position.z, state.playerZ, speed);
 
-    const targetCameraPosition = new Vector3(
-      this.playerMesh.position.x + this.cameraOffset.x,
-      this.cameraOffset.y,
-      this.playerMesh.position.z + this.cameraOffset.z
-    );
+        const jumpHeight = Math.sin(distanceToTarget * Math.PI) * 0.20;
+        
+        this.playerMesh.position.y = 0.4 + Math.max(0, jumpHeight);
+    }
 
-    this.camera.position = Vector3.Lerp(
-      this.camera.position,
-      targetCameraPosition,
-      0.1
-    );
+    this.camera.position.x = this.playerMesh.position.x + this.cameraOffset.x;
+    this.camera.position.z = this.playerMesh.position.z + this.cameraOffset.z;
+    
+    this.camera.position.y = this.cameraOffset.y; 
 
     this.camera.setTarget(new Vector3(
-      this.playerMesh.position.x,
+      this.playerMesh.position.x, 
       0,
       this.playerMesh.position.z
     ));
