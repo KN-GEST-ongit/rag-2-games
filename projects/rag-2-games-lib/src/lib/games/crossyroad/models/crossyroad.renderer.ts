@@ -39,6 +39,10 @@ export class CrossyRoadRenderer {
 
   private readonly cameraOffset = new Vector3(2, 10, -10);
 
+  private handleResize = (): void => {
+    this.engine.resize();
+  };
+
   constructor(canvas: HTMLCanvasElement) {
     const engineOptions: EngineOptions = {
       antialias: true,
@@ -105,21 +109,19 @@ export class CrossyRoadRenderer {
       this.scene.render();
     });
     
-    window.addEventListener('resize', () => {
-      this.engine.resize();
-    });
+    window.addEventListener('resize', this.handleResize);
   }
 
   public render(state: CrossyRoadState): void {
     this.playerMesh.position.x = Scalar.Lerp(
       this.playerMesh.position.x, 
       state.playerX, 
-      0.2
+      0.15
     );
     this.playerMesh.position.z = Scalar.Lerp(
       this.playerMesh.position.z, 
       state.playerZ, 
-      0.2
+      0.15
     );
 
     const jumpHeight = Math.abs(
@@ -167,7 +169,7 @@ export class CrossyRoadRenderer {
       if (!this.laneMeshes.has(lane.z)) {
         const mesh = MeshBuilder.CreateBox(
           `lane_${lane.z}`, 
-          { width: 40, height: 0.15, depth: 1 }, 
+          { width: 60, height: 0.15, depth: 1 }, 
           this.scene
         );
         mesh.position.set(0, -0.075, lane.z);
@@ -195,13 +197,16 @@ export class CrossyRoadRenderer {
         if (obs.type === 'tree') {
           mesh = MeshBuilder.CreateCylinder(
             `obs_${obs.id}`, 
-            { height: 1.2, diameter: 0.6 }, 
+            { height: 1.2, 
+            diameterTop: 0,
+            diameterBottom: 0.8, 
+            tessellation: 4 }, 
             this.scene
           );
         } else {
           mesh = MeshBuilder.CreateBox(
             `obs_${obs.id}`, 
-            { width: obs.width, height: 0.8, depth: 0.9 }, 
+            { width: obs.width, height: 0.7, depth: 0.9 }, 
             this.scene
           );
         }
@@ -230,10 +235,14 @@ export class CrossyRoadRenderer {
       if (obs.type !== 'tree') {
         mesh.rotation.y = obs.direction === 1 ? 0 : Math.PI;
       }
+      if (obs.type.includes('car')) {
+        mesh.rotation.z = Math.sin(Date.now() * 0.01 + obs.id) * 0.02;
+      }
     }
   }
 
   public dispose(): void {
+    window.removeEventListener('resize', this.handleResize);
     this.scene.dispose();
     this.engine.dispose();
   }

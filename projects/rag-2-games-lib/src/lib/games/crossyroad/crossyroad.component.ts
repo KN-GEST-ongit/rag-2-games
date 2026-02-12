@@ -64,6 +64,16 @@ export class CrossyRoadGameWindowComponent
 
   public override restart(): void {
     this.game.state = new CrossyRoadState();
+    const state = this.game.state;
+    
+    for (const lane of state.lanes) {
+        if (lane.z > 3) {
+            if (Math.random() > 0.7) {
+                lane.type = 'grass';
+            }
+            this.spawnObstaclesOnLane(lane);
+        }
+    }
   }
 
   protected override update(): void {
@@ -82,7 +92,12 @@ export class CrossyRoadGameWindowComponent
     const state = this.game.state;
     const player = this.game.players[0];
 
-    if (state.isGameOver) return;
+    if (state.isGameOver) {
+      if (player.inputData['moveUp'] || player.inputData['moveDown']) {
+        this.restart();
+      }
+      return;
+    }
 
     if (state.moveCooldown > 0) {
       state.moveCooldown--;
@@ -100,8 +115,13 @@ export class CrossyRoadGameWindowComponent
       state.playerZ += 1;
       moved = true;
     } else if (moveDown === 1) {
-      state.playerZ -= 1;
-      moved = true;
+      const targetZ = state.playerZ - 1;
+      const canMoveBack = state.lanes.some(l => l.z === targetZ);
+
+      if (canMoveBack) {
+        state.playerZ -= 1;
+        moved = true;
+      }
     }
 
     if (moveLeft === 1) {
@@ -113,7 +133,7 @@ export class CrossyRoadGameWindowComponent
     }
 
     if (moved) {
-      state.playerX = Math.max(-10, Math.min(10, state.playerX));
+      state.playerX = Math.max(-15, Math.min(15, state.playerX));
       
       if (state.playerZ > state.highestZ) {
         state.highestZ = state.playerZ;
@@ -138,6 +158,51 @@ export class CrossyRoadGameWindowComponent
     this.checkCollisions();
   }
 
+  private spawnObstaclesOnLane(lane: ILane): void {
+    const state = this.game.state;
+
+    if (lane.type === 'road') {
+      const difficultyFactor = Math.min(Math.max(0, lane.z) * 0.0005, 0.15);
+
+      let maxCars = 2;
+      if (lane.z > 100) maxCars = 3; 
+
+      const carCount = Math.floor(Math.random() * maxCars) + 1;
+      const baseSpeed = 0.06 + difficultyFactor;
+      const fastCarThreshold = Math.max(0.3, 0.6 - (lane.z * 0.002));
+      
+      let speed = Math.random() > fastCarThreshold ? (baseSpeed * 2) : baseSpeed;
+      speed = Math.min(speed, 0.25);
+
+      const direction = Math.random() > 0.5 ? 1 : -1;
+
+      for (let j = 0; j < carCount; j++) {
+        lane.obstacles.push({
+          id: state.nextObstacleId++,
+          x: (Math.random() - 0.5) * 25 + (j * 8 * direction),
+          speed: speed,
+          direction: direction as -1 | 1,
+          type: speed > 0.15 ? 'car_fast' : 'car_slow',
+          width: 1.5
+        });
+      }
+    } else if (lane.type === 'grass') {
+       if (Math.random() > 0.3) {
+          const treeCount = Math.floor(Math.random() * 3) + 1;
+          for (let j = 0; j < treeCount; j++) {
+            lane.obstacles.push({
+              id: state.nextObstacleId++,
+              x: (Math.random() - 0.5) * 25,
+              speed: 0,
+              direction: 1,
+              type: 'tree',
+              width: 0.8
+            });
+          }
+       }
+    }
+  }
+
   private generateNewLanes(): void {
     const state = this.game.state;
     const maxZ = Math.max(...state.lanes.map(l => l.z), state.playerZ);
@@ -145,60 +210,48 @@ export class CrossyRoadGameWindowComponent
     if (maxZ < state.playerZ + 15) {
       for (let i = 1; i <= 3; i++) {
         const newZ = maxZ + i;
-        const laneType = Math.random() > 0.35 ? 'road' : 'grass';
-        
+
+        let consecutiveGrass = 0;
+        for (let k = state.lanes.length - 1; k >= 0; k--) {
+          if (state.lanes[k].type === 'grass') {
+            consecutiveGrass++;
+          } else {
+            break;
+          }
+        }
+
+        let laneType: 'road' | 'grass' = Math.random() > 0.3 ? 'road' : 'grass';
+
+        if (consecutiveGrass >= 2) {
+          laneType = 'road';
+        }
         const newLane: ILane = {
           z: newZ,
           type: laneType,
           obstacles: []
         };
 
-        if (laneType === 'road') {
-          const carCount = Math.floor(Math.random() * 2) + 1;
-          const speed = Math.random() > 0.6 ? 0.12 : 0.06;
-          const direction = Math.random() > 0.5 ? 1 : -1;
-
-          for (let j = 0; j < carCount; j++) {
-            newLane.obstacles.push({
-              id: state.nextObstacleId++,
-              x: (Math.random() - 0.5) * 25 + (j * 8 * direction),
-              speed: speed,
-              direction: direction as -1 | 1,
-              type: speed > 0.09 ? 'car_fast' : 'car_slow',
-              width: 1.5
-            });
-          }
-        } else if (Math.random() > 0.7) {
-          const treeCount = Math.floor(Math.random() * 3) + 1;
-          for (let j = 0; j < treeCount; j++) {
-            newLane.obstacles.push({
-              id: state.nextObstacleId++,
-              x: (Math.random() - 0.5) * 16,
-              speed: 0,
-              direction: 1,
-              type: 'tree',
-              width: 0.8
-            });
-          }
-        }
+        this.spawnObstaclesOnLane(newLane);
 
         state.lanes.push(newLane);
       }
     }
 
-    state.lanes = state.lanes.filter(l => l.z > state.playerZ - 10);
+    state.lanes = state.lanes.filter(l => l.z > state.playerZ - 15);
   }
 
   private updateObstacles(): void {
     const state = this.game.state;
+
+    const resetLimit = 30;
 
     for (const lane of state.lanes) {
       for (const obs of lane.obstacles) {
         if (obs.speed > 0) {
           obs.x += obs.speed * obs.direction;
           
-          if (obs.x > 20) obs.x = -20;
-          if (obs.x < -20) obs.x = 20;
+          if (obs.x > resetLimit) obs.x = -resetLimit;
+          if (obs.x < -resetLimit) obs.x = resetLimit;
         }
       }
     }
@@ -208,15 +261,19 @@ export class CrossyRoadGameWindowComponent
     const state = this.game.state;
     
     const playerLane = state.lanes.find(
-      l => Math.abs(l.z - state.playerZ) < 0.5
+      l => l.z === Math.round(state.playerZ)
     );
 
     if (!playerLane) return;
 
+    const playerHitboxWidth = 0.6; 
+    const graceMargin = 0.1;
+
     for (const obs of playerLane.obstacles) {
-      const distX = Math.abs(obs.x - state.playerX);
-      
-      if (distX < (obs.width * 0.6)) {
+      const dist = Math.abs(obs.x - state.playerX);
+      const collisionThreshold = (obs.width / 2) + (playerHitboxWidth / 2) - graceMargin;
+
+      if (dist < collisionThreshold) {
         state.isGameOver = true;
         break;
       }
