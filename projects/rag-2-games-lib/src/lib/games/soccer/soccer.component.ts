@@ -118,6 +118,19 @@ export class SoccerGameWindowComponent
     context.fillRect(w - goalDepth, topY, goalDepth, goalHeight);
     
     context.globalAlpha = 1.0;
+
+    const posts = this.getPosts();
+
+    /*context.fillStyle = '#FFFFFF'; 
+    context.strokeStyle = '#000000'; 
+    context.lineWidth = 2;
+
+    posts.forEach(post => {
+        context.beginPath();
+        context.rect(post.x, post.y, post.w, post.h);
+        context.fill();
+        context.stroke();
+    });*/
   }
 
    private handleInput(): void {
@@ -134,6 +147,57 @@ export class SoccerGameWindowComponent
     }
   }
 
+  private checkPlayersCollision(p1: IMovableEntity, p2: IMovableEntity): void {
+    const r1 = p1.radius;
+    const r2 = p2.radius;
+
+    const p1Left = p1.x - r1;
+    const p1Right = p1.x + r1;
+    const p1Top = p1.y - r1;
+    const p1Bottom = p1.y + r1;
+
+    const p2Left = p2.x - r2;
+    const p2Right = p2.x + r2;
+    const p2Top = p2.y - r2;
+    const p2Bottom = p2.y + r2;
+
+    if (p1Left < p2Right && p1Right > p2Left &&
+        p1Top < p2Bottom && p1Bottom > p2Top) {
+
+      const overlapLeft = p1Right - p2Left;
+      const overlapRight = p2Right - p1Left;
+      const overlapTop = p1Bottom - p2Top;
+      const overlapBottom = p2Bottom - p1Top;
+
+      const minOverlapX = Math.min(overlapLeft, overlapRight);
+      const minOverlapY = Math.min(overlapTop, overlapBottom);
+
+      if (minOverlapX < minOverlapY) {
+        const separation = minOverlapX / 2;
+        
+        if (overlapLeft < overlapRight) {
+           p1.x -= separation;
+           p2.x += separation;
+        } else {
+           p1.x += separation;
+           p2.x -= separation;
+        }
+      } else {
+        const separation = minOverlapY / 2;
+
+        if (overlapTop < overlapBottom) {
+           p1.y -= separation;
+           p2.y += separation;
+        } else {
+           p1.y += separation;
+           p2.y -= separation;
+        }
+      }
+    }
+  }
+
+
+
   private physicsStep(): void {
     const state = this.game.state;
     const posts = this.getPosts();
@@ -141,6 +205,8 @@ export class SoccerGameWindowComponent
     this.moveEntity(state.player1);
     this.moveEntity(state.player2);
     
+    this.checkPlayersCollision(state.player1, state.player2);
+
     posts.forEach(post => {
         this.resolveAABBCollision(state.player1, post);
         this.resolveAABBCollision(state.player2, post);
@@ -234,21 +300,39 @@ export class SoccerGameWindowComponent
     }
   }
 
-  private getPosts(): { x: number; y: number; w: number; h: number }[] {
+ private getPosts(): { x: number; y: number; w: number; h: number }[] {
     const w = this.game.state.width;
     const h = this.game.state.height;
-    const goalHeight = 160;
-    const goalDepth = 40; 
     
+    const goalHeight = 145  ; 
+    const goalDepth = 40;   
+    
+    const postWidth = 40;   
+    const postHeight = 5;
+
     const topY = (h - goalHeight) / 2;
     const bottomY = topY + goalHeight;
-    const postThick = 10; 
-      
+
     return [
-      { x: 0, y: topY - postThick, w: goalDepth, h: postThick }, 
-      { x: 0, y: bottomY, w: goalDepth, h: postThick }, 
-      { x: w - goalDepth, y: topY - postThick, w: goalDepth, h: postThick }, 
-      { x: w - goalDepth, y: bottomY, w: goalDepth, h: postThick } 
+      { x: goalDepth - postWidth, 
+        y: topY - postHeight - 5, 
+        w: postWidth, 
+        h: postHeight },
+
+      { x: goalDepth - postWidth, 
+        y: bottomY + 5, 
+        w: postWidth, 
+        h: postHeight },
+
+      { x: w - goalDepth, 
+        y: topY - postHeight -5, 
+        w: postWidth, 
+        h: postHeight },
+
+      { x: w - goalDepth, 
+        y: bottomY + 5, 
+        w: postWidth, 
+        h: postHeight }
     ];
   }
 
@@ -277,35 +361,6 @@ export class SoccerGameWindowComponent
       else if (minOverlap === overlapTop) player.y -= overlapTop;
       else if (minOverlap === overlapBottom) player.y += overlapBottom;
     }
-  }
-
-  private drawGoalsAndPosts(context: CanvasRenderingContext2D, w: number, h: number): void {
-    const goalHeight = 155;
-    const goalDepth = 40; 
-    const topY = (h - goalHeight) / 2;
-    const bottomY = topY + goalHeight;
-    const posts = this.getPosts();
-
-    context.fillStyle = this.game.state.teamRedColor;
-    context.globalAlpha = 0.2;
-    context.fillRect(0, topY, goalDepth, goalHeight); 
-    context.fillStyle = this.game.state.teamBlueColor;
-    context.fillRect(w - goalDepth, topY, goalDepth, goalHeight); 
-    context.globalAlpha = 1.0;
-
-    context.lineWidth = 4;
-    context.strokeStyle = this.game.state.teamRedColor;
-    context.beginPath(); context.moveTo(0, topY); context.lineTo(goalDepth, topY); context.lineTo(goalDepth, bottomY); context.lineTo(0, bottomY); context.stroke();
-    context.strokeStyle = this.game.state.teamBlueColor;
-    context.beginPath(); context.moveTo(w, topY); context.lineTo(w - goalDepth, topY); context.lineTo(w - goalDepth, bottomY); context.lineTo(w, bottomY); context.stroke();
-
-    context.fillStyle = '#666'; 
-    context.strokeStyle = '#000';
-    context.lineWidth = 1;
-    posts.forEach(p => {
-      context.fillRect(p.x, p.y, p.w, p.h);
-      context.strokeRect(p.x, p.y, p.w, p.h);
-    });
   }
 
   private drawPitchLines(context: CanvasRenderingContext2D, w: number, h: number): void {
