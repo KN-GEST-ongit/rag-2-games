@@ -63,6 +63,10 @@ export class CrossyRoadGameWindowComponent
   }
 
   public override restart(): void {
+    if (this.renderer3D) {
+      this.renderer3D.clear();
+    }
+
     this.game.state = new CrossyRoadState();
     const state = this.game.state;
     

@@ -246,4 +246,12 @@ export class CrossyRoadRenderer {
     this.scene.dispose();
     this.engine.dispose();
   }
+
+  public clear(): void {
+  this.laneMeshes.forEach(mesh => mesh.dispose());
+  this.laneMeshes.clear();
+
+  this.obstacleMeshes.forEach(mesh => mesh.dispose());
+  this.obstacleMeshes.clear();
+}
 }
