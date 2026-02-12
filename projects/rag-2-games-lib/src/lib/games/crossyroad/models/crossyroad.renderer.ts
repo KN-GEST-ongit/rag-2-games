@@ -20,6 +20,7 @@ import {
   Scalar,
   EngineOptions
 } from '@babylonjs/core';
+import { CrossyRoadAssets } from './crossyroad.assets';
 import { CrossyRoadState } from './crossyroad.class';
 import { ILane, IObstacle } from './crossyroad.interfaces';
 
@@ -35,7 +36,6 @@ export class CrossyRoadRenderer {
 
   private grassMat: StandardMaterial;
   private roadMat: StandardMaterial;
-  private playerMat: StandardMaterial;
 
   private readonly cameraOffset = new Vector3(2, 10, -10);
 
@@ -92,18 +92,8 @@ export class CrossyRoadRenderer {
     this.roadMat = new StandardMaterial("roadMat", this.scene);
     this.roadMat.diffuseColor = new Color3(0.25, 0.25, 0.25);
 
-    this.playerMat = new StandardMaterial("playerMat", this.scene);
-    this.playerMat.diffuseColor = Color3.White();
-    this.playerMat.emissiveColor = new Color3(0.1, 0.1, 0.1);
-
-    this.playerMesh = MeshBuilder.CreateBox("player", { 
-      height: 0.9, 
-      width: 0.7, 
-      depth: 0.7 
-    }, this.scene);
-    this.playerMesh.position.y = 0.45;
-    this.playerMesh.material = this.playerMat;
-    this.shadowGenerator.addShadowCaster(this.playerMesh);
+    this.playerMesh = CrossyRoadAssets.createVoxelPlayer(this.scene, this.shadowGenerator);
+    this.playerMesh.position.y = 0;
 
     this.engine.runRenderLoop(() => {
       this.scene.render();
@@ -121,7 +111,7 @@ export class CrossyRoadRenderer {
     if (distanceToTarget < 0.05) {
         this.playerMesh.position.x = state.playerX;
         this.playerMesh.position.z = state.playerZ;
-        this.playerMesh.position.y = 0.4;
+        this.playerMesh.position.y = 0;
     } else {
         const speed = 0.35; 
         
@@ -130,7 +120,7 @@ export class CrossyRoadRenderer {
 
         const jumpHeight = Math.sin(distanceToTarget * Math.PI) * 0.20;
         
-        this.playerMesh.position.y = 0.4 + Math.max(0, jumpHeight);
+        this.playerMesh.position.y = 0 + Math.max(0, jumpHeight);
     }
 
     this.camera.position.x = this.playerMesh.position.x + this.cameraOffset.x;
@@ -192,42 +182,18 @@ export class CrossyRoadRenderer {
 
       if (!mesh) {
         if (obs.type === 'tree') {
-          mesh = MeshBuilder.CreateCylinder(
-            `obs_${obs.id}`, 
-            { height: 1.2, 
-            diameterTop: 0,
-            diameterBottom: 0.8, 
-            tessellation: 4 }, 
-            this.scene
-          );
+          mesh = CrossyRoadAssets.createVoxelTree(this.scene, this.shadowGenerator);
         } else {
-          mesh = MeshBuilder.CreateBox(
-            `obs_${obs.id}`, 
-            { width: obs.width, height: 0.7, depth: 0.9 }, 
-            this.scene
-          );
+          mesh = CrossyRoadAssets.createVoxelCar(this.scene, this.shadowGenerator, obs.type, obs.width);
         }
         
-        const mat = new StandardMaterial(`obsMat_${obs.id}`, this.scene);
-        
-        if (obs.type === 'tree') {
-          mat.diffuseColor = new Color3(0.13, 0.55, 0.13);
-        } else if (obs.type === 'car_fast') {
-          mat.diffuseColor = Color3.Red();
-          mat.emissiveColor = new Color3(0.2, 0, 0);
-        } else {
-          mat.diffuseColor = new Color3(0.9, 0.9, 0.2);
-          mat.emissiveColor = new Color3(0.1, 0.1, 0);
-        }
-        
-        mesh.material = mat;
+        mesh.metadata = { type: obs.type };
         this.obstacleMeshes.set(obs.id, mesh);
-        this.shadowGenerator.addShadowCaster(mesh);
       }
 
       mesh.position.x = obs.x;
       mesh.position.z = obs.z;
-      mesh.position.y = obs.type === 'tree' ? 0.6 : 0.4;
+      mesh.position.y = 0;
 
       if (obs.type !== 'tree') {
         mesh.rotation.y = obs.direction === 1 ? 0 : Math.PI;
@@ -245,10 +211,10 @@ export class CrossyRoadRenderer {
   }
 
   public clear(): void {
-  this.laneMeshes.forEach(mesh => mesh.dispose());
-  this.laneMeshes.clear();
+    this.laneMeshes.forEach(mesh => mesh.dispose());
+    this.laneMeshes.clear();
 
-  this.obstacleMeshes.forEach(mesh => mesh.dispose());
-  this.obstacleMeshes.clear();
-}
+    this.obstacleMeshes.forEach(mesh => mesh.dispose());
+    this.obstacleMeshes.clear();
+  }
 }
