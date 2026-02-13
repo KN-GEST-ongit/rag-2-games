@@ -24,12 +24,15 @@ interface IPlayerContext{
     </div>
 
     @if (currentMode === 'singleplayer') {
+      <div>Player Best Score: <b>{{ playerBestScores[0] }}</b></div>
       <div>
          Score: <b>{{ game.state.boards[0].score }}</b> | Lines: <b>{{ game.state.boards[0].lines }}</b> | Level: <b>{{ game.state.boards[0].level }}</b>
       </div>
     } @else if (currentMode === 'multiplayer') {
-      <div style="display: flex; justify-content: space-around; width: 100%">
+      <div style="display: flex; justify-content: space-around; width: 85%">
+        <span>P1 Best: <b>{{ playerBestScores[0] }}</b></span>
         <span>P1 Score: <b>{{ game.state.boards[0].score }}</b></span>
+        <span>P2 Best: <b>{{ playerBestScores[1] }}</b></span>
         <span>P2 Score: <b>{{ game.state.boards[1].score }}</b></span>
       </div>
     }
@@ -39,6 +42,12 @@ interface IPlayerContext{
         [displayMode]="canvasDisplayMode"
         #gameCanvas>
       </app-canvas>
+    }
+    
+    @if (!isStarted) {
+      <div style="margin-top: 20px; padding: 20px;text-align: center; color: #000; font-size: 16px; font-weight: bold;">
+        Press SPACE to begin
+      </div>
     }
       
     <br>
@@ -52,11 +61,11 @@ export class TetrisGameWindowComponent
 {
   public isCanvasVisible = true;
   public currentMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+  public playerBestScores: number[] = [0, 0];
+  public isStarted = false;
   public get canvasDisplayMode(): 'vertical' | 'horizontal' {
     return this.currentMode === 'multiplayer' ? 'horizontal' : 'vertical';
   }
-
-  private isStarted = false;
 
   private _blockWidth = 30;
   private _blockHeight = 30;
@@ -220,6 +229,9 @@ export class TetrisGameWindowComponent
     const board = this.game.state.boards[playerIndex];
     if (!board.isGameOver) return false;
 
+    if(board.score > this.playerBestScores[playerIndex])
+      this.playerBestScores[playerIndex] = board.score;
+
     const startInput = this.getPlayerInput(playerIndex, 'start');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyPressed = startInput === 1;
@@ -253,6 +265,32 @@ export class TetrisGameWindowComponent
         }
       }
     }
+  }
+
+  private drawPredictedLanding(ctx: CanvasRenderingContext2D, playerIndex:number, startX: number, startY: number) : void{
+    const board = this.game.state.boards[playerIndex];
+    if(!board.active) return; 
+    let drop = board.active.y;
+    while(this.canPlacePiece(board,board.active.type,board.active.rotation,board.active.x,drop+1))
+      drop += 1;
+
+    const matrix = this.getPieceMatrix(board.active.type, board.active.rotation);
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    
+    for (let r = 0; r < matrix.length; r++) {
+      for (let c = 0; c < matrix[r].length; c++) {
+        if (matrix[r][c] !== 0) {
+          const bx = board.active.x + c;
+          const by = drop + r;
+          if (by >= 0) {
+            this.drawBlock(ctx, startX + bx * this._blockWidth, startY + by * this._blockHeight, matrix[r][c]);
+          }
+        }
+      }
+    }
+
+    ctx.restore();
   }
 
   private processRotation(playerIndex: number): void {
@@ -454,6 +492,8 @@ export class TetrisGameWindowComponent
         }
       }
     }
+    this.drawPredictedLanding(ctx, playerIndex, startX, startY);
+
     if (boardState.active) {
       const matrix = this.getPieceMatrix(boardState.active.type, boardState.active.rotation);
       for (let r = 0; r < matrix.length; r++) {
