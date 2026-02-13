@@ -180,30 +180,69 @@ export class CrossyRoadGameWindowComponent
 
       const direction = Math.random() > 0.5 ? 1 : -1;
 
+      const placedCarsX: number[] = [];
+      const minDistance = 5;
+
       for (let j = 0; j < carCount; j++) {
-        lane.obstacles.push({
-          id: state.nextObstacleId++,
-          x: (Math.random() - 0.5) * 25 + (j * 8 * direction),
-          speed: speed,
-          direction: direction as -1 | 1,
-          type: speed > 0.15 ? 'car_fast' : 'car_slow',
-          width: 1.5
-        });
+        let attempts = 0;
+        let validPosition = false;
+        let candidateX = 0;
+
+        while (!validPosition && attempts < 10) {
+          candidateX = (Math.random() - 0.5) * 50;
+          const collision = placedCarsX.some(x => Math.abs(x - candidateX) < minDistance);
+          if (!collision) {
+            validPosition = true;
+          }
+          attempts++;
+        }
+
+        if (validPosition) {
+          placedCarsX.push(candidateX);
+          lane.obstacles.push({
+            id: state.nextObstacleId++,
+            x: candidateX,
+            speed: speed,
+            direction: direction as -1 | 1,
+            type: speed > 0.15 ? 'car_fast' : 'car_slow',
+            width: 1.5
+          });
+        }
       }
     } else if (lane.type === 'grass') {
-       if (Math.random() > 0.3) {
-          const treeCount = Math.floor(Math.random() * 3) + 1;
-          for (let j = 0; j < treeCount; j++) {
-            lane.obstacles.push({
+      if (Math.random() > 0.3) {
+        const treeCount = Math.floor(Math.random() * 4) + 1;
+        const placedX: number[] = [];
+
+        for (let j = 0; j < treeCount; j++) {
+          let attempts = 0;
+          let validPosition = false;
+          let candidateX = 0;
+
+          while (!validPosition && attempts < 5) {
+            candidateX = Math.round((Math.random() - 0.5) * 28); 
+            const collision = placedX.some(x => Math.abs(x - candidateX) < 2.5);
+            const blockingCenter = (lane.z < 5 && Math.abs(candidateX) < 2);
+
+            if (!collision && !blockingCenter) {
+              validPosition = true;
+            }
+            attempts++;
+          }
+
+          if (validPosition) {
+            placedX.push(candidateX);
+              lane.obstacles.push({
               id: state.nextObstacleId++,
-              x: (Math.random() - 0.5) * 25,
+              x: candidateX,
               speed: 0,
               direction: 1,
               type: 'tree',
               width: 0.8
             });
           }
-       }
+        }
+      }
     }
   }
 
@@ -270,7 +309,7 @@ export class CrossyRoadGameWindowComponent
 
     if (!playerLane) return;
 
-    const playerHitboxWidth = 0.6; 
+    const playerHitboxWidth = 0.6;
     const graceMargin = 0.1;
 
     for (const obs of playerLane.obstacles) {
