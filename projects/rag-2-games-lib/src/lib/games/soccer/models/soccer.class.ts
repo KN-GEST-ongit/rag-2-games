@@ -115,6 +115,8 @@ export class Soccer extends Game {
         right: '[D]',
       }
     ),
+
+    
     new Player(
       1,
       true,
