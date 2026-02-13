@@ -34,21 +34,6 @@ export class CrossyRoadGameWindowComponent
 
   public override ngAfterViewInit(): void {
     super.ngAfterViewInit();
-
-    const parent = this._canvas.parentElement;
-    if (parent) {
-      const rect = parent.getBoundingClientRect();
-      this._canvas.width = Math.max(rect.width, 800);
-      this._canvas.height = Math.max(rect.height, 600);
-    } else {
-      this._canvas.width = 1200;
-      this._canvas.height = 800;
-    }
-
-    this._canvas.style.width = '100%';
-    this._canvas.style.height = '100%';
-    this._canvas.style.display = 'block';
-
     setTimeout(() => {
       this.initBabylon();
     }, 300);

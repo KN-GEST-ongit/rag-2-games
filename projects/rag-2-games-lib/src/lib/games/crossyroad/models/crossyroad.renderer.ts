@@ -103,10 +103,20 @@ export class CrossyRoadRenderer {
   }
 
   public render(state: CrossyRoadState): void {
-    const diffX = Math.abs(state.playerX - this.playerMesh.position.x);
-    const diffZ = Math.abs(state.playerZ - this.playerMesh.position.z);
+    const dirX = state.playerX - this.playerMesh.position.x;
+    const dirZ = state.playerZ - this.playerMesh.position.z;
     
-    const distanceToTarget = diffX + diffZ;
+    const distanceToTarget = Math.abs(dirX) + Math.abs(dirZ);
+
+    if (distanceToTarget > 0.05) {
+        const targetRotation = Math.atan2(dirX, dirZ);
+        
+        this.playerMesh.rotation.y = Scalar.LerpAngle(
+            this.playerMesh.rotation.y, 
+            targetRotation, 
+            0.4
+        );
+    }
 
     if (distanceToTarget < 0.05) {
         this.playerMesh.position.x = state.playerX;
@@ -125,7 +135,6 @@ export class CrossyRoadRenderer {
 
     this.camera.position.x = this.playerMesh.position.x + this.cameraOffset.x;
     this.camera.position.z = this.playerMesh.position.z + this.cameraOffset.z;
-    
     this.camera.position.y = this.cameraOffset.y; 
 
     this.camera.setTarget(new Vector3(
