@@ -144,10 +144,12 @@ export class TetrisGameWindowComponent
     this.currentMode = mode;
     this.game.state.gameMode = mode;
     this.isCanvasVisible = false;
+    this.playerBestScores = [0, 0];
 
     setTimeout(() => {
       this.isCanvasVisible = true;
       setTimeout(() => {
+        super.ngOnInit();
         super.ngAfterViewInit();
         this.resizeCanvas();
         this.restart();
@@ -199,15 +201,17 @@ export class TetrisGameWindowComponent
       return;
     }
 
-    const playersToUpdate = this.currentMode === 'singleplayer' ? [0] : [0,1];
-    playersToUpdate.forEach(playerIndex => {
-      if(this.processGameOver(playerIndex)) return;
+    if (!this.isPaused) {
+      const playersToUpdate = this.currentMode === 'singleplayer' ? [0] : [0,1];
+      playersToUpdate.forEach(playerIndex => {
+        if(this.processGameOver(playerIndex)) return;
 
-      this.processMovement(playerIndex);
-      this.processRotation(playerIndex);
-      this.processGravity(playerIndex);
-      this.processHardDrop(playerIndex);
-    });
+        this.processMovement(playerIndex);
+        this.processRotation(playerIndex);
+        this.processGravity(playerIndex);
+        this.processHardDrop(playerIndex);
+      });
+    }
 
     this.render();
   }
