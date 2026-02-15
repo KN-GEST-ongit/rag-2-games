@@ -70,6 +70,8 @@ export class SoccerGameWindowComponent
 
       context.clearRect(0, 0, gameW, gameH);
 
+      this.drawPitchLines(context, gameW, gameH);
+
       this.drawGoals(context, gameW, gameH);
 
       this.drawEntity(context, this.game.state.player1);
@@ -151,7 +153,7 @@ export class SoccerGameWindowComponent
     if (entity.y > this.game.state.height - entity.radius) entity.y = this.game.state.height - entity.radius;
   }
 
- private getPosts(): { x: number; y: number; w: number; h: number }[] {
+  private getPosts(): { x: number; y: number; w: number; h: number }[] {
     const w = this.game.state.width;
     const h = this.game.state.height;
     
@@ -383,15 +385,16 @@ export class SoccerGameWindowComponent
       }
   }
 
-private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void {
+  private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void {
     const goalHeight = 160;
     const goalDepth = 40; 
     const topY = (h - goalHeight) / 2;
     const bottomY = topY + goalHeight;
 
+    context.lineWidth = 4;
+
     //lewa
     context.strokeStyle = this.game.state.teamRedColor;
-    context.lineWidth = 4;
 
     context.beginPath();
     context.moveTo(0, topY);           
@@ -399,10 +402,6 @@ private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void
     context.lineTo(goalDepth, bottomY);
     context.lineTo(0, bottomY);        
     context.stroke();
-
-    context.fillStyle = this.game.state.teamRedColor;
-    context.globalAlpha = 0.2;
-    context.fillRect(0, topY, goalDepth, goalHeight); 
 
     //prawa
     context.globalAlpha = 1.0;
@@ -414,15 +413,38 @@ private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void
     context.lineTo(w - goalDepth, bottomY);
     context.lineTo(w, bottomY);           
     context.stroke();
-
-    context.fillStyle = this.game.state.teamBlueColor;
-    context.globalAlpha = 0.2;
-    context.fillRect(w - goalDepth, topY, goalDepth, goalHeight);
     
     context.globalAlpha = 1.0;
+
+    const gridSize = 8; 
+    context.lineWidth = 1;
+    context.strokeStyle = 'rgba(0, 0, 0, 0.4)'; 
+    context.beginPath();
+
+    for (let x = 0; x <= goalDepth; x += gridSize) {
+        context.moveTo(x, topY);
+        context.lineTo(x, bottomY);
+    }
+    for (let y = topY; y <= bottomY; y += gridSize) {
+        context.moveTo(0, y);
+        context.lineTo(goalDepth, y);
+    }
+
+    for (let x = w - goalDepth; x <= w; x += gridSize) {
+        context.moveTo(x, topY);
+        context.lineTo(x, bottomY);
+    }
+    for (let y = topY; y <= bottomY; y += gridSize) {
+        context.moveTo(w - goalDepth, y);
+        context.lineTo(w, y);
+    }
+    context.stroke();
+
+
+    
   }
 
-    private drawEntity(context: CanvasRenderingContext2D, entity: IMovableEntity): void {
+  private drawEntity(context: CanvasRenderingContext2D, entity: IMovableEntity): void {
     const sideLength = entity.radius * 2;
     const topLeftX = entity.x - entity.radius;
     const topLeftY = entity.y - entity.radius;
@@ -434,17 +456,38 @@ private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void
     context.strokeRect(topLeftX, topLeftY, sideLength, sideLength);
   }
 
- private drawPitchLines(context: CanvasRenderingContext2D, w: number, h: number): void {
-    context.strokeStyle = '#000000';
+  private drawPitchLines(context: CanvasRenderingContext2D, w: number, h: number): void {
+    context.strokeStyle = '#474545';
     context.lineWidth = 3;
+    
     context.strokeRect(0, 0, w, h);
+    
     context.beginPath();
     context.moveTo(w / 2, 0);
     context.lineTo(w / 2, h);
     context.stroke();
+
+    const centerRadius = 50;
+    context.beginPath();
+    context.arc(w / 2, h / 2, centerRadius, 0, Math.PI * 2);
+    context.stroke();
+
+    const dotRadius = 6; 
+    context.beginPath();
+    context.arc(w / 2, h / 2, dotRadius, 0, Math.PI * 2);
+    context.fillStyle = '#474545'; 
+    context.fill();
+
+    const penaltyWidth = 125;  
+    const penaltyHeight = 250; 
+    const penaltyY = (h - penaltyHeight) / 2; 
+
+    context.strokeRect(0, penaltyY, penaltyWidth, penaltyHeight);
+
+    context.strokeRect(w - penaltyWidth, penaltyY, penaltyWidth, penaltyHeight);
   }
 
-  private drawBall(context: CanvasRenderingContext2D, ball: IMovableEntity): void {
+   private drawBall(context: CanvasRenderingContext2D, ball: IMovableEntity): void {
     context.beginPath();
     context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     context.fillStyle = ball.color;
@@ -452,5 +495,6 @@ private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void
     context.strokeStyle = 'black';
     context.lineWidth = 2;
     context.stroke();
+
   }
-}
+} 
