@@ -39,9 +39,9 @@ export class BombermanGameWindowComponent
   private _gridHeight = 13;
   private _cellSize = 50;
 
-  private readonly _maxsSpeed = 8;
-  private readonly _maxBombs = 4;
-  private readonly _maxRange = 5;
+  private readonly _maxsSpeed = 6;
+  private readonly _maxBombs = 3;
+  private readonly _maxRange = 3;
 
   private _playerSize = 0.8 * this._cellSize;
 
@@ -95,11 +95,15 @@ export class BombermanGameWindowComponent
     this.game.state.player1alive = true;
     this.game.state.player1bombCount = 1;
     this.game.state.player1bombRange = 1;
+    this.game.state.player1speed = 4;
+    this.game.state.player1InvincibleUntil = 0;
 
     this.game.state.player2lives = 3;
     this.game.state.player2alive = true;
     this.game.state.player2bombCount = 1;
     this.game.state.player2bombRange = 1;
+    this.game.state.player2speed = 4;
+    this.game.state.player2InvincibleUntil = 0;
 
     this.game.state.walls = [];
     this.game.state.bombs = [];
@@ -111,10 +115,10 @@ export class BombermanGameWindowComponent
   }
 
   private selectMap(): void {
-    // const maps = Object.values(BombermanMap);
-    // const randomIndex = Math.floor(Math.random() * maps.length);
-    // this._currentMap = maps[randomIndex];
-    this._currentMap = BombermanMap.map1;
+    const maps = Object.values(BombermanMap);
+    const randomIndex = Math.floor(Math.random() * maps.length);
+    this._currentMap = maps[randomIndex];
+    // this._currentMap = BombermanMap.map1;
   }
 
   private loadMap(): void {
@@ -139,57 +143,64 @@ export class BombermanGameWindowComponent
   }
 
   private movePlayers(): void {
-    if (this.game.state.player1alive) {
-      const moveX = Number(this.game.players[0].inputData['moveX']);
-      const moveY = Number(this.game.players[0].inputData['moveY']);
+    const processMovement = (playerIndex: number): void => {
+      const p = this.game.players[playerIndex];
+      const move = Number(p.inputData['move']);
 
-      let speed = this.game.state.player1speed;
+      if (move === 0) return;
 
-      if (moveX !== 0 && moveY !== 0) {
-        speed = speed / Math.sqrt(2);
-      }
+      const speed =
+        playerIndex === 0
+          ? this.game.state.player1speed
+          : this.game.state.player2speed;
 
-      if (moveX !== 0) {
-        const newX = this.game.state.player1x + moveX * speed;
-        if (this.canMove(newX, this.game.state.player1y)) {
-          this.game.state.player1x = newX;
-          this.checkPowerups(0);
+      const currentX =
+        playerIndex === 0 ? this.game.state.player1x : this.game.state.player2x;
+      const currentY =
+        playerIndex === 0 ? this.game.state.player1y : this.game.state.player2y;
+
+      let newX = currentX;
+      let newY = currentY;
+
+      if (move === 1) newY -= speed;
+      else if (move === 2) newY += speed;
+      else if (move === 3) newX -= speed;
+      else if (move === 4) newX += speed;
+
+      if (this.canMove(newX, newY)) {
+        this.updatePlayerPos(playerIndex, newX, newY);
+      } else {
+        const tolerance = 10;
+
+        if (move === 1 || move === 2) {
+          if (this.canMove(currentX + tolerance, newY)) {
+            this.updatePlayerPos(playerIndex, currentX + speed, currentY);
+          } else if (this.canMove(currentX - tolerance, newY)) {
+            this.updatePlayerPos(playerIndex, currentX - speed, currentY);
+          }
+        } else if (move === 3 || move === 4) {
+          if (this.canMove(newX, currentY + tolerance)) {
+            this.updatePlayerPos(playerIndex, currentX, currentY + speed);
+          } else if (this.canMove(newX, currentY - tolerance)) {
+            this.updatePlayerPos(playerIndex, currentX, currentY - speed);
+          }
         }
       }
-      if (moveY !== 0) {
-        const newY = this.game.state.player1y + moveY * speed;
-        if (this.canMove(this.game.state.player1x, newY)) {
-          this.game.state.player1y = newY;
-          this.checkPowerups(0);
-        }
-      }
+    };
+
+    if (this.game.state.player1alive) processMovement(0);
+    if (this.game.state.player2alive) processMovement(1);
+  }
+
+  private updatePlayerPos(index: number, x: number, y: number): void {
+    if (index === 0) {
+      this.game.state.player1x = x;
+      this.game.state.player1y = y;
+    } else {
+      this.game.state.player2x = x;
+      this.game.state.player2y = y;
     }
-
-    if (this.game.state.player2alive) {
-      const moveX = Number(this.game.players[1].inputData['moveX']);
-      const moveY = Number(this.game.players[1].inputData['moveY']);
-
-      let speed = this.game.state.player1speed;
-
-      if (moveX !== 0 && moveY !== 0) {
-        speed = speed / Math.sqrt(2);
-      }
-
-      if (moveX !== 0) {
-        const newX = this.game.state.player2x + moveX * speed;
-        if (this.canMove(newX, this.game.state.player2y)) {
-          this.game.state.player2x = newX;
-          this.checkPowerups(1);
-        }
-      }
-      if (moveY !== 0) {
-        const newY = this.game.state.player2y + moveY * speed;
-        if (this.canMove(this.game.state.player2x, newY)) {
-          this.game.state.player2y = newY;
-          this.checkPowerups(1);
-        }
-      }
-    }
+    this.checkPowerups(index);
   }
 
   private canMove(x: number, y: number): boolean {
@@ -385,7 +396,8 @@ export class BombermanGameWindowComponent
   }
 
   private explodeBomb(bomb: { x: number; y: number; range: number }): void {
-    this.checkPlayerHit(bomb.x, bomb.y);
+    if (this.checkPlayerHit(bomb.x, bomb.y)) return;
+
     this.createExplosionEffect(bomb.x, bomb.y);
     this.triggerBombAt(bomb.x, bomb.y);
 
@@ -401,7 +413,7 @@ export class BombermanGameWindowComponent
         const checkX = bomb.x + dir.x * i;
         const checkY = bomb.y + dir.y * i;
 
-        this.checkPlayerHit(checkX, checkY);
+        if (this.checkPlayerHit(checkX, checkY)) return;
 
         const hasHitBomb = this.triggerBombAt(checkX, checkY);
         if (hasHitBomb) {
@@ -439,53 +451,65 @@ export class BombermanGameWindowComponent
     }
   }
 
-  private checkPlayerHit(gridX: number, gridY: number): void {
+  private checkPlayerHit(gridX: number, gridY: number): boolean {
     let didPlayer1Died = false;
     let didPlayer2Died = false;
+    const now = Date.now();
 
     if (this.game.state.player1alive) {
-      if (
-        this.isPlayerOnCell(
-          gridX,
-          gridY,
-          this.game.state.player1x,
-          this.game.state.player1y
-        )
-      ) {
-        this.game.state.player1lives--;
-        if (this.game.state.player1lives <= 0) {
-          this.game.state.player1alive = false;
-          this.game.state.player2score += 1;
-          didPlayer1Died = true;
-        } else {
-          this.respawnPlayer(0);
+      if (now > this.game.state.player1InvincibleUntil) {
+        if (
+          this.isPlayerOnCell(
+            gridX,
+            gridY,
+            this.game.state.player1x,
+            this.game.state.player1y
+          )
+        ) {
+          this.game.state.player1lives--;
+          this.game.state.player1InvincibleUntil = now + 2000;
+
+          if (this.game.state.player1lives <= 0) {
+            this.game.state.player1alive = false;
+            this.game.state.player2score += 1;
+            didPlayer1Died = true;
+          } else {
+            this.respawnPlayer(0);
+          }
         }
       }
     }
 
     if (this.game.state.player2alive) {
-      if (
-        this.isPlayerOnCell(
-          gridX,
-          gridY,
-          this.game.state.player2x,
-          this.game.state.player2y
-        )
-      ) {
-        this.game.state.player2lives--;
-        if (this.game.state.player2lives <= 0) {
-          this.game.state.player2alive = false;
-          this.game.state.player1score += 1;
-          didPlayer2Died = true;
-        } else {
-          this.respawnPlayer(1);
+      if (now > this.game.state.player2InvincibleUntil) {
+        if (
+          this.isPlayerOnCell(
+            gridX,
+            gridY,
+            this.game.state.player2x,
+            this.game.state.player2y
+          )
+        ) {
+          this.game.state.player2lives--;
+          this.game.state.player2InvincibleUntil = now + 2000;
+
+          if (this.game.state.player2lives <= 0) {
+            this.game.state.player2alive = false;
+            this.game.state.player1score += 1;
+            didPlayer2Died = true;
+          } else {
+            this.respawnPlayer(1);
+          }
         }
       }
     }
 
     if (didPlayer1Died || didPlayer2Died) {
       this.resetGame();
+      return true;
     }
+
+    return false;
   }
 
   private isPlayerOnCell(
@@ -608,9 +632,15 @@ export class BombermanGameWindowComponent
 
   private updateExplosions(): void {
     const deltaTime = 1000 / 60;
+
     for (let i = this.game.state.explosions.length - 1; i >= 0; i--) {
       const explosion = this.game.state.explosions[i];
       explosion.timer -= deltaTime;
+
+      if (this.checkPlayerHit(explosion.x, explosion.y)) {
+        return;
+      }
+
       if (explosion.timer <= 0) {
         this.game.state.explosions.splice(i, 1);
       }

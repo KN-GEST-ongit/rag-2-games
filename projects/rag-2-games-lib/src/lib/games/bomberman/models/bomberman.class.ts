@@ -18,6 +18,7 @@ export class BombermanState implements TGameState {
   public player1bombCount = 1;
   public player1bombRange = 1;
   public player1speed = 4;
+  public player1InvincibleUntil = 0;
 
   public player2x = 655;
   public player2y = 555;
@@ -27,6 +28,7 @@ export class BombermanState implements TGameState {
   public player2bombCount = 1;
   public player2bombRange = 1;
   public player2speed = 4;
+  public player2InvincibleUntil = 0;
 
   public walls: IBombermanWall[] = [];
   public bombs: IBombermanBomb[] = [];
@@ -86,26 +88,26 @@ export class Bomberman extends Game {
       0,
       true,
       'Player 1',
-      { moveX: 0, moveY: 0, bomb: 0 },
+      { move: 0, bomb: 0 },
       {
         w: {
-          variableName: 'moveY',
-          pressedValue: -1,
+          variableName: 'move',
+          pressedValue: 1,
           releasedValue: 0,
         },
         s: {
-          variableName: 'moveY',
-          pressedValue: 1,
+          variableName: 'move',
+          pressedValue: 2,
           releasedValue: 0,
         },
         a: {
-          variableName: 'moveX',
-          pressedValue: -1,
+          variableName: 'move',
+          pressedValue: 3,
           releasedValue: 0,
         },
         d: {
-          variableName: 'moveX',
-          pressedValue: 1,
+          variableName: 'move',
+          pressedValue: 4,
           releasedValue: 0,
         },
         ' ': {
@@ -114,7 +116,7 @@ export class Bomberman extends Game {
           releasedValue: 0,
         },
       },
-      '<moveX>: value of {-1, 0, 1}, -1: left, 0: stop, 1: right; <moveY>: value of {-1, 0, 1}, -1: up, 0: stop, 1: down; <bomb>: value of {0, 1}, 0: no bomb, 1: place bomb',
+      '<move>: value of {0, 1, 2, 3, 4}, 0: stop, 1: up, 2: down, 3: left, 4: right; <bomb>: value of {0, 1}, 0: no bomb, 1: place bomb',
       {
         up: '[W]',
         down: '[S]',
@@ -127,26 +129,26 @@ export class Bomberman extends Game {
       1,
       true,
       'Player 2',
-      { moveX: 0, moveY: 0, bomb: 0 },
+      { move: 0, bomb: 0 },
       {
         ArrowUp: {
-          variableName: 'moveY',
-          pressedValue: -1,
+          variableName: 'move',
+          pressedValue: 1,
           releasedValue: 0,
         },
         ArrowDown: {
-          variableName: 'moveY',
-          pressedValue: 1,
+          variableName: 'move',
+          pressedValue: 2,
           releasedValue: 0,
         },
         ArrowLeft: {
-          variableName: 'moveX',
-          pressedValue: -1,
+          variableName: 'move',
+          pressedValue: 3,
           releasedValue: 0,
         },
         ArrowRight: {
-          variableName: 'moveX',
-          pressedValue: 1,
+          variableName: 'move',
+          pressedValue: 4,
           releasedValue: 0,
         },
         Enter: {
@@ -155,7 +157,7 @@ export class Bomberman extends Game {
           releasedValue: 0,
         },
       },
-      '<moveX>: value of {-1, 0, 1}, -1: left, 0: stop, 1: right; <moveY>: value of {-1, 0, 1}, -1: up, 0: stop, 1: down; <bomb>: value of {0, 1}, 0: no bomb, 1: place bomb',
+      '<move>: value of {0, 1, 2, 3, 4}, 0: stop, 1: up, 2: down, 3: left, 4: right; <bomb>: value of {0, 1}, 0: no bomb, 1: place bomb',
       {
         up: '[ARROW_UP]',
         down: '[ARROW_DOWN]',
