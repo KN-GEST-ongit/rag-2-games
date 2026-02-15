@@ -26,7 +26,7 @@ export class SoccerGameWindowComponent
 {
 
   public override game!: Soccer;
-
+  
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Soccer;
@@ -54,8 +54,10 @@ export class SoccerGameWindowComponent
   protected override update(): void {
     super.update();
 
-    this.handleInput();
-    this.physicsStep();
+    if (!this.isPaused) {
+      this.handleInput();
+      this.physicsStep();
+    }
     
     this.render();
   }
@@ -96,19 +98,13 @@ export class SoccerGameWindowComponent
    private applyMove(player: IMovableEntity, move: number): void {
     player.vx = 0;
     player.vy = 0;
-    const diagSpeed = player.speed * 0.7071; 
-    switch(move) {
-      case 1: player.vx = player.speed; break;
-      case 2: player.vx = -player.speed; break;
-      case 3: player.vy = player.speed; break;
-      case 4: player.vy = -player.speed; break;
-      case 5: player.vx = diagSpeed; player.vy = -diagSpeed; break;
-      case 6: player.vx = diagSpeed; player.vy = diagSpeed; break;
-      case 7: player.vx = -diagSpeed; player.vy = diagSpeed; break;
-      case 8: player.vx = -diagSpeed; player.vy = -diagSpeed; break;
-      default: break;
-    }
-  }
+    
+      if(move == 1) player.vx = player.speed; 
+      if(move == 2) player.vx = -player.speed; 
+      if(move == 3) player.vy = player.speed; 
+      if(move == 4) player.vy = -player.speed; 
+
+   }
 
   private physicsStep(): void {
     const state = this.game.state;
