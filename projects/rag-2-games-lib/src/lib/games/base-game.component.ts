@@ -207,6 +207,7 @@ export abstract class BaseGameWindowComponent
     for (const player of this.game.players) {
       if (
         player.playerType === PlayerSourceType.KEYBOARD &&
+        player.isActive &&
         player.controlsBinding[event.key] !== undefined &&
         document.activeElement?.id !== 'inGameMenuInputFocusAction'
       ) {
@@ -238,6 +239,7 @@ export abstract class BaseGameWindowComponent
     for (const player of this.game.players) {
       if (
         player.playerType === PlayerSourceType.KEYBOARD &&
+        player.isActive &&
         player.controlsBinding[event.key] !== undefined &&
         document.activeElement?.id !== 'inGameMenuInputFocusAction'
       ) {
