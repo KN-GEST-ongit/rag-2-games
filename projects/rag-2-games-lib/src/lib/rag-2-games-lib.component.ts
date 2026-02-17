@@ -10,8 +10,8 @@ import { HappyJumpGameWindowComponent } from './games/happyjump/happyjump.compon
 import { SpaceinvadersGameWindowComponent } from './games/spaceinvaders/spaceinvaders.component';
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
 import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
+import { BombermanGameWindowComponent } from './games/bomberman/bomberman.component';
 import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefense.component';
-
 
 @Component({
   selector: 'rag-2-games-lib',
@@ -21,11 +21,13 @@ import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefen
     SkiJumpGameWindowComponent,
     FlappyBirdGameWindowComponent,
     HappyJumpGameWindowComponent,
-  	SpaceinvadersGameWindowComponent,
-  	SnakeGameWindowComponent,
-  	PacmanGameWindowComponent,
-    TowerDefenseGameWindowComponent],
-    
+    SnakeGameWindowComponent,
+    PacmanGameWindowComponent,
+    BombermanGameWindowComponent,
+    SpaceinvadersGameWindowComponent,
+    TowerDefenseGameWindowComponent,
+  ],
+
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -64,16 +66,16 @@ import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefen
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
-			@case ('spaceinvaders') {
+      @case ('spaceinvaders') {
         <app-spaceinvaders
-        class="flex flex-col items-center w-3/4"
+          class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
           [setAbstractGame]="game"
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
-			@case ('snake') {
+      @case ('snake') {
         <app-snake
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
@@ -81,8 +83,8 @@ import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefen
           [setAbstractGame]="game"
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
-      } 
-			@case ('pacman') {
+      }
+      @case ('pacman') {
         <app-pacman
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
@@ -91,8 +93,17 @@ import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefen
           [setSocketInputDataReceive]="socketInputData"
           (gameStateDataEmitter)="handleGameStateData($event)" />
       }
-			@case ('towerdefense') {
+      @case ('towerdefense') {
         <app-towerdefense
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+      @case ('bomberman') {
+        <app-bomberman
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
