@@ -75,12 +75,12 @@ export class CrossyRoadAssets {
     
     const carMat = new StandardMaterial("carMat", scene);
     if (type === 'car_fast') {
-        carMat.diffuseColor = Color3.Red();
+      carMat.diffuseColor = Color3.Red();
     } else {
-        const rand = Math.random();
-        if (rand < 0.33) carMat.diffuseColor = new Color3(0.2, 0.2, 0.8);
-        else if (rand < 0.66) carMat.diffuseColor = new Color3(0.2, 0.8, 0.2);
-        else carMat.diffuseColor = new Color3(0.9, 0.9, 0.2);
+      const rand = Math.random();
+      if (rand < 0.33) carMat.diffuseColor = new Color3(0.2, 0.2, 0.8);
+      else if (rand < 0.66) carMat.diffuseColor = new Color3(0.2, 0.8, 0.2);
+      else carMat.diffuseColor = new Color3(0.9, 0.9, 0.2);
     }
 
     const chassis = MeshBuilder.CreateBox("chassis", { width: width, height: 0.5, depth: 0.8 }, scene);
@@ -100,16 +100,16 @@ export class CrossyRoadAssets {
     wheelMat.diffuseColor = new Color3(0.1, 0.1, 0.1);
 
     const positions = [
-        { x: width/2 - 0.3, z: 0.4 }, { x: -width/2 + 0.3, z: 0.4 },
-        { x: width/2 - 0.3, z: -0.4 }, { x: -width/2 + 0.3, z: -0.4 }
+      { x: width/2 - 0.3, z: 0.4 }, { x: -width/2 + 0.3, z: 0.4 },
+      { x: width/2 - 0.3, z: -0.4 }, { x: -width/2 + 0.3, z: -0.4 }
     ];
 
     positions.forEach(pos => {
-        const wheel = MeshBuilder.CreateCylinder("wheel", { height: 0.1, diameter: 0.35 }, scene);
-        wheel.rotation.x = Math.PI / 2;
-        wheel.position.set(pos.x, 0.17, pos.z);
-        wheel.material = wheelMat;
-        wheel.parent = root;
+      const wheel = MeshBuilder.CreateCylinder("wheel", { height: 0.1, diameter: 0.35 }, scene);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(pos.x, 0.17, pos.z);
+      wheel.material = wheelMat;
+      wheel.parent = root;
     });
 
     root.getChildMeshes().forEach(m => shadowGenerator.addShadowCaster(m as Mesh));
@@ -130,16 +130,58 @@ export class CrossyRoadAssets {
     leafMat.diffuseColor = new Color3(0.1, 0.6, 0.1);
 
     const levels = [
-        { w: 1.2, y: 0.8 },
-        { w: 0.9, y: 1.4 },
-        { w: 0.6, y: 1.9 }
+      { w: 1.2, y: 0.8 },
+      { w: 0.9, y: 1.4 },
+      { w: 0.6, y: 1.9 }
     ];
 
     levels.forEach(lvl => {
-        const leaves = MeshBuilder.CreateBox("leaves", { width: lvl.w, height: 0.7, depth: lvl.w }, scene);
-        leaves.position.y = lvl.y;
-        leaves.material = leafMat;
-        leaves.parent = root;
+      const leaves = MeshBuilder.CreateBox("leaves", { width: lvl.w, height: 0.7, depth: lvl.w }, scene);
+      leaves.position.y = lvl.y;
+      leaves.material = leafMat;
+      leaves.parent = root;
+    });
+
+    root.getChildMeshes().forEach(m => shadowGenerator.addShadowCaster(m as Mesh));
+    return root;
+  }
+
+  public static createVoxelTruck(scene: Scene, shadowGenerator: ShadowGenerator, width: number): Mesh {
+    const root = new Mesh("truck_root", scene);
+
+    const trailerWidth = width * 0.7;
+    const trailer = MeshBuilder.CreateBox("trailer", { width: trailerWidth, height: 1.2, depth: 0.9 }, scene);
+    trailer.position.y = 0.75;
+    trailer.position.x = -width * 0.15;
+    const trailerMat = new StandardMaterial("trailerMat", scene);
+    trailerMat.diffuseColor = new Color3(0.8, 0.8, 0.8); 
+    trailer.material = trailerMat;
+    trailer.parent = root;
+
+    const cabinWidth = width * 0.25;
+    const cabin = MeshBuilder.CreateBox("cabin", { width: cabinWidth, height: 0.8, depth: 0.8 }, scene);
+    cabin.position.y = 0.55;
+    cabin.position.x = trailerWidth / 2 + cabinWidth / 2 - width * 0.15 + 0.05;
+    const cabinMat = new StandardMaterial("cabinMat", scene);
+    cabinMat.diffuseColor = new Color3(0.1, 0.4, 0.8); 
+    cabin.material = cabinMat;
+    cabin.parent = root;
+
+    const wheelMat = new StandardMaterial("wheel", scene);
+    wheelMat.diffuseColor = new Color3(0.1, 0.1, 0.1);
+
+    const wheelPositions = [
+      { x: cabin.position.x, z: 0.45 }, { x: cabin.position.x, z: -0.45 },
+      { x: trailer.position.x + trailerWidth/4, z: 0.45 }, { x: trailer.position.x + trailerWidth/4, z: -0.45 },
+      { x: trailer.position.x - trailerWidth/3, z: 0.45 }, { x: trailer.position.x - trailerWidth/3, z: -0.45 }
+    ];
+
+    wheelPositions.forEach(pos => {
+      const wheel = MeshBuilder.CreateCylinder("wheel", { height: 0.1, diameter: 0.4 }, scene);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(pos.x, 0.2, pos.z);
+      wheel.material = wheelMat;
+      wheel.parent = root;
     });
 
     root.getChildMeshes().forEach(m => shadowGenerator.addShadowCaster(m as Mesh));

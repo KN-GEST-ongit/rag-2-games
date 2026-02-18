@@ -192,6 +192,8 @@ export class CrossyRoadRenderer {
       if (!mesh) {
         if (obs.type === 'tree') {
           mesh = CrossyRoadAssets.createVoxelTree(this.scene, this.shadowGenerator);
+        }else if (obs.type === 'truck') {
+            mesh = CrossyRoadAssets.createVoxelTruck(this.scene, this.shadowGenerator, obs.width);
         } else {
           mesh = CrossyRoadAssets.createVoxelCar(this.scene, this.shadowGenerator, obs.type, obs.width);
         }
@@ -207,7 +209,7 @@ export class CrossyRoadRenderer {
       if (obs.type !== 'tree') {
         mesh.rotation.y = obs.direction === 1 ? 0 : Math.PI;
       }
-      if (obs.type.includes('car')) {
+      if (obs.type.includes('car')|| obs.type === 'truck') {
         mesh.rotation.z = Math.sin(Date.now() * 0.01 + obs.id) * 0.02;
       }
     }

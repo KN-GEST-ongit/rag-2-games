@@ -184,13 +184,19 @@ export class CrossyRoadGameWindowComponent
 
         if (validPosition) {
           placedCarsX.push(candidateX);
+          const isTruck = Math.random() < 0.10;
+
+          const obstacleType = isTruck ? 'truck' : (speed > 0.15 ? 'car_fast' : 'car_slow');
+          const obstacleWidth = isTruck ? 3.5 : 1.5; 
+          const obstacleSpeed = isTruck ? speed * 0.7 : speed;
+
           lane.obstacles.push({
             id: state.nextObstacleId++,
             x: candidateX,
-            speed: speed,
+            speed: obstacleSpeed,
             direction: direction as -1 | 1,
-            type: speed > 0.15 ? 'car_fast' : 'car_slow',
-            width: 1.5
+            type: obstacleType,
+            width: obstacleWidth
           });
         }
       }

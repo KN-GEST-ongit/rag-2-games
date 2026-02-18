@@ -6,7 +6,7 @@ export interface IObstacle {
   x: number;
   speed: number;
   direction: -1 | 1;
-  type: 'car_slow' | 'car_fast' | 'tree';
+  type: 'car_slow' | 'car_fast' | 'tree' | 'truck';
   width: number;
 }
 
