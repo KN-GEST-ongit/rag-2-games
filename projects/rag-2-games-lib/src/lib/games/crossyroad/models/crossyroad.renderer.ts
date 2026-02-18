@@ -36,6 +36,7 @@ export class CrossyRoadRenderer {
 
   private grassMat: StandardMaterial;
   private roadMat: StandardMaterial;
+  private waterMat: StandardMaterial;
 
   private readonly cameraOffset = new Vector3(2, 10, -10);
 
@@ -91,6 +92,10 @@ export class CrossyRoadRenderer {
 
     this.roadMat = new StandardMaterial("roadMat", this.scene);
     this.roadMat.diffuseColor = new Color3(0.25, 0.25, 0.25);
+
+    this.waterMat = new StandardMaterial("waterMat", this.scene);
+    this.waterMat.diffuseColor = new Color3(0.1, 0.5, 0.9);
+    this.waterMat.alpha = 0.8;
 
     this.playerMesh = CrossyRoadAssets.createVoxelPlayer(this.scene, this.shadowGenerator);
     this.playerMesh.position.y = 0;
@@ -170,7 +175,12 @@ export class CrossyRoadRenderer {
         );
         mesh.position.set(0, -0.075, lane.z);
         mesh.receiveShadows = true;
-        mesh.material = lane.type === 'grass' ? this.grassMat : this.roadMat;
+        if (lane.type === 'grass') mesh.material = this.grassMat;
+        else if (lane.type === 'road') mesh.material = this.roadMat;
+        else if (lane.type === 'water'){ 
+          mesh.material = this.waterMat
+          mesh.position.y = -0.15
+        }
         this.laneMeshes.set(lane.z, mesh);
       }
     }
@@ -194,6 +204,8 @@ export class CrossyRoadRenderer {
           mesh = CrossyRoadAssets.createVoxelTree(this.scene, this.shadowGenerator);
         }else if (obs.type === 'truck') {
             mesh = CrossyRoadAssets.createVoxelTruck(this.scene, this.shadowGenerator, obs.width);
+        }else if (obs.type === 'log') {
+          mesh = CrossyRoadAssets.createVoxelLog(this.scene, this.shadowGenerator, obs.width);
         } else {
           mesh = CrossyRoadAssets.createVoxelCar(this.scene, this.shadowGenerator, obs.type, obs.width);
         }

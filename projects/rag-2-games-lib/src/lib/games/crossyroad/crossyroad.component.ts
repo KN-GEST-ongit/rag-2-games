@@ -234,6 +234,44 @@ export class CrossyRoadGameWindowComponent
           }
         }
       }
+    } else if (lane.type === 'water') {
+      let direction: 1 | -1 = Math.random() > 0.5 ? 1 : -1;
+
+      const prevLane = state.lanes[state.lanes.length - 1];
+       if (prevLane && prevLane.type === 'water' && prevLane.obstacles.length > 0) {
+           direction = prevLane.obstacles[0].direction === 1 ? -1 : 1;
+       }
+
+      const speed = 0.04 + Math.random() * 0.04;
+       
+      const logCount = Math.floor(Math.random() * 2) + 3;
+      const placedX: number[] = [];
+      const minDistance = 6;
+
+      for (let j = 0; j < logCount; j++) {
+        let attempts = 0;
+        let validPosition = false;
+        let candidateX = 0;
+
+        while (!validPosition && attempts < 10) {
+          candidateX = (Math.random() - 0.5) * 40;
+          const collision = placedX.some(x => Math.abs(x - candidateX) < minDistance);
+          if (!collision) validPosition = true;
+          attempts++;
+        }
+
+        if (validPosition) {
+          placedX.push(candidateX);
+          lane.obstacles.push({
+            id: state.nextObstacleId++,
+            x: candidateX,
+            speed: speed,
+            direction: direction as -1 | 1,
+            type: 'log',
+            width: 3.0 + Math.random() * 2
+          });
+        }
+      }
     }
   }
 
@@ -245,20 +283,46 @@ export class CrossyRoadGameWindowComponent
       for (let i = 1; i <= 3; i++) {
         const newZ = maxZ + i;
 
+        const prevLaneType = state.lanes.length > 0 ? state.lanes[state.lanes.length - 1].type : 'grass';
+
         let consecutiveGrass = 0;
+        let consecutiveWater = 0;
         for (let k = state.lanes.length - 1; k >= 0; k--) {
-          if (state.lanes[k].type === 'grass') {
-            consecutiveGrass++;
+          if (state.lanes[k].type === prevLaneType) {
+            if (prevLaneType === 'grass') consecutiveGrass++;
+            if (prevLaneType === 'water') consecutiveWater++;
           } else {
             break;
           }
         }
 
-        let laneType: 'road' | 'grass' = Math.random() > 0.3 ? 'road' : 'grass';
+        let laneType: 'grass' | 'road' | 'water' = 'grass';
+        const rand = Math.random();
+        
+        if (newZ > 15) {
+            if (rand < 0.15) laneType = 'grass';
+            else if (rand < 0.80) laneType = 'road';
+            else laneType = 'water';
+        } else {
+            laneType = rand > 0.3 ? 'road' : 'grass';
+        }
 
         if (consecutiveGrass >= 2) {
           laneType = 'road';
         }
+
+        if (consecutiveWater >= 2) {
+          laneType = 'grass';
+        }
+
+        if (prevLaneType === 'water' && laneType === 'road') {
+            laneType = 'grass';
+        }
+
+        if (prevLaneType === 'road' && laneType === 'water') {
+            laneType = 'grass';
+        }
+
         const newLane: ILane = {
           z: newZ,
           type: laneType,
@@ -303,13 +367,35 @@ export class CrossyRoadGameWindowComponent
     const playerHitboxWidth = 0.6;
     const graceMargin = 0.1;
 
+    let isSafeOnWater = false;
+    let logSpeed = 0;
+    let logDirection = 1;
+
     for (const obs of playerLane.obstacles) {
       const dist = Math.abs(obs.x - state.playerX);
       const collisionThreshold = (obs.width / 2) + (playerHitboxWidth / 2) - graceMargin;
 
       if (dist < collisionThreshold) {
+        if (obs.type === 'log') {
+          isSafeOnWater = true;
+          logSpeed = obs.speed;
+          logDirection = obs.direction;
+        } else {
+          state.isGameOver = true;
+          return;
+        }
+      }
+    }
+
+    if (playerLane.type === 'water') {
+      if (!isSafeOnWater) {
         state.isGameOver = true;
-        break;
+      } else {
+        state.playerX += logSpeed * logDirection;
+
+        if (Math.abs(state.playerX) > 15) {
+          state.isGameOver = true;
+        }
       }
     }
   }

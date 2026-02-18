@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { 
   Mesh, 
   MeshBuilder, 
@@ -185,6 +186,21 @@ export class CrossyRoadAssets {
     });
 
     root.getChildMeshes().forEach(m => shadowGenerator.addShadowCaster(m as Mesh));
+    return root;
+  }
+
+  public static createVoxelLog(scene: Scene, shadowGenerator: ShadowGenerator, width: number): Mesh {
+    const root = new Mesh("log_root", scene);
+    
+    const logMat = new StandardMaterial("logMat", scene);
+    logMat.diffuseColor = new Color3(0.4, 0.25, 0.1);
+
+    const logMesh = MeshBuilder.CreateBox("log", { width: width, height: 0.3, depth: 0.8 }, scene);
+    logMesh.position.y = 0.15;
+    logMesh.material = logMat;
+    logMesh.parent = root;
+
+    shadowGenerator.addShadowCaster(logMesh);
     return root;
   }
 }
