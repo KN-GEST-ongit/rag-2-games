@@ -83,7 +83,7 @@ export class SoccerGameWindowComponent
     }
   }
 
-   private handleInput(): void {
+  private handleInput(): void {
     //gracz1
     const p1 = this.game.state.player1;
     const move1 = this.game.players[0].inputData['move'] as number;
@@ -97,7 +97,7 @@ export class SoccerGameWindowComponent
     }
   }
 
-   private applyMove(player: IMovableEntity, move: number): void {
+  private applyMove(player: IMovableEntity, move: number): void {
     player.vx = 0;
     player.vy = 0;
     
@@ -106,7 +106,7 @@ export class SoccerGameWindowComponent
       if(move == 3) player.vy = player.speed; 
       if(move == 4) player.vy = -player.speed; 
 
-   }
+  }
 
   private physicsStep(): void {
     const state = this.game.state;
@@ -370,19 +370,60 @@ export class SoccerGameWindowComponent
   }
 
   private checkPlayerBallCollision(player: IMovableEntity, ball: IMovableEntity): void {
-      const dx = ball.x - player.x;
-      const dy = ball.y - player.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
+    const halfSize = player.radius; 
+    
+    let testX = ball.x;
+    let testY = ball.y;
 
-      if (dist < player.radius + ball.radius) {
-          const angle = Math.atan2(dy, dx);
-          const force = 6;
-          ball.vx = Math.cos(angle) * force + player.vx * 0.5;
-          ball.vy = Math.sin(angle) * force + player.vy * 0.5;
-          const overlap = (player.radius + ball.radius) - dist;
-          ball.x += Math.cos(angle) * overlap;
-          ball.y += Math.sin(angle) * overlap;
+    if (ball.x < player.x - halfSize) testX = player.x - halfSize;      //lewa
+    else if (ball.x > player.x + halfSize) testX = player.x + halfSize; //prawa
+
+    if (ball.y < player.y - halfSize) testY = player.y - halfSize;      //gorna 
+    else if (ball.y > player.y + halfSize) testY = player.y + halfSize; //dolna
+
+    const distX = ball.x - testX;
+    const distY = ball.y - testY;
+    const distance = Math.sqrt((distX * distX) + (distY * distY));
+
+    if (distance <= ball.radius) {
+      let nx = 0;
+      let ny = 0;
+      let penetration = 0;
+
+      if (distance === 0) {
+          const distLeft = ball.x - (player.x - halfSize);
+          const distRight = (player.x + halfSize) - ball.x;
+          const distTop = ball.y - (player.y - halfSize);
+          const distBottom = (player.y + halfSize) - ball.y;
+
+          const min = Math.min(distLeft, distRight, distTop, distBottom);
+
+          if (min === distLeft) { nx = -1; ny = 0; penetration = ball.radius + distLeft; }
+          else if (min === distRight) { nx = 1; ny = 0; penetration = ball.radius + distRight; }
+          else if (min === distTop) { nx = 0; ny = -1; penetration = ball.radius + distTop; }
+          else { nx = 0; ny = 1; penetration = ball.radius + distBottom; }
+      } else {
+          nx = distX / distance;
+          ny = distY / distance;
+          penetration = ball.radius - distance;
       }
+
+      ball.x += nx * penetration;
+      ball.y += ny * penetration;
+
+      const bounce = 0.5;
+      
+      const rvx = ball.vx - player.vx;
+      const rvy = ball.vy - player.vy;
+      const velAlongNormal = rvx * nx + rvy * ny;
+
+      if (velAlongNormal < 0) {
+          const impulse = -(1 + bounce) * velAlongNormal;
+          
+          ball.vx += impulse * nx;
+          ball.vy += impulse * ny;
+      }
+    }
   }
 
   private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void {
@@ -487,7 +528,7 @@ export class SoccerGameWindowComponent
     context.strokeRect(w - penaltyWidth, penaltyY, penaltyWidth, penaltyHeight);
   }
 
-   private drawBall(context: CanvasRenderingContext2D, ball: IMovableEntity): void {
+  private drawBall(context: CanvasRenderingContext2D, ball: IMovableEntity): void {
     context.beginPath();
     context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     context.fillStyle = ball.color;
