@@ -82,7 +82,7 @@ export class CrossyRoadGameWindowComponent
     const player = this.game.players[0];
 
     if (state.isGameOver) {
-      if (player.inputData['moveUp'] || player.inputData['moveDown']) {
+      if (player.inputData['move'] === 1 || player.inputData['move'] === 2) {
         this.restart();
       }
       return;
@@ -93,17 +93,14 @@ export class CrossyRoadGameWindowComponent
       return;
     }
 
-    const moveUp = player.inputData['moveUp'] as number;
-    const moveDown = player.inputData['moveDown'] as number;
-    const moveLeft = player.inputData['moveLeft'] as number;
-    const moveRight = player.inputData['moveRight'] as number;
+    const move = player.inputData['move'] as number;
 
     let moved = false;
 
-    if (moveUp === 1) {
+    if (move === 1) {
       state.playerZ += 1;
       moved = true;
-    } else if (moveDown === 1) {
+    } else if (move === 2) {
       const targetZ = state.playerZ - 1;
       const canMoveBack = state.lanes.some(l => l.z === targetZ);
 
@@ -113,10 +110,10 @@ export class CrossyRoadGameWindowComponent
       }
     }
 
-    if (moveLeft === 1) {
+    if (move === 3) {
       state.playerX -= 1;
       moved = true;
-    } else if (moveRight === 1) {
+    } else if (move === 4) {
       state.playerX += 1;
       moved = true;
     }
@@ -132,10 +129,7 @@ export class CrossyRoadGameWindowComponent
       state.moveCooldown = 8;
     }
 
-    player.inputData['moveUp'] = 0;
-    player.inputData['moveDown'] = 0;
-    player.inputData['moveLeft'] = 0;
-    player.inputData['moveRight'] = 0;
+    player.inputData['move'] = 0;
   }
 
   private updateGameLogic(): void {
