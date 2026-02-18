@@ -2,44 +2,26 @@ import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
 
-export class TetrisSingleBoardState{
+export class TetrisState implements TGameState {
     public rows = 20;
     public cols = 10;
-    public board: number[][] = [];
-    public active:{
-        type:number;
-        rotation:number;
-        x:number;
-        y:number;
-    } | null = null;
-    public nextType = 0;
-    public score = 0;
-    public level = 1;
-    public lines = 0;
-    public isGameOver = false;
-    
-    public constructor() {
-        this.resetBoard();
-    }
+    public board0: number[][] = [];
+    public active0: { type: number; rotation: number; x: number; y: number } | null = null;
+    public nextType0 = 0;
+    public score0 = 0;
+    public level0 = 1;
+    public lines0 = 0;
+    public isGameOver0 = false;
 
-    public resetBoard() :void {
-        this.board = Array.from({length:this.rows},()=>Array.from({length:this.cols},()=>0));
-        this.active = null;
-        this.nextType = Math.floor(Math.random()*7);
-        this.score = 0;
-        this.level = 1;
-        this.lines = 0;
-        this.isGameOver = false;
-    }
-}
+    public board1: number[][] = [];
+    public active1: { type: number; rotation: number; x: number; y: number } | null = null;
+    public nextType1 = 0;
+    public score1 = 0;
+    public level1 = 1;
+    public lines1 = 0;
+    public isGameOver1 = false;
 
-export class TetrisState implements TGameState {
-    public boards: TetrisSingleBoardState[] = [];
     public gameMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
-
-    public constructor(){
-        this.boards = [new TetrisSingleBoardState(), new TetrisSingleBoardState()];
-    }
 }
 
 export class Tetris extends Game {
@@ -49,8 +31,42 @@ export class Tetris extends Game {
 
     public override outputSpec = `
         output:
-            gameMode: string, {singleplayer, multiplayer};
-            boards: list of board objects;
+            gameMode: string, {'singleplayer', 'multiplayer'};
+            rows: int, 20;
+            cols: int, 10;
+            board0: [{ x: int, <0, 9>, y: int, <0, 19>, value: int, <0, 7> }];
+            active0: { type: int, <0, 6>, rotation: int, <0, 3>, x: int, <0, 9>, y: int, <0, 19> } | null;
+            nextType0: int, <0, 6>;
+            score0: int, <0, inf>;
+            level0: int, <1, inf>;
+            lines0: int, <0, inf>;
+            isGameOver0: boolean;
+            board1: [{ x: int, <0, 9>, y: int, <0, 19>, value: int, <0, 7> }];
+            active1: { type: int, <0, 6>, rotation: int, <0, 3>, x: int, <0, 9>, y: int, <0, 19> } | null;
+            nextType1: int, <0, 6>;
+            score1: int, <0, inf>;
+            level1: int, <1, inf>;
+            lines1: int, <0, inf>;
+            isGameOver1: boolean;
+
+        default values:
+            gameMode: 'singleplayer';
+            rows: 20;
+            cols: 10;
+            board0: [];
+            active0: null;
+            nextType0: 0;
+            score0: 0;
+            level0: 1;
+            lines0: 0;
+            isGameOver0: false;
+            board1: [];
+            active1: null;
+            nextType1: 0;
+            score1: 0;
+            level1: 1;
+            lines1: 0;
+            isGameOver1: false;
     `;
 
     public override players = [
@@ -66,13 +82,13 @@ export class Tetris extends Game {
                 s: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
                 ' ': { variableName: 'start', pressedValue: 1, releasedValue: 0 },
             },
-            'P1 Controls: WASD to move/rotate, SPACE to start/drop',
+            '<move>: value of {0, 1, 2, 3, 4}, 0: none, 1: left, 2: right, 3: rotate, 4: down; <start>: value of {0, 1}, 0: not pressed, 1: pressed (start/drop)',
             { left: '[A]', right: '[D]', rotate: '[W]', down: '[S]', drop: '[SPACE]' }
         ),
 
         new Player(
             1,
-            true,
+            false,
             'Player 2',
             { move: 0, start: 0 },
             {
@@ -82,7 +98,7 @@ export class Tetris extends Game {
                 ArrowDown: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
                 Enter: { variableName: 'start', pressedValue: 1, releasedValue: 0 },
             },
-            'P2 Controls: Arrows to move/rotate, ENTER to start/drop',
+            '<move>: value of {0, 1, 2, 3, 4}, 0: none, 1: left, 2: right, 3: rotate, 4: down; <start>: value of {0, 1}, 0: not pressed, 1: pressed (start/drop)',
             { left: '[←]', right: '[→]', rotate: '[↑]', down: '[↓]', drop: '[ENTER]' }
         ),
     ];

@@ -3,165 +3,83 @@
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { Tetris, TetrisSingleBoardState } from './models/tetris.class';
-
-interface IPlayerContext{
-  isRotationPressed:boolean;
-  isDropDownPressed:boolean;
-  tickCounter:number;
-  lastMoveTick:number;
-  moveCooldown:number;
-}
+import { Tetris, TetrisState } from './models/tetris.class';
+import { IPlayerContext } from './models/player-context.interface';
+import { TETROMINOS } from './models/tetrominos';
+import { TETRIS_COLORS } from './models/colors';
 
 @Component({
   selector: 'app-tetris',
   standalone: true,
   imports: [CanvasComponent],
   template: `
-    <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
-      <button (click)="setMode('singleplayer')" [style.fontWeight]="currentMode === 'singleplayer' ? 'bold' : 'normal'">Singleplayer</button>
-      <button (click)="setMode('multiplayer')" [style.fontWeight]="currentMode === 'multiplayer' ? 'bold' : 'normal'">Multiplayer</button>
-    </div>
-
-    @if (currentMode === 'singleplayer') {
-      <div>Player Best Score: <b>{{ playerBestScores[0] }}</b></div>
+    @if (!isMultiplayer) {
       <div>
-         Score: <b>{{ game.state.boards[0].score }}</b> | Lines: <b>{{ game.state.boards[0].lines }}</b> | Level: <b>{{ game.state.boards[0].level }}</b>
+        Player Best Score: <b>{{ playerBestScores[0] }}</b>
       </div>
-    } @else if (currentMode === 'multiplayer') {
+      <div>
+        Score: <b>{{ game.state.score0 }}</b> | Lines:
+        <b>{{ game.state.lines0 }}</b> | Level: <b>{{ game.state.level0 }}</b>
+      </div>
+    } @else {
       <div style="display: flex; justify-content: space-around; width: 85%">
-        <span>P1 Best: <b>{{ playerBestScores[0] }}</b></span>
-        <span>P1 Score: <b>{{ game.state.boards[0].score }}</b></span>
-        <span>P2 Best: <b>{{ playerBestScores[1] }}</b></span>
-        <span>P2 Score: <b>{{ game.state.boards[1].score }}</b></span>
+        <span
+          >P1 Best: <b>{{ playerBestScores[0] }}</b></span
+        >
+        <span
+          >P1 Score: <b>{{ game.state.score0 }}</b></span
+        >
+        <span
+          >P2 Best: <b>{{ playerBestScores[1] }}</b></span
+        >
+        <span
+          >P2 Score: <b>{{ game.state.score1 }}</b></span
+        >
       </div>
     }
 
-    @if (isCanvasVisible) {
-      <app-canvas
-        [displayMode]="canvasDisplayMode"
-        #gameCanvas>
-      </app-canvas>
-    }
-    
-    @if (!isStarted) {
-      <div style="margin-top: 20px; padding: 20px;text-align: center; color: #000; font-size: 16px; font-weight: bold;">
-        Press SPACE to begin
-      </div>
-    }
-      
-    <br>
+    <app-canvas [displayMode]="canvasDisplayMode" #gameCanvas> </app-canvas>
+
+    <br />
     <b>FPS: {{ fps }}</b>
   `,
 })
-
 export class TetrisGameWindowComponent
   extends BaseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
-  public isCanvasVisible = true;
-  public currentMode: 'singleplayer' | 'multiplayer' = 'singleplayer';
   public playerBestScores: number[] = [0, 0];
   public isStarted = false;
+
+  public get isMultiplayer(): boolean {
+    return this.game.players.length > 1 && this.game.players[1].isActive;
+  }
+
   public get canvasDisplayMode(): 'vertical' | 'horizontal' {
-    return this.currentMode === 'multiplayer' ? 'horizontal' : 'vertical';
+    return this.isMultiplayer ? 'horizontal' : 'vertical';
   }
 
   private _blockWidth = 30;
   private _blockHeight = 30;
-  private _baseTickRate = 80;
+  private _previousIsMultiplayer: boolean | null = null;
 
   private _playerContexts: IPlayerContext[] = [];
 
-  private _tetrominos: number[][][][] = [
-    [
-      [[1, 1, 1, 1]], // I
-      [[1],[1],[1],[1]],
-    ],
-    [
-      [[2,2],[2,2]], // O
-    ],
-    [
-      [[0,3,0],[3,3,3]], // T
-      [[3,0],[3,3],[3,0]],
-      [[3,3,3],[0,3,0]],
-      [[0,3],[3,3],[0,3]],
-    ],
-    [
-      [[0,4,4],[4,4,0]], // S
-      [[4,0],[4,4],[0,4]],
-    ],
-    [
-      [[5,5,0],[0,5,5]], // Z
-      [[0,5],[5,5],[5,0]],
-    ],
-    [
-      [[6,0,0],[6,6,6]], // J
-      [[6,6],[6,0],[6,0]],
-      [[6,6,6],[0,0,6]],
-      [[0,6],[0,6],[6,6]],
-    ],
-    [
-      [[0,0,7],[7,7,7]], // L
-      [[7,0],[7,0],[7,7]],
-      [[7,7,7],[7,0,0]],
-      [[7,7],[0,7],[0,7]],
-    ],
-  ];
-
-  private _colors = [
-      '#000', '#00FFFF', '#FFFF00', '#800080', '#00FF00', '#FF0000', '#0000FF', '#FFA500'
-    ];
-
-
   public override game!: Tetris;
 
-  public override ngOnInit(): void {
-    super.ngOnInit();
-    this.game = this.game as Tetris;
-    this.initPlayerContexts();
-    this.currentMode = 'singleplayer';
-    this.game.state.gameMode = 'singleplayer';
-  }
-
-  public override ngAfterViewInit(): void {
-    super.ngAfterViewInit();
+  private updateGameMode(): void {
+    const mode = this.isMultiplayer ? 'multiplayer' : 'singleplayer';
+    const st = this.game.state as TetrisState;
+    st.gameMode = mode;
     this.resizeCanvas();
     this.restart();
-  }
-
-  public override ngOnDestroy(): void {
-    super.ngOnDestroy();
-    this.isStarted = false;
-  }
-
-
-  public setMode(mode:'singleplayer' | 'multiplayer'): void {
-    if (this.currentMode === mode) return;
-
-    super.ngOnDestroy();
-
-    this.currentMode = mode;
-    this.game.state.gameMode = mode;
-    this.isCanvasVisible = false;
-    this.playerBestScores = [0, 0];
-
-    setTimeout(() => {
-      this.isCanvasVisible = true;
-      setTimeout(() => {
-        super.ngOnInit();
-        super.ngAfterViewInit();
-        this.resizeCanvas();
-        this.restart();
-      });
-    });
   }
 
   private resizeCanvas(): void {
     if (!this._canvas) return;
 
-    if (this.currentMode === 'multiplayer') {
-      this._canvas.width = 900; 
+    if (this.isMultiplayer) {
+      this._canvas.width = 900;
       this._canvas.height = 620;
     } else {
       this._canvas.width = 500;
@@ -169,14 +87,21 @@ export class TetrisGameWindowComponent
     }
   }
 
-  private initPlayerContexts():void{
-    this._playerContexts = [0,1].map(()=>({
-      isRotationPressed:false,
-      isDropDownPressed:false,
-      tickCounter:0,
-      lastMoveTick:0,
-      moveCooldown:6,
-    }));
+  private initPlayerContexts(): void {
+    this._playerContexts = [];
+    for (let i = 0; i < 2; i++) {
+      this._playerContexts.push({
+        isRotationPressed: false,
+        isDropDownPressed: false,
+        tickCounter: 0,
+        lastMoveTick: 0,
+        lastRotationTick: 0,
+        moveCooldown: 6,
+        rotationCooldown: 12,
+        fallTimer: 0,
+        currentGravity: 60,
+      });
+    }
   }
 
   private getPlayerInput(playerIndex: number, name: string): number {
@@ -186,25 +111,68 @@ export class TetrisGameWindowComponent
   public override restart(): void {
     this.isStarted = false;
     this.initPlayerContexts();
-    this.game.state.boards.forEach(board => board.resetBoard());
+    this.resetBoard(0);
+    this.resetBoard(1);
     this.spawnPiece(0);
-    if(this.currentMode === 'multiplayer'){
+    if (this.isMultiplayer) {
       this.spawnPiece(1);
     }
     this.render();
   }
 
+  private resetBoard(index: number): void {
+    const st = this.game.state as TetrisState;
+    const arr = Array.from({ length: st.rows }, () =>
+      Array.from({ length: st.cols }, () => 0)
+    );
+
+    const context = this._playerContexts[index];
+    if (context) {
+      context.fallTimer = 0;
+      context.currentGravity = 60;
+    }
+
+    if (index === 0) {
+      st.board0 = arr;
+      st.active0 = null;
+      st.nextType0 = Math.floor(Math.random() * 7);
+      st.score0 = 0;
+      st.level0 = 1;
+      st.lines0 = 0;
+      st.isGameOver0 = false;
+    } else {
+      st.board1 = arr;
+      st.active1 = null;
+      st.nextType1 = Math.floor(Math.random() * 7);
+      st.score1 = 0;
+      st.level1 = 1;
+      st.lines1 = 0;
+      st.isGameOver1 = false;
+    }
+  }
+
   protected override update(): void {
     super.update();
-    if(!this.processStart()){
+
+    if (this._previousIsMultiplayer !== this.isMultiplayer) {
+      this._previousIsMultiplayer = this.isMultiplayer;
+      this.updateGameMode();
+      return;
+    }
+
+    if (!this.processStart()) {
       this.render();
       return;
     }
 
     if (!this.isPaused) {
-      const playersToUpdate = this.currentMode === 'singleplayer' ? [0] : [0,1];
+      const playersToUpdate = this.isMultiplayer ? [0, 1] : [0];
       playersToUpdate.forEach(playerIndex => {
-        if(this.processGameOver(playerIndex)) return;
+        if (this.processGameOver(playerIndex)) return;
+
+        const context = this._playerContexts[playerIndex];
+        context.tickCounter++;
+        context.fallTimer++;
 
         this.processMovement(playerIndex);
         this.processRotation(playerIndex);
@@ -217,30 +185,36 @@ export class TetrisGameWindowComponent
   }
 
   private processStart(): boolean {
-    if(this.isStarted) return true;
-    
-    const willStart = this.getPlayerInput(0, 'start') === 1 || this.getPlayerInput(1, 'start') === 1;
+    if (this.isStarted) return true;
+
+    const willStart =
+      this.getPlayerInput(0, 'start') === 1 ||
+      this.getPlayerInput(1, 'start') === 1;
     if (willStart) {
       this.isStarted = true;
-      if(this.getPlayerInput(0, 'start') === 1) this._playerContexts[0].isDropDownPressed = true;
-      if(this.getPlayerInput(1, 'start') === 1) this._playerContexts[1].isDropDownPressed = true;
+      if (this.getPlayerInput(0, 'start') === 1)
+        this._playerContexts[0].isDropDownPressed = true;
+      if (this.getPlayerInput(1, 'start') === 1)
+        this._playerContexts[1].isDropDownPressed = true;
       return true;
     }
     return false;
   }
 
-  private processGameOver(playerIndex:number): boolean {
-    const board = this.game.state.boards[playerIndex];
-    if (!board.isGameOver) return false;
+  private processGameOver(playerIndex: number): boolean {
+    const st = this.game.state as TetrisState;
+    const isGameOver = playerIndex === 0 ? st.isGameOver0 : st.isGameOver1;
+    if (!isGameOver) return false;
 
-    if(board.score > this.playerBestScores[playerIndex])
-      this.playerBestScores[playerIndex] = board.score;
+    const score = playerIndex === 0 ? st.score0 : st.score1;
+    if (score > this.playerBestScores[playerIndex])
+      this.playerBestScores[playerIndex] = score;
 
     const startInput = this.getPlayerInput(playerIndex, 'start');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyPressed = startInput === 1;
     if (isCurrentlyPressed && !context.isDropDownPressed) {
-      board.resetBoard();
+      this.resetBoard(playerIndex);
       this.spawnPiece(playerIndex);
       context.isDropDownPressed = true;
       return false;
@@ -256,39 +230,59 @@ export class TetrisGameWindowComponent
 
     if (context.tickCounter - context.lastMoveTick >= context.moveCooldown) {
       if (moveInput === 1) {
-        if (this.tryMove(playerIndex,-1, 0)) {
+        if (this.tryMove(playerIndex, -1, 0)) {
           context.lastMoveTick = context.tickCounter;
         }
       } else if (moveInput === 2) {
-        if (this.tryMove(playerIndex,1, 0)) {
+        if (this.tryMove(playerIndex, 1, 0)) {
           context.lastMoveTick = context.tickCounter;
         }
       } else if (moveInput === 4) {
-        if (this.tryMove(playerIndex,0, 1)) {
+        if (this.tryMove(playerIndex, 0, 1)) {
           context.lastMoveTick = context.tickCounter;
+          context.fallTimer = 0;
         }
       }
     }
   }
 
-  private drawPredictedLanding(ctx: CanvasRenderingContext2D, playerIndex:number, startX: number, startY: number) : void{
-    const board = this.game.state.boards[playerIndex];
-    if(!board.active) return; 
-    let drop = board.active.y;
-    while(this.canPlacePiece(board,board.active.type,board.active.rotation,board.active.x,drop+1))
+  private drawPredictedLanding(
+    ctx: CanvasRenderingContext2D,
+    playerIndex: number,
+    startX: number,
+    startY: number
+  ): void {
+    const st = this.game.state as TetrisState;
+    const active = playerIndex === 0 ? st.active0 : st.active1;
+    if (!active) return;
+    let drop = active.y;
+    while (
+      this.canPlacePiece(
+        playerIndex,
+        active.type,
+        active.rotation,
+        active.x,
+        drop + 1
+      )
+    )
       drop += 1;
 
-    const matrix = this.getPieceMatrix(board.active.type, board.active.rotation);
+    const matrix = this.getPieceMatrix(active.type, active.rotation);
     ctx.save();
     ctx.globalAlpha = 0.35;
-    
+
     for (let r = 0; r < matrix.length; r++) {
       for (let c = 0; c < matrix[r].length; c++) {
         if (matrix[r][c] !== 0) {
-          const bx = board.active.x + c;
+          const bx = active.x + c;
           const by = drop + r;
           if (by >= 0) {
-            this.drawBlock(ctx, startX + bx * this._blockWidth, startY + by * this._blockHeight, matrix[r][c]);
+            this.drawBlock(
+              ctx,
+              startX + bx * this._blockWidth,
+              startY + by * this._blockHeight,
+              matrix[r][c]
+            );
           }
         }
       }
@@ -301,96 +295,157 @@ export class TetrisGameWindowComponent
     const moveInput = this.getPlayerInput(playerIndex, 'move');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyRotating = moveInput === 3;
-    if (isCurrentlyRotating && !context.isRotationPressed) {
-      this.tryRotate(playerIndex);
+    if (isCurrentlyRotating) {
+      if (!context.isRotationPressed) {
+        this.tryRotate(playerIndex);
+        context.lastRotationTick = context.tickCounter;
+      } else if (
+        context.tickCounter - context.lastRotationTick >=
+        context.rotationCooldown
+      ) {
+        this.tryRotate(playerIndex);
+        context.lastRotationTick = context.tickCounter;
+      }
     }
     context.isRotationPressed = isCurrentlyRotating;
   }
 
   private processGravity(playerIndex: number): void {
-    const board = this.game.state.boards[playerIndex];
     const context = this._playerContexts[playerIndex];
-    context.tickCounter++;
+    const st = this.game.state as TetrisState;
+    const level = playerIndex === 0 ? st.level0 : st.level1;
+    context.currentGravity = Math.max(5, 60 - (level - 1) * 2);
 
-    const tickRate = Math.max(5, Math.floor(this._baseTickRate - (board.level - 1) * 2));
-
-    if (context.tickCounter % tickRate !== 0) return;
-
-    if (this.tryMove(playerIndex,0, 1)) return;
-
-    this.lockPiece(playerIndex);
-    this.clearLines(playerIndex);
-    this.spawnPiece(playerIndex);
+    if (context.fallTimer >= context.currentGravity) {
+      if (this.tryMove(playerIndex, 0, 1)) {
+        context.fallTimer = 0;
+      } else {
+        this.lockPiece(playerIndex);
+        this.clearLines(playerIndex);
+        this.spawnPiece(playerIndex);
+        context.fallTimer = 0;
+      }
+    }
   }
 
   private processHardDrop(playerIndex: number): void {
     const startInput = this.getPlayerInput(playerIndex, 'start');
     const context = this._playerContexts[playerIndex];
     const isCurrentlyPressed = startInput === 1;
-    if (this.isStarted && !this.game.state.boards[playerIndex].isGameOver) {
+    const st = this.game.state as TetrisState;
+    const isGameOver = playerIndex === 0 ? st.isGameOver0 : st.isGameOver1;
+    if (this.isStarted && !isGameOver) {
       if (isCurrentlyPressed && !context.isDropDownPressed) {
         while (this.tryMove(playerIndex, 0, 1));
         this.lockPiece(playerIndex);
         this.clearLines(playerIndex);
         this.spawnPiece(playerIndex);
+        context.fallTimer = 0;
       }
     }
 
     context.isDropDownPressed = isCurrentlyPressed;
   }
 
-  private spawnPiece(playerIndex: number):void{
-    const board = this.game.state.boards[playerIndex];
-    const next = board.nextType ?? Math.floor(Math.random()*7);
-    board.nextType = Math.floor(Math.random()*7);
+  private spawnPiece(playerIndex: number): void {
+    const st = this.game.state as TetrisState;
+    const next =
+      (playerIndex === 0 ? st.nextType0 : st.nextType1) ??
+      Math.floor(Math.random() * 7);
+    if (playerIndex === 0) st.nextType0 = Math.floor(Math.random() * 7);
+    else st.nextType1 = Math.floor(Math.random() * 7);
 
-    const startX = Math.floor((board.cols - this.getPieceMatrix(next,0)[0].length) / 2);
+    const startX = Math.floor(
+      (st.cols - this.getPieceMatrix(next, 0)[0].length) / 2
+    );
     const startY = 0;
 
-    board.active = { type:next, rotation:0, x:startX, y:startY };
+    if (playerIndex === 0)
+      st.active0 = { type: next, rotation: 0, x: startX, y: startY };
+    else st.active1 = { type: next, rotation: 0, x: startX, y: startY };
 
-    if(!this.canPlacePiece(board, board.active.type, board.active.rotation, board.active.x, board.active.y)){
-      board.isGameOver = true;
+    const active = playerIndex === 0 ? st.active0 : st.active1;
+    if (!active) return;
+    if (
+      !this.canPlacePiece(
+        playerIndex,
+        active.type,
+        active.rotation,
+        active.x,
+        active.y
+      )
+    ) {
+      if (playerIndex === 0) st.isGameOver0 = true;
+      else st.isGameOver1 = true;
     }
   }
 
-  private getPieceMatrix(type:number, rotation:number):number[][]{
-    const rotations = this._tetrominos[type];
+  private getPieceMatrix(type: number, rotation: number): number[][] {
+    const rotations = TETROMINOS[type];
     rotation = rotation % rotations.length;
     return rotations[rotation];
   }
 
-  private canPlacePiece(board:TetrisSingleBoardState,type:number,rotation:number,x:number,y:number):boolean{
-    const matrix = this.getPieceMatrix(type,rotation);
-    for(let i=0;i<matrix.length;i++){
-      for(let j=0;j<matrix[i].length;j++){
-        if(matrix[i][j] === 0) continue;
+  private canPlacePiece(
+    playerIndex: number,
+    type: number,
+    rotation: number,
+    x: number,
+    y: number
+  ): boolean {
+    const st = this.game.state as TetrisState;
+    const matrix = this.getPieceMatrix(type, rotation);
+    const cols = st.cols;
+    const rows = st.rows;
+    const boardArr = playerIndex === 0 ? st.board0 : st.board1;
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = 0; j < matrix[i].length; j++) {
+        if (matrix[i][j] === 0) continue;
         const boardX = x + j;
         const boardY = y + i;
-        if(boardX < 0 || boardX >= board.cols || boardY<0 || boardY >= board.rows) return false;
-        if(board.board[boardY][boardX] !== 0) return false;
+        if (boardX < 0 || boardX >= cols || boardY < 0 || boardY >= rows)
+          return false;
+        if (boardArr[boardY][boardX] !== 0) return false;
       }
     }
     return true;
   }
 
-  private tryMove(playerIndex: number, deltaX: number, deltaY: number): boolean {
-    const board = this.game.state.boards[playerIndex];
-    if(!board.active) return false;
-    const newX = board.active.x + deltaX;
-    const newY = board.active.y + deltaY;
-    if(this.canPlacePiece(board,board.active.type,board.active.rotation,newX,newY)) {
-      board.active.x = newX;
-      board.active.y = newY;
-      return true;
-    }
-    return false;
+  private tryMove(
+    playerIndex: number,
+    deltaX: number,
+    deltaY: number
+  ): boolean {
+    const st = this.game.state as TetrisState;
+    const active = playerIndex === 0 ? st.active0 : st.active1;
+    if (!active) return false;
+
+    const newX = active.x + deltaX;
+    const newY = active.y + deltaY;
+
+    const canPlace = this.canPlacePiece(
+      playerIndex,
+      active.type,
+      active.rotation,
+      newX,
+      newY
+    );
+    if (!canPlace) return false;
+
+    active.x = newX;
+    active.y = newY;
+
+    if (playerIndex === 0) st.active0 = active;
+    else st.active1 = active;
+
+    return true;
   }
 
   private tryRotate(playerIndex: number): boolean {
-    const board = this.game.state.boards[playerIndex];
-    if(!board.active) return false;
-    const newRotation = (board.active.rotation + 1) % this._tetrominos[board.active.type].length;
+    const st = this.game.state as TetrisState;
+    const active = playerIndex === 0 ? st.active0 : st.active1;
+    if (!active) return false;
+    const newRotation = (active.rotation + 1) % TETROMINOS[active.type].length;
 
     const tries = [
       { x: 0, y: 0 },
@@ -399,11 +454,19 @@ export class TetrisGameWindowComponent
       { x: -2, y: 0 },
       { x: 2, y: 0 },
     ];
-    for(const t of tries){
-      if(this.canPlacePiece(board,board.active.type,newRotation,board.active.x + t.x,board.active.y + t.y)){
-        board.active.rotation = newRotation;
-        board.active.x += t.x;
-        board.active.y += t.y;
+    for (const t of tries) {
+      if (
+        this.canPlacePiece(
+          playerIndex,
+          active.type,
+          newRotation,
+          active.x + t.x,
+          active.y + t.y
+        )
+      ) {
+        active.rotation = newRotation;
+        active.x += t.x;
+        active.y += t.y;
         return true;
       }
     }
@@ -411,68 +474,95 @@ export class TetrisGameWindowComponent
   }
 
   private lockPiece(playerIndex: number): void {
-    const board = this.game.state.boards[playerIndex];
-    if(!board.active) return;
-    const matrix = this.getPieceMatrix(board.active.type,board.active.rotation);
-    for(let i=0;i<matrix.length;i++){
-      for(let j=0;j<matrix[i].length;j++){
-        if(matrix[i][j] === 0) continue;
-        const boardX = board.active.x + j;
-        const boardY = board.active.y + i;
-        if(boardX < board.cols && boardX >= 0 && boardY < board.rows && boardY >=0){
-          board.board[boardY][boardX] = matrix[i][j];
+    const st = this.game.state as TetrisState;
+    const active = playerIndex === 0 ? st.active0 : st.active1;
+    if (!active) return;
+    const matrix = this.getPieceMatrix(active.type, active.rotation);
+    const boardArr = playerIndex === 0 ? st.board0 : st.board1;
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = 0; j < matrix[i].length; j++) {
+        if (matrix[i][j] === 0) continue;
+        const boardX = active.x + j;
+        const boardY = active.y + i;
+        if (
+          boardX < st.cols &&
+          boardX >= 0 &&
+          boardY < st.rows &&
+          boardY >= 0
+        ) {
+          boardArr[boardY][boardX] = matrix[i][j];
         }
       }
     }
-    board.active = null;
+    if (playerIndex === 0) st.active0 = null;
+    else st.active1 = null;
   }
 
-  private clearLines(playerIndex: number):void{
-    const board = this.game.state.boards[playerIndex];
-    const newBoard:number[][] = [];
+  private clearLines(playerIndex: number): void {
+    const st = this.game.state as TetrisState;
+    const boardArr = playerIndex === 0 ? st.board0 : st.board1;
+    const cols = st.cols;
+    const rows = st.rows;
+    const newBoard: number[][] = [];
     let cleared = 0;
-    for(let i=0;i<board.rows;i++){
-      const isFull = board.board[i].every(cell => cell !== 0);
-      if(isFull){
+    for (let i = 0; i < rows; i++) {
+      const isFull = boardArr[i].every(cell => cell !== 0);
+      if (isFull) {
         cleared++;
-      }else{
-        newBoard.push(board.board[i]);
+      } else {
+        newBoard.push(boardArr[i]);
       }
     }
-    while(newBoard.length < board.rows){
-      newBoard.unshift(Array.from({length:board.cols}, () => 0));
+    while (newBoard.length < rows) {
+      newBoard.unshift(Array.from({ length: cols }, () => 0));
     }
-    if(cleared > 0){
-      board.board = newBoard;
-      const scoreMap:Record<number,number> = {1:100,2:300,3:500,4:800};
-      board.score += scoreMap[cleared] ?? (cleared * 200);
-      board.lines += cleared;
-      board.level = 1 + Math.floor(board.lines / 10);
+    if (cleared > 0) {
+      if (playerIndex === 0) st.board0 = newBoard;
+      else st.board1 = newBoard;
+      const scoreMap: Record<number, number> = {
+        1: 100,
+        2: 300,
+        3: 500,
+        4: 800,
+      };
+      if (playerIndex === 0) st.score0 += scoreMap[cleared] ?? cleared * 200;
+      else st.score1 += scoreMap[cleared] ?? cleared * 200;
+      if (playerIndex === 0) st.lines0 += cleared;
+      else st.lines1 += cleared;
+      if (playerIndex === 0) st.level0 = 1 + Math.floor(st.lines0 / 5);
+      else st.level1 = 1 + Math.floor(st.lines1 / 5);
     }
   }
 
   private render(): void {
-    const context = this._canvas.getContext('2d');
-    if(!context) return;
+    if (!this._canvas) return;
 
-    context.clearRect(0,0,this._canvas.width,this._canvas.height);
-    if (this.currentMode === 'singleplayer') {
-      const boardW = this.game.state.boards[0].cols * this._blockWidth;
+    const context = this._canvas.getContext('2d');
+    if (!context) return;
+
+    context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    if (!this.isMultiplayer) {
+      const boardW = this.game.state.cols * this._blockWidth;
       const offsetX = (this._canvas.width - boardW) / 2;
       this.renderBoard(context, 0, offsetX, 10);
     } else {
       const boardW = 10 * this._blockWidth;
       // Player1
-      this.renderBoard(context, 0, 50, 10); 
+      this.renderBoard(context, 0, 50, 10);
       // Player2
       const offsetP2 = this._canvas.width - boardW - 100;
       this.renderBoard(context, 1, offsetP2, 10);
     }
   }
-  private renderBoard(ctx: CanvasRenderingContext2D, playerIndex: number, startX: number, startY: number): void {
-    const boardState = this.game.state.boards[playerIndex];
-    const cols = boardState.cols;
-    const rows = boardState.rows;
+  private renderBoard(
+    ctx: CanvasRenderingContext2D,
+    playerIndex: number,
+    startX: number,
+    startY: number
+  ): void {
+    const st = this.game.state as TetrisState;
+    const cols = st.cols;
+    const rows = st.rows;
     const bw = this._blockWidth;
     const bh = this._blockHeight;
 
@@ -489,24 +579,32 @@ export class TetrisGameWindowComponent
       ctx.lineTo(startX + j * bw, startY + rows * bh);
     }
     ctx.stroke();
+    const boardArr = playerIndex === 0 ? st.board0 : st.board1;
     for (let r = 0; r < rows; r++) {
+      if (!boardArr[r]) continue;
       for (let c = 0; c < cols; c++) {
-        if (boardState.board[r][c] !== 0) {
-          this.drawBlock(ctx, startX + c * bw, startY + r * bh, boardState.board[r][c]);
+        if (boardArr[r][c] !== 0) {
+          this.drawBlock(ctx, startX + c * bw, startY + r * bh, boardArr[r][c]);
         }
       }
     }
     this.drawPredictedLanding(ctx, playerIndex, startX, startY);
 
-    if (boardState.active) {
-      const matrix = this.getPieceMatrix(boardState.active.type, boardState.active.rotation);
+    const active = playerIndex === 0 ? st.active0 : st.active1;
+    if (active) {
+      const matrix = this.getPieceMatrix(active.type, active.rotation);
       for (let r = 0; r < matrix.length; r++) {
         for (let c = 0; c < matrix[r].length; c++) {
           if (matrix[r][c] !== 0) {
-            const bx = boardState.active.x + c;
-            const by = boardState.active.y + r;
+            const bx = active.x + c;
+            const by = active.y + r;
             if (by >= 0) {
-              this.drawBlock(ctx, startX + bx * bw, startY + by * bh, matrix[r][c]);
+              this.drawBlock(
+                ctx,
+                startX + bx * bw,
+                startY + by * bh,
+                matrix[r][c]
+              );
             }
           }
         }
@@ -517,27 +615,43 @@ export class TetrisGameWindowComponent
     ctx.strokeRect(startX, startY, cols * bw, rows * bh);
     ctx.lineWidth = 1;
 
-    if (boardState.isGameOver) {
+    const isGameOver = playerIndex === 0 ? st.isGameOver0 : st.isGameOver1;
+    if (isGameOver) {
       ctx.fillStyle = 'rgba(0,0,0,0.8)';
       ctx.fillRect(startX, startY + (rows * bh) / 2 - 40, cols * bw, 80);
       ctx.fillStyle = 'red';
       ctx.font = '30px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', startX + (cols * bw) / 2, startY + (rows * bh) / 2 + 10);
+      ctx.fillText(
+        'GAME OVER',
+        startX + (cols * bw) / 2,
+        startY + (rows * bh) / 2 + 10
+      );
     }
     const previewX = startX + cols * bw + 10;
     const previewY = startY;
-    this.renderPreview(ctx, boardState.nextType, previewX, previewY);
+    const nextType = playerIndex === 0 ? st.nextType0 : st.nextType1;
+    this.renderPreview(ctx, nextType, previewX, previewY);
   }
 
-  private drawBlock(ctx: CanvasRenderingContext2D, x: number, y: number, colorIndex: number): void {
-    ctx.fillStyle = this._colors[colorIndex] || '#888';
+  private drawBlock(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    colorIndex: number
+  ): void {
+    ctx.fillStyle = TETRIS_COLORS[colorIndex] || '#888';
     ctx.fillRect(x + 1, y + 1, this._blockWidth - 2, this._blockHeight - 2);
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
     ctx.fillRect(x + 1, y + 1, this._blockWidth - 2, 4);
   }
 
-  private renderPreview(ctx: CanvasRenderingContext2D, type: number, x: number, y: number): void {
+  private renderPreview(
+    ctx: CanvasRenderingContext2D,
+    type: number,
+    x: number,
+    y: number
+  ): void {
     ctx.fillStyle = '#222';
     ctx.fillRect(x, y, 80, 80);
     ctx.strokeStyle = '#555';
@@ -551,8 +665,13 @@ export class TetrisGameWindowComponent
     for (let r = 0; r < matrix.length; r++) {
       for (let c = 0; c < matrix[r].length; c++) {
         if (matrix[r][c] !== 0) {
-          ctx.fillStyle = this._colors[matrix[r][c]] || '#999';
-          ctx.fillRect(offsetX + c * miniBlockSize, offsetY + r * miniBlockSize, miniBlockSize - 1, miniBlockSize - 1);
+          ctx.fillStyle = TETRIS_COLORS[matrix[r][c]] || '#999';
+          ctx.fillRect(
+            offsetX + c * miniBlockSize,
+            offsetY + r * miniBlockSize,
+            miniBlockSize - 1,
+            miniBlockSize - 1
+          );
         }
       }
     }
