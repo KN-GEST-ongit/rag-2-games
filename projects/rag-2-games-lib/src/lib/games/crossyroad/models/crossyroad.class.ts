@@ -33,18 +33,36 @@ export class CrossyRoadState implements TGameState {
 }
 
 export class CrossyRoad extends Game {
-    public override author = 'Norbert Mazur';
-    public override name = 'crossyroad';
-    public override state = new CrossyRoadState();
+  public override author = 'Norbert Mazur';
+  public override name = 'crossyroad';
+  public override state = new CrossyRoadState();
 
-    public override outputSpec = `output: playerX, playerZ, score, isGameOver`;
+  public override outputSpec = `
+  output:
+    playerX: int, <-8, 12>;
+    playerZ: int, <0, inf>;
+    score: int, <0, inf>;
+    highestZ: int, <0, inf>;
+    isGameOver: boolean;
+    deathReason: string;
+    lanes: array;
+
+  default values:
+    playerX: ${this.state.playerX};
+    playerZ: ${this.state.playerZ};
+    score: ${this.state.score};
+    highestZ: ${this.state.highestZ};
+    isGameOver: ${this.state.isGameOver};
+    deathReason: '';
+    lanes: [...];
+  `;
 
   public override players = [
     new Player(
       0,
       true,
       'Player 1',
-      { move: 0 },
+      { move: 0, action: 0 },
       {
         ArrowUp: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
         ArrowDown: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
@@ -54,9 +72,18 @@ export class CrossyRoad extends Game {
         s: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
         a: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
         d: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+        ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       },
-      `Move with Arrows/WASD`,
-      { up: '↑', down: '↓', left: '←', right: '→' }
+      `<move>: value of {1: forward/up, 2: backward/down, 3: left, 4: right, 0: idle};
+      <action>: value of {1: action, 0: idle};`,
+      { 
+        up: '[W]/[↑]',
+        down: '[S]/[↓]',
+        left: '[A]/[←]',
+        right: '[D]/[→]',
+        restart: '[SPACE] / [ENTER]'
+      }
     ),
   ];
 }

@@ -131,7 +131,7 @@ export class CrossyRoadRenderer {
     this.gameOverPanel.addControl(this.scoreText);
 
     const restartHint = new TextBlock();
-    restartHint.text = "Press W or Arrow Up to Restart";
+    restartHint.text = "Press Space or Enter to Restart";
     restartHint.color = "yellow";
     restartHint.fontSize = 24;
     restartHint.top = "100px";

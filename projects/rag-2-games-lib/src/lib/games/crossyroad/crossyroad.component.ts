@@ -90,7 +90,7 @@ export class CrossyRoadGameWindowComponent
     const player = this.game.players[0];
 
     if (state.isGameOver) {
-      if (player.inputData['move'] === 1 || player.inputData['move'] === 2) {
+      if (player.inputData['action'] === 1) {
         this.restart();
       }
       return;
@@ -142,6 +142,7 @@ export class CrossyRoadGameWindowComponent
     }
 
     player.inputData['move'] = 0;
+    player.inputData['action'] = 0;
   }
 
   private updateGameLogic(): void {
