@@ -138,12 +138,12 @@ export class CrossyRoadRenderer {
         this.playerMesh.position.y = 0 + Math.max(0, jumpHeight);
     }
 
-    this.camera.position.x = this.playerMesh.position.x + this.cameraOffset.x;
+    this.camera.position.x = this.cameraOffset.x;
     this.camera.position.z = this.playerMesh.position.z + this.cameraOffset.z;
     this.camera.position.y = this.cameraOffset.y; 
 
     this.camera.setTarget(new Vector3(
-      this.playerMesh.position.x, 
+      this.cameraOffset.x, 
       0,
       this.playerMesh.position.z
     ));

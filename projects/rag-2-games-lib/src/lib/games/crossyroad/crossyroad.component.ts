@@ -119,7 +119,7 @@ export class CrossyRoadGameWindowComponent
     }
 
     if (moved) {
-      state.playerX = Math.max(-15, Math.min(15, state.playerX));
+      state.playerX = Math.max(-8, Math.min(12, state.playerX));
       
       if (state.playerZ > state.highestZ) {
         state.highestZ = state.playerZ;
@@ -387,7 +387,7 @@ export class CrossyRoadGameWindowComponent
       } else {
         state.playerX += logSpeed * logDirection;
 
-        if (Math.abs(state.playerX) > 15) {
+        if (state.playerX < -8 || state.playerX > 12) {
           state.isGameOver = true;
         }
       }
