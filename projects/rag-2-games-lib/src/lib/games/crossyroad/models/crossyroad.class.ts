@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
@@ -5,28 +6,30 @@ import { Player } from '../../../models/player.class';
 import { ILane } from './crossyroad.interfaces';
 
 export class CrossyRoadState implements TGameState {
-    public playerX = 0; 
-    public playerZ = 0;
+  public playerX = 0; 
+  public playerZ = 0;
   
-    public score = 0;
-    public highestZ = 0;
-    public isGameOver = false;
+  public score = 0;
+  public highestZ = 0;
+  public isGameOver = false;
   
-    public moveCooldown = 0; 
-    public isMoving = false;
+  public moveCooldown = 0; 
+  public isMoving = false;
 
-    public lanes: ILane[] = [];
-    public nextObstacleId = 0;
+  public lanes: ILane[] = [];
+  public nextObstacleId = 0;
 
-    constructor() {
-        for (let i = -2; i < 15; i++) {
-            this.lanes.push({
-                z: i,
-                type: (i <= 0) ? 'grass' : 'road',
-                obstacles: []
-            });
-        }
+  public deathReason: string = '';
+
+  constructor() {
+    for (let i = -2; i < 15; i++) {
+      this.lanes.push({
+        z: i,
+        type: (i <= 0) ? 'grass' : 'road',
+        obstacles: []
+      });
     }
+  }
 }
 
 export class CrossyRoad extends Game {

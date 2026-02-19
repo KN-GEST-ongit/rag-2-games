@@ -20,6 +20,7 @@ import {
   Scalar,
   EngineOptions
 } from '@babylonjs/core';
+import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui';
 import { CrossyRoadAssets } from './crossyroad.assets';
 import { CrossyRoadState } from './crossyroad.class';
 import { ILane, IObstacle } from './crossyroad.interfaces';
@@ -37,6 +38,11 @@ export class CrossyRoadRenderer {
   private grassMat: StandardMaterial;
   private roadMat: StandardMaterial;
   private waterMat: StandardMaterial;
+
+  private guiTexture?: AdvancedDynamicTexture;
+  private gameOverPanel?: Rectangle;
+  private scoreText?: TextBlock;
+  private deathReasonText?: TextBlock;
 
   private readonly cameraOffset = new Vector3(2, 10, -10);
 
@@ -100,6 +106,43 @@ export class CrossyRoadRenderer {
     this.playerMesh = CrossyRoadAssets.createVoxelPlayer(this.scene, this.shadowGenerator);
     this.playerMesh.position.y = 0;
 
+    this.guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    this.gameOverPanel = new Rectangle();
+    this.gameOverPanel.width = 1;
+    this.gameOverPanel.height = 1;
+    this.gameOverPanel.background = "rgba(0, 0, 0, 0.7)";
+    this.gameOverPanel.color = "transparent";
+    this.gameOverPanel.isVisible = false;
+    this.guiTexture.addControl(this.gameOverPanel);
+
+    const title = new TextBlock();
+    title.text = "GAME OVER";
+    title.color = "red";
+    title.fontSize = 64;
+    title.fontWeight = "bold";
+    title.top = "-100px";
+    this.gameOverPanel.addControl(title);
+
+    this.scoreText = new TextBlock();
+    this.scoreText.color = "white";
+    this.scoreText.fontSize = 32;
+    this.scoreText.top = "40px";
+    this.gameOverPanel.addControl(this.scoreText);
+
+    const restartHint = new TextBlock();
+    restartHint.text = "Press W or Arrow Up to Restart";
+    restartHint.color = "yellow";
+    restartHint.fontSize = 24;
+    restartHint.top = "100px";
+    this.gameOverPanel.addControl(restartHint);
+
+    this.deathReasonText = new TextBlock();
+    this.deathReasonText.color = "orange";
+    this.deathReasonText.fontSize = 40;
+    this.deathReasonText.top = "-40px";
+    this.gameOverPanel.addControl(this.deathReasonText);
+
     this.engine.runRenderLoop(() => {
       this.scene.render();
     });
@@ -113,29 +156,39 @@ export class CrossyRoadRenderer {
     
     const distanceToTarget = Math.abs(dirX) + Math.abs(dirZ);
 
+    if (this.gameOverPanel && this.scoreText && this.deathReasonText) {
+      if (state.isGameOver) {
+        this.scoreText.text = `Score: ${state.score}\nBest: ${state.highestZ}`;
+        this.deathReasonText.text = state.deathReason;
+        this.gameOverPanel.isVisible = true;
+      } else {
+         this.gameOverPanel.isVisible = false;
+      }
+    }
+
     if (distanceToTarget > 0.05) {
         const targetRotation = Math.atan2(dirX, dirZ);
         
         this.playerMesh.rotation.y = Scalar.LerpAngle(
-            this.playerMesh.rotation.y, 
-            targetRotation, 
-            0.4
+          this.playerMesh.rotation.y, 
+          targetRotation, 
+          0.4
         );
     }
 
     if (distanceToTarget < 0.05) {
-        this.playerMesh.position.x = state.playerX;
-        this.playerMesh.position.z = state.playerZ;
-        this.playerMesh.position.y = 0;
+      this.playerMesh.position.x = state.playerX;
+      this.playerMesh.position.z = state.playerZ;
+      this.playerMesh.position.y = 0;
     } else {
-        const speed = 0.35; 
+      const speed = 0.35; 
         
-        this.playerMesh.position.x = Scalar.Lerp(this.playerMesh.position.x, state.playerX, speed);
-        this.playerMesh.position.z = Scalar.Lerp(this.playerMesh.position.z, state.playerZ, speed);
+      this.playerMesh.position.x = Scalar.Lerp(this.playerMesh.position.x, state.playerX, speed);
+      this.playerMesh.position.z = Scalar.Lerp(this.playerMesh.position.z, state.playerZ, speed);
 
-        const jumpHeight = Math.sin(distanceToTarget * Math.PI) * 0.20;
+      const jumpHeight = Math.sin(distanceToTarget * Math.PI) * 0.20;
         
-        this.playerMesh.position.y = 0 + Math.max(0, jumpHeight);
+      this.playerMesh.position.y = 0 + Math.max(0, jumpHeight);
     }
 
     this.camera.position.x = this.cameraOffset.x;

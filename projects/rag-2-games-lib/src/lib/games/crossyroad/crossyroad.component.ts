@@ -12,7 +12,10 @@ import { ILane } from './models/crossyroad.interfaces';
   selector: 'app-crossyroad',
   standalone: true,
   imports: [CanvasComponent],
-  template: `
+  template: `<div>
+    Score: <b>{{ game.state.score }}</b> | 
+    Best: <b>{{ game.state.highestZ }}</b>
+  </div>
     <app-canvas
       [displayMode]="'horizontal'"
       [is3DEnabled]="true"
@@ -54,14 +57,19 @@ export class CrossyRoadGameWindowComponent
 
     this.game.state = new CrossyRoadState();
     const state = this.game.state;
+
+    const savedHighScore = localStorage.getItem('crossyroadBestScore');
+    if (savedHighScore) {
+      state.highestZ = parseInt(savedHighScore, 10);
+    }
     
     for (const lane of state.lanes) {
-        if (lane.z > 3) {
-            if (Math.random() > 0.7) {
-                lane.type = 'grass';
-            }
-            this.spawnObstaclesOnLane(lane);
+      if (lane.z > 3) {
+        if (Math.random() > 0.7) {
+          lane.type = 'grass';
         }
+        this.spawnObstaclesOnLane(lane);
+      }
     }
   }
 
@@ -123,7 +131,11 @@ export class CrossyRoadGameWindowComponent
       
       if (state.playerZ > state.highestZ) {
         state.highestZ = state.playerZ;
-        state.score = state.highestZ;
+        localStorage.setItem('crossyroadBestScore', state.highestZ.toString());
+      }
+
+      if (state.playerZ > state.score) {
+        state.score = state.playerZ;
       }
 
       state.moveCooldown = 8;
@@ -232,9 +244,9 @@ export class CrossyRoadGameWindowComponent
       let direction: 1 | -1 = Math.random() > 0.5 ? 1 : -1;
 
       const prevLane = state.lanes[state.lanes.length - 1];
-       if (prevLane && prevLane.type === 'water' && prevLane.obstacles.length > 0) {
-           direction = prevLane.obstacles[0].direction === 1 ? -1 : 1;
-       }
+      if (prevLane && prevLane.type === 'water' && prevLane.obstacles.length > 0) {
+        direction = prevLane.obstacles[0].direction === 1 ? -1 : 1;
+      }
 
       const speed = 0.04 + Math.random() * 0.04;
        
@@ -374,8 +386,13 @@ export class CrossyRoadGameWindowComponent
           isSafeOnWater = true;
           logSpeed = obs.speed;
           logDirection = obs.direction;
+        } else if (obs.type === 'tree') {
+          state.isGameOver = true;
+          state.deathReason = 'You cannot move tree!';
+          return;
         } else {
           state.isGameOver = true;
+          state.deathReason = obs.type === 'truck' ? 'Hit by truck!' : 'Hit by car!';
           return;
         }
       }
@@ -384,11 +401,13 @@ export class CrossyRoadGameWindowComponent
     if (playerLane.type === 'water') {
       if (!isSafeOnWater) {
         state.isGameOver = true;
+        state.deathReason = 'Better learn to swim!';
       } else {
         state.playerX += logSpeed * logDirection;
 
         if (state.playerX < -8 || state.playerX > 12) {
           state.isGameOver = true;
+          state.deathReason = 'Better stay in safe area!';
         }
       }
     }
