@@ -112,7 +112,7 @@ export class CrossyRoadGameWindowComponent
       const targetZ = state.playerZ - 1;
       const canMoveBack = state.lanes.some(l => l.z === targetZ);
 
-      if (canMoveBack) {
+      if (canMoveBack && targetZ >= -1) {
         state.playerZ -= 1;
         moved = true;
       }

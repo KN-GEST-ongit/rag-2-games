@@ -22,7 +22,7 @@ export class CrossyRoadState implements TGameState {
   public deathReason: string = '';
 
   constructor() {
-    for (let i = -2; i < 15; i++) {
+    for (let i = -7; i < 15; i++) {
       this.lanes.push({
         z: i,
         type: (i <= 0) ? 'grass' : 'road',
