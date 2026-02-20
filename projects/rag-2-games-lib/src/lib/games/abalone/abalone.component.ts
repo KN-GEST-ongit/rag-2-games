@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Abalone, AbaloneState, ICubeCoords } from './models/abalone.class';
@@ -7,14 +8,23 @@ import { Abalone, AbaloneState, ICubeCoords } from './models/abalone.class';
 @Component({
   selector: 'app-abalone',
   standalone: true,
-  imports: [CanvasComponent],
+  imports: [CanvasComponent, NgIf],
   template: `
     <div class="game-info">
       Tura: <b [style.color]="game.state.currentPlayer === 'BLACK' ? 'black' : 'gray'">
         {{ game.state.currentPlayer }}
       </b> | 
       Punkty - Czarne: <b>{{ game.state.deadMarbles.WHITE }}</b>, 
-      Białe: <b>{{ game.state.deadMarbles.BLACK }}</b>
+      Białe: <b>{{ game.state.deadMarbles.BLACK }}</b> |
+      Faza: <b>{{ game.state.phase === 'SELECT' ? 'Zaznaczanie' : 'Ruch' }}</b>
+    </div>
+    <div class="game-hint" *ngIf="!game.state.isGameOver">
+      {{ game.state.phase === 'SELECT'
+        ? 'Space: zaznacz/odznacz | Enter: zatwierdź wybór | Esc: anuluj'
+        : 'Q/W/E/D/S/A: wykonaj ruch | Esc: wróć' }}
+    </div>
+    <div class="game-over" *ngIf="game.state.isGameOver" style="color: #2200ff; font-size: 1.2em; font-weight: bold;">
+      Koniec gry! Wygrywa: {{ game.state.winner === 'BLACK' ? 'Czarne' : 'Białe' }}!
     </div>
     <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b>
@@ -57,6 +67,10 @@ export class AbaloneGameWindowComponent
     { x: 0, y: 1, z: -1 },
   ];
 
+  private readonly _dirKeyLabels: Record<number, string> = {
+    1: 'Q', 2: 'W', 3: 'E', 4: 'D', 5: 'S', 6: 'A'
+  };
+
   private _boundKeyHandler = (e: KeyboardEvent): void => this.onAbaloneKeyDown(e);
 
   public override ngOnInit(): void {
@@ -82,7 +96,7 @@ export class AbaloneGameWindowComponent
   }
 
   private onAbaloneKeyDown(event: KeyboardEvent): void {
-    if (this.isPaused) return;
+    if (this.isPaused || this.game.state.isGameOver) return;
 
     const moveDir = this.keyToMoveMap[event.key];
     if (moveDir !== undefined) {
@@ -106,14 +120,39 @@ export class AbaloneGameWindowComponent
   }
 
   private handleInput(): void {
-    if (this._moveQueue.length > 0) {
-      const move = this._moveQueue.shift()!;
-      this.moveCursor(move);
+    const state = this.game.state;
+
+    if (state.phase === 'SELECT') {
+      this.handleSelectPhaseInput();
+    } else if (state.phase === 'MOVE') {
+      this.handleMovePhaseInput();
+    }
+  }
+
+  private handleSelectPhaseInput(): void {
+    const moveDir = this._moveQueue.shift();
+    if (moveDir !== undefined) {
+      this.moveCursor(moveDir);
     }
 
-    if (this._actionQueue.length > 0) {
-      const action = this._actionQueue.shift()!;
+    const action = this._actionQueue.shift();
+    if (action !== undefined) {
       this.handleAction(action);
+    }
+  }
+
+  private handleMovePhaseInput(): void {
+    const state = this.game.state;
+
+    const dir = this._moveQueue.shift();
+    if (dir !== undefined && state.possibleMoves.includes(dir)) {
+      this.executeMove(dir);
+    }
+
+    const action = this._actionQueue.shift();
+    if (action === 3) {
+      state.phase = 'SELECT';
+      state.possibleMoves = [];
     }
   }
 
@@ -136,7 +175,9 @@ export class AbaloneGameWindowComponent
     if (action === 1) {
       this.toggleSelection(currentKey);
     } else if (action === 2) {
-      this.executeMove();
+      if (state.selectedMarbles.length > 0) {
+        this.enterMovePhase();
+      }
     } else if (action === 3) {
       state.selectedMarbles = [];
     }
@@ -193,45 +234,29 @@ export class AbaloneGameWindowComponent
     }
   }
 
-  // --- Walidacja linii ---
-
-  /** Czy dwa pola sąsiadują (dystans kubiczny = 1) */
   private areNeighbors(a: ICubeCoords, b: ICubeCoords): boolean {
     return this.cubeDistance(a, b) === 1;
   }
 
-  /** Dystans kubiczny */
   private cubeDistance(a: ICubeCoords, b: ICubeCoords): number {
     return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z)) / 2;
   }
 
-  /**
-   * Sprawdza czy 3 pola leżą na jednej z 3 osi hex (w linii prostej).
-   * Wymagane: jedno pole jest środkowe, a dwa pozostałe są jego sąsiadami
-   * w tym samym kierunku osi.
-   */
+
   private areInLine(a: ICubeCoords, b: ICubeCoords, c: ICubeCoords): boolean {
     const points = [a, b, c];
 
-    // Sprawdź każdą z 3 osi hex
     for (const axis of this.HEX_AXIS_DIRS) {
-      // Rzutuj punkty na tę oś (iloczyn skalarny z wektorem osi)
       const projections = points.map(p => p.x * axis.x + p.y * axis.y + p.z * axis.z);
       projections.sort((x, y) => x - y);
 
-      // 3 punkty w linii na osi = kolejne wartości rzutu (np. 0,1,2 lub -1,0,1)
       if (projections[1] - projections[0] === 1 && projections[2] - projections[1] === 1) {
-        // Dodatkowa weryfikacja: sprawdź że na osi prostopadłej mają tę samą wartość
-        // Użyj drugiej osi do sprawdzenia współliniowości
         const otherAxes = this.HEX_AXIS_DIRS.filter(ax => ax !== axis);
         const allSamePlane = otherAxes.some(oa => {
           const pp = points.map(p => p.x * oa.x + p.y * oa.y + p.z * oa.z);
-          // Dwa z trzech muszą mieć ten sam rzut na prostopadłą oś — to za mało
-          // Prostsze: po prostu sprawdź, że wektor (a->b) i (b->c) to ten sam kierunek osi
-          return true; // rzutowanie na oś wystarczy
+          return true; 
         });
 
-        // Zweryfikuj bezpośrednio: wektor a→b i b→c muszą być równoległe do osi
         const sorted = [...points].sort((p1, p2) => {
           return (p1.x * axis.x + p1.y * axis.y + p1.z * axis.z) -
                  (p2.x * axis.x + p2.y * axis.y + p2.z * axis.z);
@@ -239,7 +264,6 @@ export class AbaloneGameWindowComponent
         const d1 = { x: sorted[1].x - sorted[0].x, y: sorted[1].y - sorted[0].y, z: sorted[1].z - sorted[0].z };
         const d2 = { x: sorted[2].x - sorted[1].x, y: sorted[2].y - sorted[1].y, z: sorted[2].z - sorted[1].z };
 
-        // Oba wektory muszą być identyczne i być jednym z 6 kierunków hex
         if (d1.x === d2.x && d1.y === d2.y && d1.z === d2.z &&
             this.cubeDistance({ x: 0, y: 0, z: 0 }, d1) === 1) {
           return true;
@@ -249,11 +273,199 @@ export class AbaloneGameWindowComponent
     return false;
   }
 
-  private executeMove(): void {
-    if (this.game.state.selectedMarbles.length > 0) {
-      this.game.state.selectedMarbles = [];
-      this.game.state.currentPlayer = this.game.state.currentPlayer === 'BLACK' ? 'WHITE' : 'BLACK';
+  private executeMove(dirIdx: number): void {
+    const state = this.game.state;
+    const selected = state.selectedMarbles.map(k => this.keyToCoords(k));
+    const dir = this.directions[dirIdx];
+
+    if (selected.length === 1) {
+      this.executeInlineMove(selected, dir);
+    } else {
+      const axis = this.getLineAxis(selected);
+      if (this.isInlineDirection(axis, dir)) {
+        this.executeInlineMove(selected, dir);
+      } else {
+        this.executeBroadsideMove(selected, dir);
+      }
     }
+
+    if (state.deadMarbles.BLACK >= 6 || state.deadMarbles.WHITE >= 6) {
+      state.isGameOver = true;
+      state.winner = state.deadMarbles.BLACK >= 6 ? 'WHITE' : 'BLACK';
+      return;
+    }
+
+    state.currentPlayer = state.currentPlayer === 'BLACK' ? 'WHITE' : 'BLACK';
+    state.selectedMarbles = [];
+    state.possibleMoves = [];
+    state.phase = 'SELECT';
+  }
+
+  // ── Faza ruchu ──────────────────────────────────────────────
+
+  private enterMovePhase(): void {
+    const possibleMoves = this.computePossibleMoves();
+    if (possibleMoves.length > 0) {
+      this.game.state.possibleMoves = possibleMoves;
+      this.game.state.phase = 'MOVE';
+    }
+  }
+
+  private computePossibleMoves(): number[] {
+    const valid: number[] = [];
+    for (let dirIdx = 1; dirIdx <= 6; dirIdx++) {
+      if (this.isMoveValid(dirIdx)) {
+        valid.push(dirIdx);
+      }
+    }
+    return valid;
+  }
+
+  private isMoveValid(dirIdx: number): boolean {
+    const selected = this.game.state.selectedMarbles.map(k => this.keyToCoords(k));
+    const dir = this.directions[dirIdx];
+
+    if (selected.length === 1) {
+      return this.isInlineMoveValid(selected, dir);
+    }
+
+    const axis = this.getLineAxis(selected);
+    if (this.isInlineDirection(axis, dir)) {
+      return this.isInlineMoveValid(selected, dir);
+    }
+    return this.isBroadsideMoveValid(selected, dir);
+  }
+
+  private isInlineMoveValid(selected: ICubeCoords[], dir: ICubeCoords): boolean {
+    const state = this.game.state;
+    const sorted = this.sortMarblesAlongDir(selected, dir);
+    const front = sorted[sorted.length - 1];
+
+    const pos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
+
+    if (!this.isOnBoard(pos)) return false;
+
+    const posKey = `${pos.x},${pos.y},${pos.z}`;
+    if (!state.board.has(posKey)) return true;
+    if (state.board.get(posKey) === state.currentPlayer) return false;
+
+    return this.canPushOpponents(pos, dir, selected.length);
+  }
+
+  private canPushOpponents(startPos: ICubeCoords, dir: ICubeCoords, ownCount: number): boolean {
+    const state = this.game.state;
+    let pos = { ...startPos };
+    let opponentCount = 0;
+
+    while (
+      this.isOnBoard(pos) &&
+      state.board.has(`${pos.x},${pos.y},${pos.z}`) &&
+      state.board.get(`${pos.x},${pos.y},${pos.z}`) !== state.currentPlayer
+    ) {
+      opponentCount++;
+      pos = { x: pos.x + dir.x, y: pos.y + dir.y, z: pos.z + dir.z };
+    }
+
+    if (ownCount <= opponentCount) return false;
+
+    if (this.isOnBoard(pos) && state.board.has(`${pos.x},${pos.y},${pos.z}`)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private isBroadsideMoveValid(selected: ICubeCoords[], dir: ICubeCoords): boolean {
+    const state = this.game.state;
+
+    for (const marble of selected) {
+      const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
+      const destKey = `${dest.x},${dest.y},${dest.z}`;
+
+      if (!this.isOnBoard(dest)) return false;
+      if (state.board.has(destKey)) return false;
+    }
+    return true;
+  }
+
+  private getLineAxis(marbles: ICubeCoords[]): ICubeCoords {
+    return {
+      x: marbles[1].x - marbles[0].x,
+      y: marbles[1].y - marbles[0].y,
+      z: marbles[1].z - marbles[0].z,
+    };
+  }
+
+  private isInlineDirection(axis: ICubeCoords, dir: ICubeCoords): boolean {
+    return (
+      (dir.x === axis.x && dir.y === axis.y && dir.z === axis.z) ||
+      (dir.x === -axis.x && dir.y === -axis.y && dir.z === -axis.z)
+    );
+  }
+
+  private sortMarblesAlongDir(marbles: ICubeCoords[], dir: ICubeCoords): ICubeCoords[] {
+    return [...marbles].sort((a, b) => {
+      const projA = a.x * dir.x + a.y * dir.y + a.z * dir.z;
+      const projB = b.x * dir.x + b.y * dir.y + b.z * dir.z;
+      return projA - projB;
+    });
+  }
+
+  private isOnBoard(pos: ICubeCoords): boolean {
+    return Math.max(Math.abs(pos.x), Math.abs(pos.y), Math.abs(pos.z)) <= 4;
+  }
+
+  // ── Wykonanie ruchów ───────────────────────────────────────
+
+  private executeInlineMove(selected: ICubeCoords[], dir: ICubeCoords): void {
+    const state = this.game.state;
+    const sorted = this.sortMarblesAlongDir(selected, dir);
+    const front = sorted[sorted.length - 1];
+
+    // Zebranie kuleczek przeciwnika do zepchnięcia
+    let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
+    const opponentMarbles: ICubeCoords[] = [];
+
+    while (this.isOnBoard(pushPos)) {
+      const key = `${pushPos.x},${pushPos.y},${pushPos.z}`;
+      const color = state.board.get(key);
+      if (!color || color === state.currentPlayer) break;
+      opponentMarbles.push({ ...pushPos });
+      pushPos = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
+    }
+
+    // Przesuwanie kulek przeciwnika (od najdalszej)
+    for (let i = opponentMarbles.length - 1; i >= 0; i--) {
+      const opp = opponentMarbles[i];
+      const oppKey = `${opp.x},${opp.y},${opp.z}`;
+      const oppColor = state.board.get(oppKey);
+      state.board.delete(oppKey);
+
+      if (!oppColor) continue;
+
+      const newPos: ICubeCoords = { x: opp.x + dir.x, y: opp.y + dir.y, z: opp.z + dir.z };
+      if (this.isOnBoard(newPos)) {
+        state.board.set(`${newPos.x},${newPos.y},${newPos.z}`, oppColor);
+      } else {
+        state.deadMarbles[oppColor]++;
+      }
+    }
+
+    // Przesuwanie własnych kulek
+    const colors = sorted.map(m => state.board.get(`${m.x},${m.y},${m.z}`) ?? state.currentPlayer);
+    sorted.forEach(m => state.board.delete(`${m.x},${m.y},${m.z}`));
+    sorted.forEach((m, i) => {
+      state.board.set(`${m.x + dir.x},${m.y + dir.y},${m.z + dir.z}`, colors[i]);
+    });
+  }
+
+  private executeBroadsideMove(selected: ICubeCoords[], dir: ICubeCoords): void {
+    const state = this.game.state;
+    const colors = selected.map(m => state.board.get(`${m.x},${m.y},${m.z}`) ?? state.currentPlayer);
+    selected.forEach(m => state.board.delete(`${m.x},${m.y},${m.z}`));
+    selected.forEach((m, i) => {
+      state.board.set(`${m.x + dir.x},${m.y + dir.y},${m.z + dir.z}`, colors[i]);
+    });
   }
 
 
@@ -269,6 +481,8 @@ export class AbaloneGameWindowComponent
 
     this.drawHexGrid(ctx);
     this.drawMarbles(ctx);
+    this.drawMoveGhosts(ctx);
+    this.drawDirectionCompass(ctx);
     this.drawCursor(ctx);
 
     ctx.restore();
@@ -309,22 +523,81 @@ export class AbaloneGameWindowComponent
       if (isSelected) {
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, marbleRadius + 3, 0, Math.PI * 2);
-        ctx.strokeStyle = '#22c55e'; // zielony
+        ctx.strokeStyle = '#22c55e'; 
         ctx.lineWidth = 4;
         ctx.stroke();
       }
     });
-  }
+  } 
 
   private drawCursor(ctx: CanvasRenderingContext2D): void {
     const pos = this.cubeToPixel(this.game.state.cursor.x, this.game.state.cursor.y);
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, this.HEX_SIZE * 0.85, 0, Math.PI * 2);
-    ctx.strokeStyle = '#facc15';
-    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = '#fffb00';
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.setLineDash([]);
+  }
+
+  // ── Wizualizacja możliwych ruchów ──────────────────────────────
+
+  private drawMoveGhosts(ctx: CanvasRenderingContext2D): void {
+    const state = this.game.state;
+    if (state.phase !== 'MOVE' || state.possibleMoves.length === 0) return;
+
+    const selected = state.selectedMarbles.map(k => this.keyToCoords(k));
+    const selectedKeySet = new Set(state.selectedMarbles);
+
+    for (const dirIdx of state.possibleMoves) {
+      const dir = this.directions[dirIdx];
+
+      for (const marble of selected) {
+        const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
+        const destKey = `${dest.x},${dest.y},${dest.z}`;
+
+        if (selectedKeySet.has(destKey) || !this.isOnBoard(dest)) continue;
+
+        const pos = this.cubeToPixel(dest.x, dest.y);
+
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, this.HEX_SIZE * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.4)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+  }
+
+  private drawDirectionCompass(ctx: CanvasRenderingContext2D): void {
+    const state = this.game.state;
+    if (state.phase !== 'MOVE' || state.selectedMarbles.length === 0) return;
+
+    const selected = state.selectedMarbles.map(k => this.keyToCoords(k));
+    const cx = selected.reduce((s, c) => s + c.x, 0) / selected.length;
+    const cy = selected.reduce((s, c) => s + c.y, 0) / selected.length;
+    const centerPx = this.cubeToPixel(cx, cy);
+
+    for (let dirIdx = 1; dirIdx <= 6; dirIdx++) {
+      const dir = this.directions[dirIdx];
+      const isValid = state.possibleMoves.includes(dirIdx);
+
+      const targetPx = this.cubeToPixel(cx + dir.x, cy + dir.y);
+      const arrowX = targetPx.x;
+      const arrowY = targetPx.y;
+
+      ctx.beginPath();
+      ctx.arc(arrowX, arrowY, this.HEX_SIZE * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = isValid ? 'rgba(34, 197, 94, 0.75)' : 'rgba(100, 100, 100, 0.25)';
+      ctx.fill();
+
+      ctx.fillStyle = isValid ? '#ffffff' : 'rgba(180, 180, 180, 0.4)';
+      ctx.font = `bold ${this.HEX_SIZE * 0.5}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this._dirKeyLabels[dirIdx], arrowX, arrowY);
+    }
   }
 
   private drawHexagon(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {

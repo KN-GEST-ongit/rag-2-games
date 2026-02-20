@@ -17,11 +17,13 @@ export type THexKey = string;
 export class AbaloneState implements TGameState {
   public board = new Map<THexKey, TPlayerColor>();
   
-  public currentPlayer: TPlayerColor = 'BLACK';
+  public currentPlayer: TPlayerColor = 'WHITE';
   public cursor: ICubeCoords = { x: 0, y: 0, z: 0 };
   public selectedMarbles: THexKey[] = [];
   public deadMarbles: Record<TPlayerColor, number> = { BLACK: 0, WHITE: 0 };
- public isGameOver = false;
+  public phase: 'SELECT' | 'MOVE' = 'SELECT';
+  public possibleMoves: number[] = [];
+  public isGameOver = false;
   public winner: TPlayerColor | null = null;
 
   public constructor() {
