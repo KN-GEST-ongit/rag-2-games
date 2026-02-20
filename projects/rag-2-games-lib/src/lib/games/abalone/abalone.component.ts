@@ -98,8 +98,12 @@ export class AbaloneGameWindowComponent
   private onAbaloneKeyDown(event: KeyboardEvent): void {
     if (this.isPaused || this.game.state.isGameOver) return;
 
-    const moveDir = this.keyToMoveMap[event.key];
+    let moveDir = this.keyToMoveMap[event.key];
     if (moveDir !== undefined) {
+      // Odwróć kierunek gdy plansza jest obrócona (tura białych)
+      if (this.game.state.currentPlayer === 'WHITE') {
+        moveDir = ((moveDir - 1 + 3) % 6) + 1;
+      }
       this._moveQueue.push(moveDir);
       return;
     }
@@ -479,6 +483,11 @@ export class AbaloneGameWindowComponent
     ctx.save();
     ctx.translate(this._canvas.width / 2, this._canvas.height / 2);
 
+    // Obrót planszy o 180° gdy tura białych
+    if (this.game.state.currentPlayer === 'WHITE') {
+      ctx.rotate(Math.PI);
+    }
+
     this.drawHexGrid(ctx);
     this.drawMarbles(ctx);
     this.drawMoveGhosts(ctx);
@@ -534,7 +543,7 @@ export class AbaloneGameWindowComponent
     const pos = this.cubeToPixel(this.game.state.cursor.x, this.game.state.cursor.y);
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, this.HEX_SIZE * 0.85, 0, Math.PI * 2);
-    ctx.strokeStyle = '#fffb00';
+    ctx.strokeStyle = '#ff0000';
     ctx.lineWidth = 2;
     ctx.stroke();
   }
@@ -574,14 +583,16 @@ export class AbaloneGameWindowComponent
     const state = this.game.state;
     if (state.phase !== 'MOVE' || state.selectedMarbles.length === 0) return;
 
+    const isRotated = state.currentPlayer === 'WHITE';
     const selected = state.selectedMarbles.map(k => this.keyToCoords(k));
     const cx = selected.reduce((s, c) => s + c.x, 0) / selected.length;
     const cy = selected.reduce((s, c) => s + c.y, 0) / selected.length;
-    const centerPx = this.cubeToPixel(cx, cy);
 
     for (let dirIdx = 1; dirIdx <= 6; dirIdx++) {
-      const dir = this.directions[dirIdx];
-      const isValid = state.possibleMoves.includes(dirIdx);
+   
+      const visualDir = isRotated ? ((dirIdx - 1 + 3) % 6) + 1 : dirIdx;
+      const dir = this.directions[visualDir];
+      const isValid = state.possibleMoves.includes(visualDir);
 
       const targetPx = this.cubeToPixel(cx + dir.x, cy + dir.y);
       const arrowX = targetPx.x;
@@ -592,11 +603,18 @@ export class AbaloneGameWindowComponent
       ctx.fillStyle = isValid ? 'rgba(34, 197, 94, 0.75)' : 'rgba(100, 100, 100, 0.25)';
       ctx.fill();
 
+      // Obrót tekstu z powrotem, żeby litery nie były do góry nogami
+      ctx.save();
+      ctx.translate(arrowX, arrowY);
+      if (isRotated) {
+        ctx.rotate(Math.PI);
+      }
       ctx.fillStyle = isValid ? '#ffffff' : 'rgba(180, 180, 180, 0.4)';
       ctx.font = `bold ${this.HEX_SIZE * 0.5}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(this._dirKeyLabels[dirIdx], arrowX, arrowY);
+      ctx.fillText(this._dirKeyLabels[dirIdx], 0, 0);
+      ctx.restore();
     }
   }
 
