@@ -149,6 +149,13 @@ export class CrossyRoadRenderer {
   public render(state: CrossyRoadState): void {
     const dirX = state.playerX - this.playerMesh.position.x;
     const dirZ = state.playerZ - this.playerMesh.position.z;
+
+    const currentLane = state.lanes.find(l => l.z === Math.round(state.playerZ));
+    let baseHeight = 0;
+
+    if (currentLane?.type === 'water' && !state.isGameOver) {
+      baseHeight = 0.3;
+    }
     
     const distanceToTarget = Math.abs(dirX) + Math.abs(dirZ);
 
@@ -175,7 +182,7 @@ export class CrossyRoadRenderer {
     if (distanceToTarget < 0.05) {
       this.playerMesh.position.x = state.playerX;
       this.playerMesh.position.z = state.playerZ;
-      this.playerMesh.position.y = 0;
+      this.playerMesh.position.y = baseHeight;
     } else {
       const speed = 0.35; 
         
@@ -184,7 +191,7 @@ export class CrossyRoadRenderer {
 
       const jumpHeight = Math.sin(distanceToTarget * Math.PI) * 0.20;
         
-      this.playerMesh.position.y = 0 + Math.max(0, jumpHeight);
+      this.playerMesh.position.y = baseHeight + Math.max(0, jumpHeight);
     }
 
     this.camera.position.x = this.cameraOffset.x;
