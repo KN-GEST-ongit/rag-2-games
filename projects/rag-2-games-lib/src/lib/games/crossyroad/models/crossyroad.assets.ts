@@ -124,11 +124,13 @@ export class CrossyRoadAssets {
     trunk.position.y = 0.4;
     const woodMat = new StandardMaterial("wood", scene);
     woodMat.diffuseColor = new Color3(0.4, 0.2, 0.1);
+    woodMat.specularColor = new Color3(0, 0, 0);
     trunk.material = woodMat;
     trunk.parent = root;
 
     const leafMat = new StandardMaterial("leaf", scene);
     leafMat.diffuseColor = new Color3(0.1, 0.6, 0.1);
+    leafMat.specularColor = new Color3(0, 0, 0);
 
     const levels = [
       { w: 1.2, y: 0.8 },
@@ -194,6 +196,7 @@ export class CrossyRoadAssets {
     
     const logMat = new StandardMaterial("logMat", scene);
     logMat.diffuseColor = new Color3(0.4, 0.25, 0.1);
+    logMat.specularColor = new Color3(0.2, 0.2, 0.2);
 
     const logMesh = MeshBuilder.CreateBox("log", { width: width, height: 0.3, depth: 0.8 }, scene);
     logMesh.position.y = 0.15;

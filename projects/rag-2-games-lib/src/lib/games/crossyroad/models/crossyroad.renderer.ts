@@ -18,7 +18,7 @@ import {
   Color4,
   ShadowGenerator,
   Scalar,
-  EngineOptions
+  EngineOptions,
 } from '@babylonjs/core';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui';
 import { CrossyRoadAssets } from './crossyroad.assets';
@@ -75,33 +75,29 @@ export class CrossyRoadRenderer {
     this.camera.inputs.clear();
 
     const hemiLight = new HemisphericLight("hemi", new Vector3(0, 1, 0), this.scene);
-    hemiLight.intensity = 0.8;
+    hemiLight.intensity = 0.5;
 
-    const dirLight = new DirectionalLight("dir", new Vector3(-0.5, -1, -0.5), this.scene);
+    const dirLight = new DirectionalLight("dir", new Vector3(-0.5, -1.5, -0.5), this.scene);
     dirLight.position = new Vector3(20, 40, 20);
-    dirLight.intensity = 0.6;
+    dirLight.intensity = 1.2;
     
     this.shadowGenerator = new ShadowGenerator(2048, dirLight);
     this.shadowGenerator.useBlurExponentialShadowMap = true;
     this.shadowGenerator.blurKernel = 32;
-
-    const ground = MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, this.scene);
-    ground.position.y = -0.25;
-    ground.receiveShadows = true;
-    
-    const groundMat = new StandardMaterial("groundMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.4, 0.6, 0.4);
-    ground.material = groundMat;
+    this.shadowGenerator.setDarkness(0.35);
 
     this.grassMat = new StandardMaterial("grassMat", this.scene);
     this.grassMat.diffuseColor = new Color3(0.3, 0.7, 0.3);
+    this.grassMat.specularColor = new Color3(0.1, 0.1, 0.1);
 
     this.roadMat = new StandardMaterial("roadMat", this.scene);
     this.roadMat.diffuseColor = new Color3(0.25, 0.25, 0.25);
+    this.roadMat.specularColor = new Color3(0.1, 0.1, 0.1);
 
     this.waterMat = new StandardMaterial("waterMat", this.scene);
     this.waterMat.diffuseColor = new Color3(0.1, 0.5, 0.9);
     this.waterMat.alpha = 0.8;
+    this.waterMat.specularColor = new Color3(0.5, 0.5, 0.5);
 
     this.playerMesh = CrossyRoadAssets.createVoxelPlayer(this.scene, this.shadowGenerator);
     this.playerMesh.position.y = 0;
@@ -223,7 +219,7 @@ export class CrossyRoadRenderer {
       if (!this.laneMeshes.has(lane.z)) {
         const mesh = MeshBuilder.CreateBox(
           `lane_${lane.z}`, 
-          { width: 60, height: 0.15, depth: 1 }, 
+          { width: 40, height: 0.15, depth: 1 },
           this.scene
         );
         mesh.position.set(0, -0.075, lane.z);
@@ -233,6 +229,7 @@ export class CrossyRoadRenderer {
         else if (lane.type === 'water'){ 
           mesh.material = this.waterMat
           mesh.position.y = -0.15
+          mesh.receiveShadows = true;
         }
         this.laneMeshes.set(lane.z, mesh);
       }

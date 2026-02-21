@@ -160,8 +160,8 @@ export class CrossyRoadGameWindowComponent
     if (lane.type === 'road') {
       const difficultyFactor = Math.min(Math.max(0, lane.z) * 0.0005, 0.15);
 
-      let maxCars = 2;
-      if (lane.z > 100) maxCars = 3; 
+      let maxCars = 3;
+      if (lane.z > 100) maxCars = 4;
 
       const carCount = Math.floor(Math.random() * maxCars) + 1;
       const baseSpeed = 0.06 + difficultyFactor;
@@ -172,8 +172,13 @@ export class CrossyRoadGameWindowComponent
 
       const direction = Math.random() > 0.5 ? 1 : -1;
 
+      const isTruckLane = Math.random() < 0.10;
+      const lanObstacleType = isTruckLane ? 'truck' : (speed > 0.15 ? 'car_fast' : 'car_slow');
+      const laneObstacleWidth = isTruckLane ? 3.5 : 1.5;
+      const laneObstacleSpeed = isTruckLane ? speed * 0.8 : speed;
+
       const placedCarsX: number[] = [];
-      const minDistance = 5;
+      const minDistance = isTruckLane ? 8 : 5;
 
       for (let j = 0; j < carCount; j++) {
         let attempts = 0;
@@ -181,7 +186,7 @@ export class CrossyRoadGameWindowComponent
         let candidateX = 0;
 
         while (!validPosition && attempts < 10) {
-          candidateX = (Math.random() - 0.5) * 50;
+          candidateX = (Math.random() - 0.5) * 40;
           const collision = placedCarsX.some(x => Math.abs(x - candidateX) < minDistance);
           if (!collision) {
             validPosition = true;
@@ -191,19 +196,14 @@ export class CrossyRoadGameWindowComponent
 
         if (validPosition) {
           placedCarsX.push(candidateX);
-          const isTruck = Math.random() < 0.10;
-
-          const obstacleType = isTruck ? 'truck' : (speed > 0.15 ? 'car_fast' : 'car_slow');
-          const obstacleWidth = isTruck ? 3.5 : 1.5; 
-          const obstacleSpeed = isTruck ? speed * 0.7 : speed;
 
           lane.obstacles.push({
             id: state.nextObstacleId++,
             x: candidateX,
-            speed: obstacleSpeed,
+            speed: laneObstacleSpeed,
             direction: direction as -1 | 1,
-            type: obstacleType,
-            width: obstacleWidth
+            type: lanObstacleType,
+            width: laneObstacleWidth
           });
         }
       }
@@ -251,7 +251,7 @@ export class CrossyRoadGameWindowComponent
 
       const speed = 0.04 + Math.random() * 0.04;
        
-      const logCount = Math.floor(Math.random() * 2) + 3;
+      const logCount = Math.floor(Math.random() * 2) + 4;
       const placedX: number[] = [];
       const minDistance = 6;
 
@@ -348,7 +348,7 @@ export class CrossyRoadGameWindowComponent
   private updateObstacles(): void {
     const state = this.game.state;
 
-    const resetLimit = 30;
+    const resetLimit = 20;
 
     for (const lane of state.lanes) {
       for (const obs of lane.obstacles) {
