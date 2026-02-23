@@ -11,6 +11,7 @@ import { SpaceinvadersGameWindowComponent } from './games/spaceinvaders/spaceinv
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
 import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
 import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefense.component';
+import { CrossyRoadGameWindowComponent } from './games/crossyroad/crossyroad.component';
 import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
 
 @Component({
@@ -26,7 +27,9 @@ import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
   	PacmanGameWindowComponent,
     TowerDefenseGameWindowComponent,
     TetrisGameWindowComponent,
+    CrossyRoadGameWindowComponent
   ],
+
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -103,6 +106,15 @@ import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
       }
 			@case ('tetris') {
         <app-tetris
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+      @case ('crossyroad') {
+        <app-crossyroad
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
