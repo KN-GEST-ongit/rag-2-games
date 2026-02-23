@@ -11,7 +11,7 @@ import { SpaceinvadersGameWindowComponent } from './games/spaceinvaders/spaceinv
 import { SnakeGameWindowComponent } from './games/snake/snake.component';
 import { PacmanGameWindowComponent } from './games/pacman/pacman.component';
 import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefense.component';
-
+import { TetrisGameWindowComponent } from './games/tetris/tetris.component';
 
 @Component({
   selector: 'rag-2-games-lib',
@@ -24,8 +24,9 @@ import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefen
   	SpaceinvadersGameWindowComponent,
   	SnakeGameWindowComponent,
   	PacmanGameWindowComponent,
-    TowerDefenseGameWindowComponent],
-    
+    TowerDefenseGameWindowComponent,
+    TetrisGameWindowComponent,
+  ],
   template: `
     @switch (gameName) {
       @case ('pong') {
@@ -93,6 +94,15 @@ import { TowerDefenseGameWindowComponent } from './games/towerdefense/towerdefen
       }
 			@case ('towerdefense') {
         <app-towerdefense
+          class="flex flex-col items-center w-3/4"
+          [gameRestart]="gameRestart"
+          [gamePause]="gamePause"
+          [setAbstractGame]="game"
+          [setSocketInputDataReceive]="socketInputData"
+          (gameStateDataEmitter)="handleGameStateData($event)" />
+      }
+			@case ('tetris') {
+        <app-tetris
           class="flex flex-col items-center w-3/4"
           [gameRestart]="gameRestart"
           [gamePause]="gamePause"
