@@ -21,6 +21,8 @@ export class SoccerState implements TGameState {
     public teamRedColor = '#FF0000';
     public teamBlueColor = '#0000FF';
 
+    public kickoffTeam: 'red' | 'blue' | null = null; 
+
     public player1: IMovableEntity = {
         x: 100,
         y: this.height / 2,

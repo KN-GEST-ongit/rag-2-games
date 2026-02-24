@@ -42,9 +42,13 @@ export class SoccerGameWindowComponent
   public override restart(): void {
     const savedScoreRed = this.game.state.scoreRed;
     const savedScoreBlue = this.game.state.scoreBlue;
+    const savedKickoffTeam = this.game.state.kickoffTeam; 
+
     this.game.state = new SoccerState();
+
     this.game.state.scoreRed = savedScoreRed;
     this.game.state.scoreBlue = savedScoreBlue;
+    this.game.state.kickoffTeam = savedKickoffTeam; 
   }
 
   private fullReset(): void {
@@ -112,8 +116,8 @@ export class SoccerGameWindowComponent
     const state = this.game.state;
     const posts = this.getPosts();
 
-    this.moveEntity(state.player1);
-    this.moveEntity(state.player2);
+    this.moveEntity(state.player1, 'red');
+    this.moveEntity(state.player2, 'blue');
     
     this.checkPlayersCollision(state.player1, state.player2);
 
@@ -139,11 +143,11 @@ export class SoccerGameWindowComponent
     state.ball.vx *= state.friction;
     state.ball.vy *= state.friction;
 
-    this.checkPlayerBallCollision(state.player1, state.ball);
-    this.checkPlayerBallCollision(state.player2, state.ball);
+    this.checkPlayerBallCollision(state.player1, state.ball, 'red');
+    this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
   }
 
-  private moveEntity(entity: IMovableEntity): void {
+  private moveEntity(entity: IMovableEntity, team: 'red' | 'blue'): void {
     entity.x += entity.vx;
     entity.y += entity.vy;  
 
@@ -151,6 +155,34 @@ export class SoccerGameWindowComponent
     if (entity.x > this.game.state.width - entity.radius) entity.x = this.game.state.width - entity.radius;
     if (entity.y < entity.radius) entity.y = entity.radius;
     if (entity.y > this.game.state.height - entity.radius) entity.y = this.game.state.height - entity.radius;
+
+    if (this.game.state.kickoffTeam !== null && this.game.state.kickoffTeam !== team) {
+        const midX = this.game.state.width / 2;
+        const midY = this.game.state.height / 2;
+        
+        if (team === 'red' && entity.x > midX - entity.radius) {
+            entity.x = midX - entity.radius;
+            entity.vx = 0;
+        }
+        if (team === 'blue' && entity.x < midX + entity.radius) {
+            entity.x = midX + entity.radius;
+            entity.vx = 0;
+        }
+
+        const dx = entity.x - midX;
+        const dy = entity.y - midY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        const centerRadius = 50; 
+        const minAllowedDist = centerRadius + entity.radius;
+
+        if (dist < minAllowedDist && dist > 0) {
+            const overlap = minAllowedDist - dist;
+            entity.x += (dx / dist) * overlap;
+            entity.y += (dy / dist) * overlap;
+        }
+    }
+    
   }
 
   private getPosts(): { x: number; y: number; w: number; h: number }[] {
@@ -190,8 +222,15 @@ export class SoccerGameWindowComponent
   }
 
   private handleGoal(scorer: 'red' | 'blue'): void {
-      if (scorer === 'red') this.game.state.scoreRed++;
-      else this.game.state.scoreBlue++;
+      if (scorer === 'red') {
+        this.game.state.scoreRed++;
+        this.game.state.kickoffTeam = 'blue'; 
+      }
+
+      else {
+        this.game.state.scoreBlue++;
+        this.game.state.kickoffTeam = 'red'; 
+      }
       this.restart();
   }
 
@@ -369,23 +408,32 @@ export class SoccerGameWindowComponent
     }
   }
 
-  private checkPlayerBallCollision(player: IMovableEntity, ball: IMovableEntity): void {
+  private checkPlayerBallCollision(player: IMovableEntity, ball: IMovableEntity, team: 'red' | 'blue'): void {
+    if (this.game.state.kickoffTeam !== null && this.game.state.kickoffTeam !== team) {
+        return; 
+    }
+
     const halfSize = player.radius; 
     
     let testX = ball.x;
     let testY = ball.y;
 
-    if (ball.x < player.x - halfSize) testX = player.x - halfSize;      //lewa
-    else if (ball.x > player.x + halfSize) testX = player.x + halfSize; //prawa
+    if (ball.x < player.x - halfSize) testX = player.x - halfSize;      // lewa
+    else if (ball.x > player.x + halfSize) testX = player.x + halfSize; // prawa
 
-    if (ball.y < player.y - halfSize) testY = player.y - halfSize;      //gorna 
-    else if (ball.y > player.y + halfSize) testY = player.y + halfSize; //dolna
+    if (ball.y < player.y - halfSize) testY = player.y - halfSize;      // gorna 
+    else if (ball.y > player.y + halfSize) testY = player.y + halfSize; // dolna
 
     const distX = ball.x - testX;
     const distY = ball.y - testY;
     const distance = Math.sqrt((distX * distX) + (distY * distY));
 
     if (distance <= ball.radius) {
+      
+      if (this.game.state.kickoffTeam === team) {
+          this.game.state.kickoffTeam = null;
+      }
+
       let nx = 0;
       let ny = 0;
       let penetration = 0;
@@ -398,10 +446,21 @@ export class SoccerGameWindowComponent
 
           const min = Math.min(distLeft, distRight, distTop, distBottom);
 
-          if (min === distLeft) { nx = -1; ny = 0; penetration = ball.radius + distLeft; }
-          else if (min === distRight) { nx = 1; ny = 0; penetration = ball.radius + distRight; }
-          else if (min === distTop) { nx = 0; ny = -1; penetration = ball.radius + distTop; }
-          else { nx = 0; ny = 1; penetration = ball.radius + distBottom; }
+          if (min === distLeft) { 
+            nx = -1; ny = 0; 
+            penetration = ball.radius + distLeft; 
+          }
+          else if (min === distRight) { 
+            nx = 1; ny = 0; 
+            penetration = ball.radius + distRight; 
+          }
+          else if (min === distTop) { 
+            nx = 0; ny = -1; 
+            penetration = ball.radius + distTop; 
+          }
+          else { nx = 0; ny = 1; 
+            penetration = ball.radius + distBottom; 
+          }
       } else {
           nx = distX / distance;
           ny = distY / distance;
