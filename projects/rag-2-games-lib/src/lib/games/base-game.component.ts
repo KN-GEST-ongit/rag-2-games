@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable complexity */
 /* eslint-disable max-lines */
 import {
   ChangeDetectionStrategy,
@@ -59,7 +61,7 @@ export abstract class BaseGameWindowComponent
   private _lastFrameTime = performance.now();
   private _deltaTimeAccumulator = 0;
   private _frameCount = 0;
-  private _activeKeyBindings: Record<string, Set<string>> = {};
+  private _activeKeyBindings = new Map<string, Record<string, Set<string>>>();
   private _playerInactivityTimers = new Map<
     string,
     ReturnType<typeof setTimeout>
@@ -165,7 +167,7 @@ export abstract class BaseGameWindowComponent
   }
 
   private resetActiveKeyBindings(): void {
-    this._activeKeyBindings = {};
+    this._activeKeyBindings.clear();
 
     for (const player of this.game.players) {
       if (player.playerType === PlayerSourceType.KEYBOARD) {
@@ -190,8 +192,11 @@ export abstract class BaseGameWindowComponent
         player.inputData[variableName] = releasedValue;
       }
 
-      for (const variableName in this._activeKeyBindings) {
-        this._activeKeyBindings[variableName]?.clear();
+      const playerBindings = this._activeKeyBindings.get(player.id.toString());
+      if (playerBindings) {
+        for (const variableName in playerBindings) {
+          playerBindings[variableName]?.clear();
+        }
       }
     }, 1000);
 
@@ -202,6 +207,7 @@ export abstract class BaseGameWindowComponent
     for (const player of this.game.players) {
       if (
         player.playerType === PlayerSourceType.KEYBOARD &&
+        player.isActive &&
         player.controlsBinding[event.key] !== undefined &&
         document.activeElement?.id !== 'inGameMenuInputFocusAction'
       ) {
@@ -211,12 +217,17 @@ export abstract class BaseGameWindowComponent
         const variableName = control.variableName;
         const pressedValue = control.pressedValue;
 
-        if (!this._activeKeyBindings[variableName]) {
-          this._activeKeyBindings[variableName] = new Set<string>();
+        const playerId = player.id.toString();
+        if (!this._activeKeyBindings.has(playerId)) {
+          this._activeKeyBindings.set(playerId, {});
         }
 
-        this._activeKeyBindings[variableName].add(event.key);
+        const playerBindings = this._activeKeyBindings.get(playerId)!;
+        if (!playerBindings[variableName]) {
+          playerBindings[variableName] = new Set<string>();
+        }
 
+        playerBindings[variableName].add(event.key);
         player.inputData[variableName] = pressedValue;
 
         this.resetInactivityTimer(player);
@@ -228,6 +239,7 @@ export abstract class BaseGameWindowComponent
     for (const player of this.game.players) {
       if (
         player.playerType === PlayerSourceType.KEYBOARD &&
+        player.isActive &&
         player.controlsBinding[event.key] !== undefined &&
         document.activeElement?.id !== 'inGameMenuInputFocusAction'
       ) {
@@ -237,12 +249,15 @@ export abstract class BaseGameWindowComponent
         const variableName = control.variableName;
         const releasedValue = control.releasedValue;
 
-        if (this._activeKeyBindings[variableName]) {
-          this._activeKeyBindings[variableName].delete(event.key);
-        }
+        const playerId = player.id.toString();
+        const playerBindings = this._activeKeyBindings.get(playerId);
 
-        if (this._activeKeyBindings[variableName].size === 0) {
-          player.inputData[variableName] = releasedValue;
+        if (playerBindings?.[variableName]) {
+          playerBindings[variableName].delete(event.key);
+
+          if (playerBindings[variableName].size === 0) {
+            player.inputData[variableName] = releasedValue;
+          }
         }
 
         this.resetInactivityTimer(player);
