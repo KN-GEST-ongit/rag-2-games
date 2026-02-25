@@ -56,6 +56,7 @@ export class ${stateClassName} implements TGameState {
 
 export class ${gameClassName} extends Game {
     public override name = '${gameName.toLowerCase()}';
+    public override author = 'NAME SURNAME';
     public override state = new ${stateClassName}();
 
     public override outputSpec = \`\`;
@@ -191,76 +192,39 @@ export class ${gameClassName}GameWindowComponent
 function updateGameLibComponent(gameName) {
   let gameLibComponent = fs.readFileSync(RAG_2_GAMES_LIB_PATH, 'utf-8');
 
-  const newGameImport = `import { ${capitalize(gameName)}GameWindowComponent } from './games/${gameName.toLowerCase()}/${gameName.toLowerCase()}.component';\n`;
+  // Find the switch statement
+  const switchStartRegex = /switch\s*\(gameName\)\s*\{/;
+  const switchStart = gameLibComponent.search(switchStartRegex);
 
-  if (!gameLibComponent.includes(newGameImport)) {
-    const componentIndex = gameLibComponent.indexOf('@Component({');
-
-    if (componentIndex !== -1) {
-      const componentLineStart = gameLibComponent.lastIndexOf(
-        '\n',
-        componentIndex
-      );
-
-      const insertPosition =
-        gameLibComponent.lastIndexOf('\n', componentLineStart - 1) + 1;
-
-      gameLibComponent =
-        gameLibComponent.slice(0, insertPosition) +
-        newGameImport +
-        gameLibComponent.slice(insertPosition);
-    } else {
-      gameLibComponent = newGameImport + gameLibComponent;
-    }
+  if (switchStart === -1) {
+    console.error('Could not find the switch statement in rag-2-games-lib.component.ts');
+    return;
   }
 
-  const newImportsSection = `\t${capitalize(gameName)}GameWindowComponent`;
-  const importsSectionEnd = gameLibComponent.indexOf('],');
+  // Find 'default:' position after the switch statement
+  const defaultCaseIndex = gameLibComponent.indexOf('default:', switchStart);
 
-  if (importsSectionEnd !== -1) {
-    gameLibComponent =
-      gameLibComponent.slice(0, importsSectionEnd) +
-      newImportsSection +
-      gameLibComponent.slice(importsSectionEnd);
-  } else {
-    gameLibComponent = newImportsSection + gameLibComponent;
+  if (defaultCaseIndex === -1) {
+    console.error('Could not find default case in switch statement');
+    return;
   }
 
-  const caseRegex = /@case/g;
-  let match;
-  let lastCaseIndex = -1;
+  // Create the new case statement for the game
+  const componentClassName = `${capitalize(gameName)}GameWindowComponent`;
+  const newCase = `case '${gameName.toLowerCase()}':
+          ComponentClass = (await import('./games/${gameName.toLowerCase()}/${gameName.toLowerCase()}.component')).${componentClassName};
+          break;
+        `;
 
-  while ((match = caseRegex.exec(gameLibComponent)) !== null) {
-    lastCaseIndex = match.index;
-  }
-
-  if (lastCaseIndex !== -1) {
-    let lines = gameLibComponent.split('\n');
-
-    const lastCaseLine =
-      gameLibComponent.slice(0, lastCaseIndex).split('\n').length - 1;
-
-    const insertLine = lastCaseLine + 9;
-    lines.splice(
-      insertLine,
-      0,
-      `\t\t\t@case ('${gameName.toLowerCase()}') {
-        <app-${gameName.toLowerCase()}
-          class="flex flex-col items-center w-3/4"
-          [gameRestart]="gameRestart"
-          [gamePause]="gamePause"
-          [setAbstractGame]="game"
-          [setSocketInputDataReceive]="socketInputData"
-          (gameStateDataEmitter)="handleGameStateData($event)" />
-      }`
-    );
-
-    gameLibComponent = lines.join('\n');
-  }
+  // Insert the new case before the 'default' case
+  gameLibComponent =
+    gameLibComponent.slice(0, defaultCaseIndex) +
+    newCase +
+    gameLibComponent.slice(defaultCaseIndex);
 
   fs.writeFileSync(RAG_2_GAMES_LIB_PATH, gameLibComponent, 'utf-8');
   console.log(
-    `Updated rag-2-games-lib.component.ts with ${gameName} game data.`
+    `Updated rag-2-games-lib.component.ts with ${gameName} dynamic import.`
   );
 }
 

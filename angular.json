@@ -56,7 +56,11 @@
               }
             ],
             "styles": ["src/styles.css"],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "feather-icons",
+              "file-saver"
+            ]
           },
           "configurations": {
             "production": {
