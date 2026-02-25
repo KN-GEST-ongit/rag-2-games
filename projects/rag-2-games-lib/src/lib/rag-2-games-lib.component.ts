@@ -48,6 +48,19 @@ export class Rag2GamesLibComponent implements OnChanges {
   public async ngOnChanges(changes: SimpleChanges): Promise<void> {
     if (changes['gameName'] && this.gameName) {
       await this.loadGameComponent(this.gameName);
+    } else if (this._currentComponentRef) {
+      if (changes['gameRestart'] && this.gameRestart) {
+        this._currentComponentRef.setInput('gameRestart', this.gameRestart);
+      }
+      if (changes['gamePause'] && this.gamePause) {
+        this._currentComponentRef.setInput('gamePause', this.gamePause);
+      }
+      if (changes['game'] && this.game) {
+        this._currentComponentRef.setInput('setAbstractGame', this.game);
+      }
+      if (changes['socketInputData']) {
+        this._currentComponentRef.setInput('setSocketInputDataReceive', this.socketInputData);
+      }
     }
   }
 
