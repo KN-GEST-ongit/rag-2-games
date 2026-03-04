@@ -51,10 +51,6 @@ export class SoccerGameWindowComponent
     this.game.state.kickoffTeam = savedKickoffTeam; 
   }
 
-  private fullReset(): void {
-    this.game.state = new SoccerState();
-  }
-
   protected override update(): void {
     super.update();
 
@@ -504,7 +500,6 @@ export class SoccerGameWindowComponent
     context.stroke();
 
     //prawa
-    context.globalAlpha = 1.0;
     context.strokeStyle = this.game.state.teamBlueColor;
 
     context.beginPath();
@@ -514,8 +509,6 @@ export class SoccerGameWindowComponent
     context.lineTo(w, bottomY);           
     context.stroke();
     
-    context.globalAlpha = 1.0;
-
     const gridSize = 8; 
     context.lineWidth = 1;
     context.strokeStyle = 'rgba(0, 0, 0, 0.4)'; 

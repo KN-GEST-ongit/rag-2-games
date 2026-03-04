@@ -11,8 +11,6 @@ export class SoccerState implements TGameState {
 
     public scoreRed = 0;
     public scoreBlue = 0;
-    public isGoalScored = false;
-    public goalTimer = 0;
 
     public kickPower = 6;
     public friction = 0.98;
