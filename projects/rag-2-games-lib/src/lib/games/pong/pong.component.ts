@@ -44,6 +44,10 @@ export class PongGameWindowComponent
     this.resetPaddlesAndBall();
   }
 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
   public override restart(): void {
     this.game.state = new PongState();
 

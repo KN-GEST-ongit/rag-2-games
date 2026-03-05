@@ -67,6 +67,12 @@ export abstract class BaseGameWindowComponent
     ReturnType<typeof setTimeout>
   >();
 
+  private _keyDownHandler: ((event: KeyboardEvent) => void) | null = null;
+  private _keyUpHandler: ((event: KeyboardEvent) => void) | null = null;
+  private _mouseDownHandler: ((event: MouseEvent) => void) | null = null;
+  private _visibilityChangeHandler: (() => void) | null = null;
+  private _blurHandler: (() => void) | null = null;
+
   protected _updateTimeout: ReturnType<typeof setTimeout> | undefined;
   protected isPaused = false;
   protected game!: Game;
@@ -88,16 +94,20 @@ export abstract class BaseGameWindowComponent
   public ngAfterViewInit(): void {
     this._canvas = this.gameCanvas.canvasElement.nativeElement;
 
-    window.addEventListener('keydown', event => this.onKeyDown(event));
-    window.addEventListener('keyup', event => this.onKeyUp(event));
-    window.addEventListener('mousedown', event =>
-      this.onMouseDownOutsideCanvas(event)
-    );
-    document.addEventListener('visibilitychange', () =>
-      this.onVisibilityChange()
-    );
-    window.addEventListener('blur', () => this.onWindowBlur());
+    this._keyDownHandler = (event: KeyboardEvent): void => this.onKeyDown(event);
+    this._keyUpHandler = (event: KeyboardEvent): void => this.onKeyUp(event);
+    this._mouseDownHandler = (event: MouseEvent): void =>
+      this.onMouseDownOutsideCanvas(event);
+    this._visibilityChangeHandler = (): void => this.onVisibilityChange();
+    this._blurHandler = (): void => this.onWindowBlur();
 
+    window.addEventListener('keydown', this._keyDownHandler);
+    window.addEventListener('keyup', this._keyUpHandler);
+    window.addEventListener('mousedown', this._mouseDownHandler);
+    document.addEventListener('visibilitychange', this._visibilityChangeHandler);
+    window.addEventListener('blur', this._blurHandler);
+
+    console.error('🎮 Event listeners ADDED successfully');
     this.update();
     setTimeout(() => this.restart());
   }
@@ -107,15 +117,21 @@ export abstract class BaseGameWindowComponent
     this._restartSubscription.unsubscribe();
     this._pauseSubscription.unsubscribe();
 
-    window.removeEventListener('keydown', event => this.onKeyDown(event));
-    window.removeEventListener('keyup', event => this.onKeyUp(event));
-    window.removeEventListener('mousedown', event =>
-      this.onMouseDownOutsideCanvas(event)
-    );
-    document.removeEventListener('visibilitychange', () =>
-      this.onVisibilityChange()
-    );
-    window.removeEventListener('blur', () => this.onWindowBlur());
+    if (this._keyDownHandler) {
+      window.removeEventListener('keydown', this._keyDownHandler);
+    }
+    if (this._keyUpHandler) {
+      window.removeEventListener('keyup', this._keyUpHandler);
+    }
+    if (this._mouseDownHandler) {
+      window.removeEventListener('mousedown', this._mouseDownHandler);
+    }
+    if (this._visibilityChangeHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
+    }
+    if (this._blurHandler) {
+      window.removeEventListener('blur', this._blurHandler);
+    }
 
     this._playerInactivityTimers.forEach(timer => clearTimeout(timer));
     this._playerInactivityTimers.clear();

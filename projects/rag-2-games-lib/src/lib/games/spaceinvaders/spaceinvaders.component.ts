@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -42,6 +43,10 @@ export class SpaceinvadersGameWindowComponent
     this.render();
   }
 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
   public override restart(): void {
     this.game.state = new SpaceinvadersState();
   }
@@ -49,23 +54,23 @@ export class SpaceinvadersGameWindowComponent
   protected override update(): void {
     super.update();
 
-    if (!this.isPaused) { 
-    this.handleInput();
-    this.updateLaser();
-    this.checkWideLaserStatus();
-    this.moveAliens();
-    this.moveMods();
-    this.checkModPickup();
-    this.difficulty();
-    this.checkLossCondition();
+    if (!this.isPaused) {
+      this.handleInput();
+      this.updateLaser();
+      this.checkWideLaserStatus();
+      this.moveAliens();
+      this.moveMods();
+      this.checkModPickup();
+      this.difficulty();
+      this.checkLossCondition();
 
-    this.render();
+      this.render();
     }
   }
 
    private handleInput(): void {
     const input = this.game.players[0].inputData;
-    
+
     if (input['move'] === -1) this.game.state.playerX -= this.game.state.playerSpeed;
     if (input['move'] === 1) this.game.state.playerX += this.game.state.playerSpeed;
 
@@ -89,7 +94,7 @@ export class SpaceinvadersGameWindowComponent
 
     this.updateLaserPosition();
     this.checkLaserCollision();
-    
+
     if (this.game.state.laserY < 0) {
       this.game.state.laserY = -1;
     }
@@ -209,7 +214,7 @@ export class SpaceinvadersGameWindowComponent
     private activateWideLaser(): void {
       this.game.state.laserWidthPowerupActive = true;
       this._laserWidth = 50;
-      this.game.state.laserAmount += 10; 
+      this.game.state.laserAmount += 10;
   }
 
     private checkWideLaserStatus(): void {
@@ -243,8 +248,6 @@ export class SpaceinvadersGameWindowComponent
           this._laserHeight
       );
     }
-
-    
 
     //alien
     context.fillStyle = 'purple';

@@ -13,7 +13,7 @@ import { ILane } from './models/crossyroad.interfaces';
   standalone: true,
   imports: [CanvasComponent],
   template: `<div>
-    Score: <b>{{ game.state.score }}</b> | 
+    Score: <b>{{ game.state.score }}</b> |
     Best: <b>{{ game.state.highestZ }}</b>
   </div>
     <app-canvas
@@ -62,7 +62,7 @@ export class CrossyRoadGameWindowComponent
     if (savedHighScore) {
       state.highestZ = parseInt(savedHighScore, 10);
     }
-    
+
     for (const lane of state.lanes) {
       if (lane.z > 3) {
         if (Math.random() > 0.7) {
@@ -128,7 +128,7 @@ export class CrossyRoadGameWindowComponent
 
     if (moved) {
       state.playerX = Math.max(-8, Math.min(12, state.playerX));
-      
+
       if (state.playerZ > state.highestZ) {
         state.highestZ = state.playerZ;
         localStorage.setItem('crossyroadBestScore', state.highestZ.toString());
@@ -166,7 +166,7 @@ export class CrossyRoadGameWindowComponent
       const carCount = Math.floor(Math.random() * maxCars) + 1;
       const baseSpeed = 0.06 + difficultyFactor;
       const fastCarThreshold = Math.max(0.3, 0.6 - (lane.z * 0.002));
-      
+
       let speed = Math.random() > fastCarThreshold ? (baseSpeed * 2) : baseSpeed;
       speed = Math.min(speed, 0.25);
 
@@ -218,7 +218,7 @@ export class CrossyRoadGameWindowComponent
           let candidateX = 0;
 
           while (!validPosition && attempts < 5) {
-            candidateX = Math.round((Math.random() - 0.5) * 28); 
+            candidateX = Math.round((Math.random() - 0.5) * 28);
             const collision = placedX.some(x => Math.abs(x - candidateX) < 2.5);
             const blockingCenter = (lane.z < 5 && Math.abs(candidateX) < 2);
 
@@ -250,7 +250,7 @@ export class CrossyRoadGameWindowComponent
       }
 
       const speed = 0.04 + Math.random() * 0.04;
-       
+
       const logCount = Math.floor(Math.random() * 2) + 4;
       const placedX: number[] = [];
       const minDistance = 6;
@@ -285,7 +285,7 @@ export class CrossyRoadGameWindowComponent
   private generateNewLanes(): void {
     const state = this.game.state;
     const maxZ = Math.max(...state.lanes.map(l => l.z), state.playerZ);
-    
+
     if (maxZ < state.playerZ + 15) {
       for (let i = 1; i <= 3; i++) {
         const newZ = maxZ + i;
@@ -305,7 +305,7 @@ export class CrossyRoadGameWindowComponent
 
         let laneType: 'grass' | 'road' | 'water' = 'grass';
         const rand = Math.random();
-        
+
         if (newZ > 15) {
             if (rand < 0.15) laneType = 'grass';
             else if (rand < 0.80) laneType = 'road';
@@ -354,7 +354,7 @@ export class CrossyRoadGameWindowComponent
       for (const obs of lane.obstacles) {
         if (obs.speed > 0) {
           obs.x += obs.speed * obs.direction;
-          
+
           if (obs.x > resetLimit) obs.x = -resetLimit;
           if (obs.x < -resetLimit) obs.x = resetLimit;
         }
@@ -364,7 +364,7 @@ export class CrossyRoadGameWindowComponent
 
   private checkCollisions(): void {
     const state = this.game.state;
-    
+
     const playerLane = state.lanes.find(
       l => l.z === Math.round(state.playerZ)
     );
