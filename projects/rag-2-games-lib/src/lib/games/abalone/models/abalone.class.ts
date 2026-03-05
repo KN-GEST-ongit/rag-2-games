@@ -14,6 +14,15 @@ export interface ICubeCoords {
 // Pomocniczy typ dla klucza mapy planszy (np. "0,1,-1")
 export type THexKey = string;
 
+export interface IMarbleAnim {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  color: TPlayerColor;
+  isDying: boolean;
+}
+
 export class AbaloneState implements TGameState {
   public board = new Map<THexKey, TPlayerColor>();
   
@@ -21,7 +30,7 @@ export class AbaloneState implements TGameState {
   public cursor: ICubeCoords = { x: 0, y: 0, z: 0 };
   public selectedMarbles: THexKey[] = [];
   public deadMarbles: Record<TPlayerColor, number> = { BLACK: 0, WHITE: 0 };
-  public phase: 'SELECT' | 'MOVE' = 'SELECT';
+  public phase: 'SELECT' | 'MOVE' | 'ANIMATING' = 'SELECT';
   public possibleMoves: number[] = [];
   public isGameOver = false;
   public winner: TPlayerColor | null = null;
