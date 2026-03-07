@@ -168,6 +168,10 @@ export class ${gameClassName}GameWindowComponent
     this.render();
   }
 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
   public override restart(): void {
     this.game.state = new ${stateClassName}();
   }

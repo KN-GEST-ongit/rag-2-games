@@ -10,6 +10,7 @@ import {
   ViewChild,
   ComponentRef,
   OnChanges,
+  OnDestroy,
   SimpleChanges,
   Type
 } from '@angular/core';
@@ -30,7 +31,7 @@ import { Observable } from 'rxjs';
     </div>
   `,
 })
-export class Rag2GamesLibComponent implements OnChanges {
+export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
   @ViewChild('gameContainer', { read: ViewContainerRef, static: true })
   public gameContainer!: ViewContainerRef;
 
@@ -136,5 +137,11 @@ export class Rag2GamesLibComponent implements OnChanges {
   }
   public handleGameStateData(data: Game): void {
     this.gameStateDataEmitter.emit(data);
+  }
+
+  public ngOnDestroy(): void {
+    if (this._currentComponentRef) {
+      this._currentComponentRef.destroy();
+    }
   }
 }

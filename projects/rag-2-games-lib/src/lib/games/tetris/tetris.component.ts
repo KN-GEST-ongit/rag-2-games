@@ -108,6 +108,10 @@ export class TetrisGameWindowComponent
     return (this.game.players[playerIndex].inputData[name] as number) || 0;
   }
 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
   public override restart(): void {
     this.isStarted = false;
     this.initPlayerContexts();
