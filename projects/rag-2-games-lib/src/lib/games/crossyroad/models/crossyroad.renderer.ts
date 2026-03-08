@@ -182,16 +182,14 @@ export class CrossyRoadRenderer extends Base3DRenderer {
         );
         mesh.position.set(0, -0.075, lane.z);
 
+        mesh.receiveShadows = true;
         if (lane.type === 'grass') {
           mesh.material = this.grassMat;
-          mesh.receiveShadows = true;
         } else if (lane.type === 'road') {
           mesh.material = this.roadMat;
-          mesh.receiveShadows = true;
         } else if (lane.type === 'water') { 
           mesh.material = this.waterMat;
           mesh.position.y = -0.15;
-          mesh.receiveShadows = true;
         }
         
         this.laneMeshes.set(lane.z, mesh);
