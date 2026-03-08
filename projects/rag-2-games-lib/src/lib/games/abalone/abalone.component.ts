@@ -3,8 +3,8 @@ import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { Abalone, AbaloneState, ICubeCoords, IMarbleAnim } from './models/abalone.class';
-import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCursor as drawHexCursor, drawAnimatingMarbles } from './models/abalone.drawing.helper';
+import { Abalone, AbaloneState, ICubeCoords, IMarbleAnim, cubeToNotation, notationToCube } from './models/abalone.class';
+import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCursor as drawHexCursor, drawAnimatingMarbles, drawBoardLabels } from './models/abalone.drawing.helper';
 
 @Component({
   selector: 'app-abalone',
@@ -17,7 +17,8 @@ import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCur
       </b> | 
       Punkty - Czarne: <b>{{ game.state.deadMarbles.WHITE }}</b>, 
       Białe: <b>{{ game.state.deadMarbles.BLACK }}</b> |
-      Faza: <b>{{ game.state.phase === 'SELECT' ? 'Zaznaczanie' : 'Ruch' }}</b>
+      Faza: <b>{{ game.state.phase === 'SELECT' ? 'Zaznaczanie' : 'Ruch' }}</b> |
+      Kursor: <b>{{ cursorNotation }}</b>
     </div>
     <div class="game-hint" *ngIf="!game.state.isGameOver">
       {{ game.state.phase === 'SELECT'
@@ -37,6 +38,10 @@ export class AbaloneGameWindowComponent
 {
   public override game!: Abalone;
   private readonly HEX_SIZE = 30;
+
+  public get cursorNotation(): string {
+    return cubeToNotation(this.game.state.cursor);
+  }
 
   private _moveQueue: number[] = [];
   private _actionQueue: number[] = [];
@@ -184,7 +189,7 @@ export class AbaloneGameWindowComponent
 
   private handleAction(action: number): void {
     const state = this.game.state;
-    const currentKey = `${state.cursor.x},${state.cursor.y},${state.cursor.z}`;
+    const currentKey = cubeToNotation(state.cursor);
 
     if (action === 1) {
       this.toggleSelection(currentKey);
@@ -357,7 +362,7 @@ export class AbaloneGameWindowComponent
 
     if (!this.isOnBoard(pos)) return false;
 
-    const posKey = `${pos.x},${pos.y},${pos.z}`;
+    const posKey = cubeToNotation(pos);
     if (!state.board.has(posKey)) return true;
     if (state.board.get(posKey) === state.currentPlayer) return false;
 
@@ -371,8 +376,8 @@ export class AbaloneGameWindowComponent
 
     while (
       this.isOnBoard(pos) &&
-      state.board.has(`${pos.x},${pos.y},${pos.z}`) &&
-      state.board.get(`${pos.x},${pos.y},${pos.z}`) !== state.currentPlayer
+      state.board.has(cubeToNotation(pos)) &&
+      state.board.get(cubeToNotation(pos)) !== state.currentPlayer
     ) {
       opponentCount++;
       pos = { x: pos.x + dir.x, y: pos.y + dir.y, z: pos.z + dir.z };
@@ -380,7 +385,7 @@ export class AbaloneGameWindowComponent
 
     if (ownCount <= opponentCount) return false;
 
-    if (this.isOnBoard(pos) && state.board.has(`${pos.x},${pos.y},${pos.z}`)) {
+    if (this.isOnBoard(pos) && state.board.has(cubeToNotation(pos))) {
       return false;
     }
 
@@ -392,7 +397,7 @@ export class AbaloneGameWindowComponent
 
     for (const marble of selected) {
       const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
-      const destKey = `${dest.x},${dest.y},${dest.z}`;
+      const destKey = cubeToNotation(dest);
 
       if (!this.isOnBoard(dest)) return false;
       if (state.board.has(destKey)) return false;
@@ -439,7 +444,7 @@ export class AbaloneGameWindowComponent
     const opponentMarbles: ICubeCoords[] = [];
 
     while (this.isOnBoard(pushPos)) {
-      const key = `${pushPos.x},${pushPos.y},${pushPos.z}`;
+      const key = cubeToNotation(pushPos);
       const color = state.board.get(key);
       if (!color || color === state.currentPlayer) break;
       opponentMarbles.push({ ...pushPos });
@@ -449,7 +454,7 @@ export class AbaloneGameWindowComponent
     // Przesuwanie kulek przeciwnika (od najdalszej)
     for (let i = opponentMarbles.length - 1; i >= 0; i--) {
       const opp = opponentMarbles[i];
-      const oppKey = `${opp.x},${opp.y},${opp.z}`;
+      const oppKey = cubeToNotation(opp);
       const oppColor = state.board.get(oppKey);
       state.board.delete(oppKey);
 
@@ -457,26 +462,26 @@ export class AbaloneGameWindowComponent
 
       const newPos: ICubeCoords = { x: opp.x + dir.x, y: opp.y + dir.y, z: opp.z + dir.z };
       if (this.isOnBoard(newPos)) {
-        state.board.set(`${newPos.x},${newPos.y},${newPos.z}`, oppColor);
+        state.board.set(cubeToNotation(newPos), oppColor);
       } else {
         state.deadMarbles[oppColor]++;
       }
     }
 
     // Przesuwanie własnych kulek
-    const colors = sorted.map(m => state.board.get(`${m.x},${m.y},${m.z}`) ?? state.currentPlayer);
-    sorted.forEach(m => state.board.delete(`${m.x},${m.y},${m.z}`));
+    const colors = sorted.map(m => state.board.get(cubeToNotation(m)) ?? state.currentPlayer);
+    sorted.forEach(m => state.board.delete(cubeToNotation(m)));
     sorted.forEach((m, i) => {
-      state.board.set(`${m.x + dir.x},${m.y + dir.y},${m.z + dir.z}`, colors[i]);
+      state.board.set(cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z }), colors[i]);
     });
   }
 
   private executeBroadsideMove(selected: ICubeCoords[], dir: ICubeCoords): void {
     const state = this.game.state;
-    const colors = selected.map(m => state.board.get(`${m.x},${m.y},${m.z}`) ?? state.currentPlayer);
-    selected.forEach(m => state.board.delete(`${m.x},${m.y},${m.z}`));
+    const colors = selected.map(m => state.board.get(cubeToNotation(m)) ?? state.currentPlayer);
+    selected.forEach(m => state.board.delete(cubeToNotation(m)));
     selected.forEach((m, i) => {
-      state.board.set(`${m.x + dir.x},${m.y + dir.y},${m.z + dir.z}`, colors[i]);
+      state.board.set(cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z }), colors[i]);
     });
   }
 
@@ -491,7 +496,7 @@ export class AbaloneGameWindowComponent
     // Kulki przeciwnika (przesuwane / wypychane)
     let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
     while (this.isOnBoard(pushPos)) {
-      const key = `${pushPos.x},${pushPos.y},${pushPos.z}`;
+      const key = cubeToNotation(pushPos);
       const color = state.board.get(key);
       if (!color || color === state.currentPlayer) break;
 
@@ -507,7 +512,7 @@ export class AbaloneGameWindowComponent
 
     // Własne kulki
     for (const marble of sorted) {
-      const color = state.board.get(`${marble.x},${marble.y},${marble.z}`) ?? state.currentPlayer;
+      const color = state.board.get(cubeToNotation(marble)) ?? state.currentPlayer;
       anims.push({
         fromX: marble.x, fromY: marble.y,
         toX: marble.x + dir.x, toY: marble.y + dir.y,
@@ -524,7 +529,7 @@ export class AbaloneGameWindowComponent
     const anims: IMarbleAnim[] = [];
 
     for (const marble of selected) {
-      const color = state.board.get(`${marble.x},${marble.y},${marble.z}`) ?? state.currentPlayer;
+      const color = state.board.get(cubeToNotation(marble)) ?? state.currentPlayer;
       anims.push({
         fromX: marble.x, fromY: marble.y,
         toX: marble.x + dir.x, toY: marble.y + dir.y,
@@ -582,6 +587,7 @@ export class AbaloneGameWindowComponent
     }
 
     drawHexGrid(ctx, this.HEX_SIZE);
+    drawBoardLabels(ctx, this.HEX_SIZE, this.game.state.currentPlayer === 'WHITE');
 
     if (this.game.state.phase === 'ANIMATING' && this._animation.length > 0) {
       const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this.HEX_SIZE);
@@ -597,7 +603,6 @@ export class AbaloneGameWindowComponent
   }
 
   private keyToCoords(key: string): ICubeCoords {
-    const [x, y, z] = key.split(',').map(Number);
-    return { x, y, z };
+    return notationToCube(key);
   }
 }

@@ -1,4 +1,5 @@
-import { AbaloneState, ICubeCoords, IMarbleAnim } from './abalone.class';
+/* eslint-disable max-lines */
+import { AbaloneState, ICubeCoords, IMarbleAnim, notationToCube, cubeToNotation } from './abalone.class';
 
 function cubeToPixel(hexSize: number, x: number, y: number): { x: number; y: number } {
   const px = hexSize * Math.sqrt(3) * (x + y / 2);
@@ -45,8 +46,8 @@ export function drawMarbles(
   state.board.forEach((color, key) => {
     if (skipKeys?.has(key)) return;
 
-    const [x, y] = key.split(',').map(Number);
-    const pos = cubeToPixel(hexSize, x, y);
+    const coords = notationToCube(key);
+    const pos = cubeToPixel(hexSize, coords.x, coords.y);
     const marbleRadius = hexSize * 0.8;
     const isSelected = selectedSet.has(key);
 
@@ -92,7 +93,7 @@ export function drawMoveGhosts(
 
     for (const marble of selected) {
       const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
-      const destKey = `${dest.x},${dest.y},${dest.z}`;
+      const destKey = cubeToNotation(dest);
 
       if (selectedKeySet.has(destKey) || !isOnBoard(dest)) continue;
 
@@ -184,10 +185,45 @@ export function drawAnimatingMarbles(
     ctx.restore();
 
     if (!anim.isDying) {
-      const toZ = -anim.toX - anim.toY;
-      skipKeys.add(`${anim.toX},${anim.toY},${toZ}`);
+      skipKeys.add(cubeToNotation({ x: anim.toX, y: anim.toY, z: -anim.toX - anim.toY }));
     }
   }
 
   return skipKeys;
+}
+
+function drawRowLabels(ctx: CanvasRenderingContext2D, hexSize: number, isRotated: boolean): void {
+  for (let y = 4; y >= -4; y--) {
+    const pos = cubeToPixel(hexSize, Math.max(-4, -4 - y), y);
+    const lx = isRotated ? -(pos.x - hexSize * 1.3) : pos.x - hexSize * 1.3;
+    const ly = isRotated ? -pos.y : pos.y;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.save();
+    if (isRotated) ctx.rotate(Math.PI);
+    ctx.fillText(String.fromCharCode(65 + 4 - y), lx, ly);
+    ctx.restore();
+  }
+}
+
+function drawColumnLabels(ctx: CanvasRenderingContext2D, hexSize: number, isRotated: boolean): void {
+  const off = hexSize * 1.3;
+  const ox = 0.5 * off;
+  const oy = 0.866 * off;
+  for (let x = -4; x <= 4; x++) {
+    const pos = cubeToPixel(hexSize, x, x <= 0 ? 4 : 4 - x);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.save();
+    if (isRotated) ctx.rotate(Math.PI);
+    ctx.fillText(`${x + 5}`, isRotated ? -(pos.x + ox) : pos.x + ox, isRotated ? -(pos.y + oy) : pos.y + oy);
+    ctx.restore();
+  }
+}
+
+export function drawBoardLabels(ctx: CanvasRenderingContext2D, hexSize: number, isRotated: boolean): void {
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = `bold ${hexSize * 0.45}px monospace`;
+  drawRowLabels(ctx, hexSize, isRotated);
+  drawColumnLabels(ctx, hexSize, isRotated);
 }

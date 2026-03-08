@@ -11,8 +11,29 @@ export interface ICubeCoords {
   z: number;
 }
 
-// Pomocniczy typ dla klucza mapy planszy (np. "0,1,-1")
+// Pomocniczy typ dla klucza mapy planszy w notacji Abalone (np. "A1", "E5", "I5")
 export type THexKey = string;
+
+/**
+ * Zamienia współrzędne cube (x,y,z) na notację Abalone (np. "E5").
+ * Wiersz: A(y=4)..I(y=-4), Kolumna: od 1 (lewy skraj wiersza).
+ */
+export function cubeToNotation(c: ICubeCoords): string {
+  const row = String.fromCharCode(65 + (4 - c.y));
+  const col = c.x + 5 + Math.min(0, c.y);
+  return `${row}${col}`;
+}
+
+/**
+ * Zamienia notację Abalone (np. "E5") na współrzędne cube.
+ */
+export function notationToCube(notation: string): ICubeCoords {
+  const rowIdx = notation.charCodeAt(0) - 65;
+  const col = parseInt(notation.substring(1), 10);
+  const y = 4 - rowIdx;
+  const x = col - 5 - Math.min(0, y);
+  return { x, y, z: -x - y };
+}
 
 export interface IMarbleAnim {
   fromX: number;
@@ -47,7 +68,7 @@ export class AbaloneState implements TGameState {
         if (Math.abs(z) <= radius) {
           const color = this.getInitialColor(x, y, z);
           if (color) {
-            this.board.set(`${x},${y},${z}`, color);
+            this.board.set(cubeToNotation({ x, y, z }), color);
           }
         }
       }
@@ -74,10 +95,10 @@ export class Abalone extends Game {
 
   public override outputSpec = `
     state:
-      board: Map<string, 'BLACK' | 'WHITE'>; 
+      board: Map<string, 'BLACK' | 'WHITE'>; // klucze w notacji Abalone, np. "A1", "E5"
       currentPlayer: 'BLACK' | 'WHITE';
       cursor: { x: int, y: int, z: int }; 
-      selectedMarbles: string[]; 
+      selectedMarbles: string[]; // notacja Abalone, np. ["E5", "E6"]
       deadMarbles: { BLACK: int, WHITE: int }; 
       isGameOver: boolean;
       winner: 'BLACK' | 'WHITE' | null;
