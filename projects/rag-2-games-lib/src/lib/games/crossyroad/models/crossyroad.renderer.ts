@@ -5,12 +5,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 import { 
-  Engine, 
-  Scene, 
   UniversalCamera,
   Vector3, 
-  HemisphericLight, 
-  DirectionalLight, 
   MeshBuilder, 
   Mesh, 
   StandardMaterial, 
@@ -18,16 +14,14 @@ import {
   Color4,
   ShadowGenerator,
   Scalar,
-  EngineOptions,
 } from '@babylonjs/core';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui';
 import { CrossyRoadAssets } from './crossyroad.assets';
 import { CrossyRoadState } from './crossyroad.class';
 import { ILane, IObstacle } from './crossyroad.interfaces';
+import { Base3DRenderer } from '../../engine/base-3d.renderer';
 
-export class CrossyRoadRenderer {
-  private engine: Engine;
-  private scene: Scene;
+export class CrossyRoadRenderer extends Base3DRenderer {
   private camera: UniversalCamera;
   private shadowGenerator: ShadowGenerator;
 
@@ -46,45 +40,15 @@ export class CrossyRoadRenderer {
 
   private readonly cameraOffset = new Vector3(2, 10, -10);
 
-  private handleResize = (): void => {
-    this.engine.resize();
-  };
-
   constructor(canvas: HTMLCanvasElement) {
-    const engineOptions: EngineOptions = {
-      antialias: true,
-      preserveDrawingBuffer: true,
-      stencil: true,
-      premultipliedAlpha: false,
-      powerPreference: 'high-performance',
-      doNotHandleContextLost: true
-    };
+    super(canvas, new Color4(0.53, 0.81, 0.92, 1));
 
-    this.engine = new Engine(canvas, true, engineOptions, true);
-    this.scene = new Scene(this.engine);
-    this.scene.clearColor = new Color4(0.53, 0.81, 0.92, 1);
-
-    this.camera = new UniversalCamera(
-      "camera",
-      new Vector3(2, 10, -10),
-      this.scene
-    );
-    
+    this.camera = new UniversalCamera("camera", new Vector3(2, 10, -10), this.scene);
     this.camera.setTarget(Vector3.Zero());
-    
     this.camera.inputs.clear();
 
-    const hemiLight = new HemisphericLight("hemi", new Vector3(0, 1, 0), this.scene);
-    hemiLight.intensity = 0.5;
-
-    const dirLight = new DirectionalLight("dir", new Vector3(-0.5, -1.5, -0.5), this.scene);
-    dirLight.position = new Vector3(20, 40, 20);
-    dirLight.intensity = 1.2;
-    
-    this.shadowGenerator = new ShadowGenerator(2048, dirLight);
-    this.shadowGenerator.useBlurExponentialShadowMap = true;
-    this.shadowGenerator.blurKernel = 32;
-    this.shadowGenerator.setDarkness(0.35);
+    const lighting = this.setupStandardLightingAndShadows(new Vector3(-0.5, -1.5, -0.5));
+    this.shadowGenerator = lighting.shadowGenerator;
 
     this.grassMat = new StandardMaterial("grassMat", this.scene);
     this.grassMat.diffuseColor = new Color3(0.3, 0.7, 0.3);
@@ -102,6 +66,10 @@ export class CrossyRoadRenderer {
     this.playerMesh = CrossyRoadAssets.createVoxelPlayer(this.scene, this.shadowGenerator);
     this.playerMesh.position.y = 0;
 
+    this.setupGUI();
+  }
+
+  private setupGUI(): void {
     this.guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
     this.gameOverPanel = new Rectangle();
@@ -138,12 +106,6 @@ export class CrossyRoadRenderer {
     this.deathReasonText.fontSize = 40;
     this.deathReasonText.top = "-40px";
     this.gameOverPanel.addControl(this.deathReasonText);
-
-    this.engine.runRenderLoop(() => {
-      this.scene.render();
-    });
-    
-    window.addEventListener('resize', this.handleResize);
   }
 
   public render(state: CrossyRoadState): void {
@@ -171,12 +133,7 @@ export class CrossyRoadRenderer {
 
     if (distanceToTarget > 0.05) {
         const targetRotation = Math.atan2(dirX, dirZ);
-        
-        this.playerMesh.rotation.y = Scalar.LerpAngle(
-          this.playerMesh.rotation.y, 
-          targetRotation, 
-          0.4
-        );
+        this.playerMesh.rotation.y = Scalar.LerpAngle(this.playerMesh.rotation.y, targetRotation, 0.4);
     }
 
     if (distanceToTarget < 0.05) {
@@ -185,12 +142,10 @@ export class CrossyRoadRenderer {
       this.playerMesh.position.y = baseHeight;
     } else {
       const speed = 0.35; 
-        
       this.playerMesh.position.x = Scalar.Lerp(this.playerMesh.position.x, state.playerX, speed);
       this.playerMesh.position.z = Scalar.Lerp(this.playerMesh.position.z, state.playerZ, speed);
 
       const jumpHeight = Math.sin(distanceToTarget * Math.PI) * 0.20;
-        
       this.playerMesh.position.y = baseHeight + Math.max(0, jumpHeight);
     }
 
@@ -198,11 +153,7 @@ export class CrossyRoadRenderer {
     this.camera.position.z = this.playerMesh.position.z + this.cameraOffset.z;
     this.camera.position.y = this.cameraOffset.y; 
 
-    this.camera.setTarget(new Vector3(
-      this.cameraOffset.x, 
-      0,
-      this.playerMesh.position.z
-    ));
+    this.camera.setTarget(new Vector3(this.cameraOffset.x, 0, this.playerMesh.position.z));
 
     this.syncLanes(state.lanes);
     
@@ -230,14 +181,19 @@ export class CrossyRoadRenderer {
           this.scene
         );
         mesh.position.set(0, -0.075, lane.z);
-        mesh.receiveShadows = true;
-        if (lane.type === 'grass') mesh.material = this.grassMat;
-        else if (lane.type === 'road') mesh.material = this.roadMat;
-        else if (lane.type === 'water'){ 
-          mesh.material = this.waterMat
-          mesh.position.y = -0.15
+
+        if (lane.type === 'grass') {
+          mesh.material = this.grassMat;
+          mesh.receiveShadows = true;
+        } else if (lane.type === 'road') {
+          mesh.material = this.roadMat;
+          mesh.receiveShadows = true;
+        } else if (lane.type === 'water') { 
+          mesh.material = this.waterMat;
+          mesh.position.y = -0.15;
           mesh.receiveShadows = true;
         }
+        
         this.laneMeshes.set(lane.z, mesh);
       }
     }
@@ -259,9 +215,9 @@ export class CrossyRoadRenderer {
       if (!mesh) {
         if (obs.type === 'tree') {
           mesh = CrossyRoadAssets.createVoxelTree(this.scene, this.shadowGenerator);
-        }else if (obs.type === 'truck') {
+        } else if (obs.type === 'truck') {
             mesh = CrossyRoadAssets.createVoxelTruck(this.scene, this.shadowGenerator, obs.width);
-        }else if (obs.type === 'log') {
+        } else if (obs.type === 'log') {
           mesh = CrossyRoadAssets.createVoxelLog(this.scene, this.shadowGenerator, obs.width);
         } else {
           mesh = CrossyRoadAssets.createVoxelCar(this.scene, this.shadowGenerator, obs.type, obs.width);
@@ -278,16 +234,14 @@ export class CrossyRoadRenderer {
       if (obs.type !== 'tree') {
         mesh.rotation.y = obs.direction === 1 ? 0 : Math.PI;
       }
-      if (obs.type.includes('car')|| obs.type === 'truck') {
+      if (obs.type.includes('car') || obs.type === 'truck') {
         mesh.rotation.z = Math.sin(Date.now() * 0.01 + obs.id) * 0.02;
       }
     }
   }
 
-  public dispose(): void {
-    window.removeEventListener('resize', this.handleResize);
-    this.scene.dispose();
-    this.engine.dispose();
+  public override dispose(): void {
+    super.dispose();
   }
 
   public clear(): void {
