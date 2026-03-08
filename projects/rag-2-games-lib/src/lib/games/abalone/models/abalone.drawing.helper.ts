@@ -43,7 +43,7 @@ export function drawMarbles(
 ): void {
   const selectedSet = new Set(state.selectedMarbles);
 
-  state.board.forEach((color, key) => {
+  Object.entries(state.board).forEach(([key, color]) => {
     if (skipKeys?.has(key)) return;
 
     const coords = notationToCube(key);

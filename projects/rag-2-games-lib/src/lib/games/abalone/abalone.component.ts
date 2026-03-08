@@ -204,7 +204,7 @@ export class AbaloneGameWindowComponent
 
   private toggleSelection(key: string): void {
     const state = this.game.state;
-    const colorAtCursor = state.board.get(key);
+    const colorAtCursor = state.board[key];
 
     if (colorAtCursor !== state.currentPlayer) return;
 
@@ -363,8 +363,8 @@ export class AbaloneGameWindowComponent
     if (!this.isOnBoard(pos)) return false;
 
     const posKey = cubeToNotation(pos);
-    if (!state.board.has(posKey)) return true;
-    if (state.board.get(posKey) === state.currentPlayer) return false;
+    if (!state.board[posKey]) return true;
+    if (state.board[posKey] === state.currentPlayer) return false;
 
     return this.canPushOpponents(pos, dir, selected.length);
   }
@@ -376,8 +376,8 @@ export class AbaloneGameWindowComponent
 
     while (
       this.isOnBoard(pos) &&
-      state.board.has(cubeToNotation(pos)) &&
-      state.board.get(cubeToNotation(pos)) !== state.currentPlayer
+      state.board[cubeToNotation(pos)] &&
+      state.board[cubeToNotation(pos)] !== state.currentPlayer
     ) {
       opponentCount++;
       pos = { x: pos.x + dir.x, y: pos.y + dir.y, z: pos.z + dir.z };
@@ -385,7 +385,7 @@ export class AbaloneGameWindowComponent
 
     if (ownCount <= opponentCount) return false;
 
-    if (this.isOnBoard(pos) && state.board.has(cubeToNotation(pos))) {
+    if (this.isOnBoard(pos) && state.board[cubeToNotation(pos)]) {
       return false;
     }
 
@@ -400,7 +400,7 @@ export class AbaloneGameWindowComponent
       const destKey = cubeToNotation(dest);
 
       if (!this.isOnBoard(dest)) return false;
-      if (state.board.has(destKey)) return false;
+      if (state.board[destKey]) return false;
     }
     return true;
   }
@@ -445,7 +445,7 @@ export class AbaloneGameWindowComponent
 
     while (this.isOnBoard(pushPos)) {
       const key = cubeToNotation(pushPos);
-      const color = state.board.get(key);
+      const color = state.board[key];
       if (!color || color === state.currentPlayer) break;
       opponentMarbles.push({ ...pushPos });
       pushPos = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
@@ -455,33 +455,33 @@ export class AbaloneGameWindowComponent
     for (let i = opponentMarbles.length - 1; i >= 0; i--) {
       const opp = opponentMarbles[i];
       const oppKey = cubeToNotation(opp);
-      const oppColor = state.board.get(oppKey);
-      state.board.delete(oppKey);
+      const oppColor = state.board[oppKey];
+      delete state.board[oppKey];
 
       if (!oppColor) continue;
 
       const newPos: ICubeCoords = { x: opp.x + dir.x, y: opp.y + dir.y, z: opp.z + dir.z };
       if (this.isOnBoard(newPos)) {
-        state.board.set(cubeToNotation(newPos), oppColor);
+        state.board[cubeToNotation(newPos)] = oppColor;
       } else {
         state.deadMarbles[oppColor]++;
       }
     }
 
     // Przesuwanie własnych kulek
-    const colors = sorted.map(m => state.board.get(cubeToNotation(m)) ?? state.currentPlayer);
-    sorted.forEach(m => state.board.delete(cubeToNotation(m)));
+    const colors = sorted.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
+    sorted.forEach(m => delete state.board[cubeToNotation(m)]);
     sorted.forEach((m, i) => {
-      state.board.set(cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z }), colors[i]);
+      state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
     });
   }
 
   private executeBroadsideMove(selected: ICubeCoords[], dir: ICubeCoords): void {
     const state = this.game.state;
-    const colors = selected.map(m => state.board.get(cubeToNotation(m)) ?? state.currentPlayer);
-    selected.forEach(m => state.board.delete(cubeToNotation(m)));
+    const colors = selected.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
+    selected.forEach(m => delete state.board[cubeToNotation(m)]);
     selected.forEach((m, i) => {
-      state.board.set(cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z }), colors[i]);
+      state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
     });
   }
 
@@ -497,7 +497,7 @@ export class AbaloneGameWindowComponent
     let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
     while (this.isOnBoard(pushPos)) {
       const key = cubeToNotation(pushPos);
-      const color = state.board.get(key);
+      const color = state.board[key];
       if (!color || color === state.currentPlayer) break;
 
       const newPos: ICubeCoords = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
@@ -512,7 +512,7 @@ export class AbaloneGameWindowComponent
 
     // Własne kulki
     for (const marble of sorted) {
-      const color = state.board.get(cubeToNotation(marble)) ?? state.currentPlayer;
+      const color = state.board[cubeToNotation(marble)] ?? state.currentPlayer;
       anims.push({
         fromX: marble.x, fromY: marble.y,
         toX: marble.x + dir.x, toY: marble.y + dir.y,
@@ -529,7 +529,7 @@ export class AbaloneGameWindowComponent
     const anims: IMarbleAnim[] = [];
 
     for (const marble of selected) {
-      const color = state.board.get(cubeToNotation(marble)) ?? state.currentPlayer;
+      const color = state.board[cubeToNotation(marble)] ?? state.currentPlayer;
       anims.push({
         fromX: marble.x, fromY: marble.y,
         toX: marble.x + dir.x, toY: marble.y + dir.y,

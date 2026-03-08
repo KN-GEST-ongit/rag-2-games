@@ -45,7 +45,7 @@ export interface IMarbleAnim {
 }
 
 export class AbaloneState implements TGameState {
-  public board = new Map<THexKey, TPlayerColor>();
+  public board: Record<THexKey, TPlayerColor> = {};
   
   public currentPlayer: TPlayerColor = 'WHITE';
   public cursor: ICubeCoords = { x: 0, y: 0, z: 0 };
@@ -68,7 +68,7 @@ export class AbaloneState implements TGameState {
         if (Math.abs(z) <= radius) {
           const color = this.getInitialColor(x, y, z);
           if (color) {
-            this.board.set(cubeToNotation({ x, y, z }), color);
+            this.board[cubeToNotation({ x, y, z })] = color;
           }
         }
       }
