@@ -19,7 +19,7 @@ import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui';
 import { CrossyRoadAssets } from './crossyroad.assets';
 import { CrossyRoadState } from './crossyroad.class';
 import { ILane, IObstacle } from './crossyroad.interfaces';
-import { Base3DRenderer } from '../../engine/base-3d.renderer';
+import { Base3DRenderer } from '../../../engine-3d/base-3d.renderer';
 
 export class CrossyRoadRenderer extends Base3DRenderer {
   private camera: UniversalCamera;
