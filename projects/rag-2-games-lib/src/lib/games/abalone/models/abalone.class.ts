@@ -66,7 +66,7 @@ export class AbaloneState implements TGameState {
       for (let y = -radius; y <= radius; y++) {
         const z = -x - y;
         if (Math.abs(z) <= radius) {
-          const color = this.getInitialColor(x, y, z);
+          const color = this.getInitialColor(x, y);
           if (color) {
             this.board[cubeToNotation({ x, y, z })] = color;
           }
@@ -75,15 +75,18 @@ export class AbaloneState implements TGameState {
     }
   }
 
-private getInitialColor(x: number, y: number, z: number): TPlayerColor | null {
-    
-    if (y === -4 || y === -3) return 'WHITE';
-    if (y === -2 && x >= 0 && x <= 2) return 'WHITE';
-
-    if (y === 4 || y === 3) return 'BLACK';
-    if (y === 2 && x >= -2 && x <= 0) return 'BLACK';
-
+private getInitialColor(x: number, y: number): TPlayerColor | null {
+    if (this.isInitialWhite(x, y)) return 'WHITE';
+    if (this.isInitialBlack(x, y)) return 'BLACK';
     return null;
+  }
+
+  private isInitialWhite(x: number, y: number): boolean {
+    return y === -4 || y === -3 || (y === -2 && x >= 0 && x <= 2);
+  }
+
+  private isInitialBlack(x: number, y: number): boolean {
+    return y === 4 || y === 3 || (y === 2 && x >= -2 && x <= 0);
   }
 }
 
@@ -97,8 +100,6 @@ export class Abalone extends Game {
     state:
       board: Map<string, 'BLACK' | 'WHITE'>; // klucze w notacji Abalone, np. "A1", "E5"
       currentPlayer: 'BLACK' | 'WHITE';
-      cursor: { x: int, y: int, z: int }; 
-      selectedMarbles: string[]; // notacja Abalone, np. ["E5", "E6"]
       deadMarbles: { BLACK: int, WHITE: int }; 
       isGameOver: boolean;
       winner: 'BLACK' | 'WHITE' | null;
@@ -118,6 +119,7 @@ export class Abalone extends Game {
       },
       PlayerSourceType.KEYBOARD
     ),
+
   ];
 
   private static getKeyboardBindings(): Record<string, IPlayerControlsBinding> {

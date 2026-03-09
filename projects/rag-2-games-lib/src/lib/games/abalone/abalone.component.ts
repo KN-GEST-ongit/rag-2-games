@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -12,7 +12,7 @@ import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCur
   imports: [CanvasComponent, NgIf],
   template: `
     <div class="game-info">
-      Tura: <b [style.color]="game.state.currentPlayer === 'BLACK' ? 'black' : 'gray'">
+      Tura: <b [style.color]="game.state.currentPlayer === 'BLACK' ? 'black' : 'white'">
         {{ game.state.currentPlayer }}
       </b> | 
       Punkty - Czarne: <b>{{ game.state.deadMarbles.WHITE }}</b>, 
@@ -34,7 +34,7 @@ import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCur
 })
 export class AbaloneGameWindowComponent
   extends BaseGameWindowComponent
-  implements OnInit, AfterViewInit, OnDestroy
+  implements OnInit, AfterViewInit
 {
   public override game!: Abalone;
   private readonly HEX_SIZE = 30;
@@ -43,24 +43,10 @@ export class AbaloneGameWindowComponent
     return cubeToNotation(this.game.state.cursor);
   }
 
-  private _moveQueue: number[] = [];
-  private _actionQueue: number[] = [];
-
   private _animation: IMarbleAnim[] = [];
   private _animationProgress = 0;
   private _animationFrame = 0;
   private readonly _animFramesTotal = 20;
-
-  private readonly keyToMoveMap: Record<string, number> = {
-    'q': 1, 'w': 2, 'e': 3,
-    'd': 4, 's': 5, 'a': 6
-  };
-
-  private readonly keyToActionMap: Record<string, number> = {
-    ' ': 1,
-    'Enter': 2,
-    'Escape': 3
-  };
 
   private readonly directions: Record<number, ICubeCoords> = {
     1: { x: 0, y: -1, z: 1 },
@@ -82,8 +68,6 @@ export class AbaloneGameWindowComponent
     1: 'Q', 2: 'W', 3: 'E', 4: 'D', 5: 'S', 6: 'A'
   };
 
-  private _boundKeyHandler = (e: KeyboardEvent): void => this.onAbaloneKeyDown(e);
-
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Abalone;
@@ -91,41 +75,14 @@ export class AbaloneGameWindowComponent
 
   public override ngAfterViewInit(): void {
     super.ngAfterViewInit();
-    window.addEventListener('keydown', this._boundKeyHandler);
     this.render();
-  }
-
-  public override ngOnDestroy(): void {
-    window.removeEventListener('keydown', this._boundKeyHandler);
-    super.ngOnDestroy();
   }
 
   public override restart(): void {
     this.game.state = new AbaloneState();
-    this._moveQueue = [];
-    this._actionQueue = [];
     this._animation = [];
     this._animationProgress = 0;
     this._animationFrame = 0;
-  }
-
-  private onAbaloneKeyDown(event: KeyboardEvent): void {
-    if (this.isPaused || this.game.state.isGameOver || this.game.state.phase === 'ANIMATING') return;
-
-    let moveDir = this.keyToMoveMap[event.key];
-    if (moveDir !== undefined) {
-      // Odwróć kierunek gdy plansza jest obrócona (tura białych)
-      if (this.game.state.currentPlayer === 'WHITE') {
-        moveDir = ((moveDir - 1 + 3) % 6) + 1;
-      }
-      this._moveQueue.push(moveDir);
-      return;
-    }
-
-    const actionId = this.keyToActionMap[event.key];
-    if (actionId !== undefined) {
-      this._actionQueue.push(actionId);
-    }
   }
 
   protected override update(): void {
@@ -140,38 +97,46 @@ export class AbaloneGameWindowComponent
 
   private handleInput(): void {
     const state = this.game.state;
+    if (state.isGameOver) return;
+
+    const input = this.game.players[0].inputData;
+    let move = input['move'] as number;
+    const action = input['action'] as number;
+
+    if (move !== 0) {
+      // Odwróć kierunek gdy plansza jest obrócona (tura białych)
+      if (state.currentPlayer === 'WHITE') {
+        move = ((move - 1 + 3) % 6) + 1;
+      }
+      input['move'] = 0;
+    }
+    if (action !== 0) {
+      input['action'] = 0;
+    }
 
     if (state.phase === 'SELECT') {
-      this.handleSelectPhaseInput();
+      this.handleSelectPhaseInput(move, action);
     } else if (state.phase === 'MOVE') {
-      this.handleMovePhaseInput();
+      this.handleMovePhaseInput(move, action);
     }
   }
 
-  private handleSelectPhaseInput(): void {
-    const moveDir = this._moveQueue.shift();
-    if (moveDir !== undefined) {
-      this.moveCursor(moveDir);
+  private handleSelectPhaseInput(move: number, action: number): void {
+    if (move !== 0) {
+      this.moveCursor(move);
     }
-
-    const action = this._actionQueue.shift();
-    if (action !== undefined) {
+    if (action !== 0) {
       this.handleAction(action);
     }
   }
 
-  private handleMovePhaseInput(): void {
-    const state = this.game.state;
-
-    const dir = this._moveQueue.shift();
-    if (dir !== undefined && state.possibleMoves.includes(dir)) {
-      this.executeMove(dir);
+  private handleMovePhaseInput(move: number, action: number): void {
+    if (move !== 0 && this.game.state.possibleMoves.includes(move)) {
+      this.executeMove(move);
     }
-
-    const action = this._actionQueue.shift();
     if (action === 3) {
-      state.phase = 'SELECT';
-      state.possibleMoves = [];
+      this.game.state.phase = 'SELECT';
+      this.game.state.possibleMoves = [];
     }
   }
 
@@ -236,8 +201,8 @@ export class AbaloneGameWindowComponent
 
   private tryAddSecondMarble(key: string): void {
     const state = this.game.state;
-    const first = this.keyToCoords(state.selectedMarbles[0]);
-    const next = this.keyToCoords(key);
+    const first = notationToCube(state.selectedMarbles[0]);
+    const next = notationToCube(key);
     if (this.areNeighbors(first, next)) {
       state.selectedMarbles.push(key);
     }
@@ -245,9 +210,9 @@ export class AbaloneGameWindowComponent
 
   private tryAddThirdMarble(key: string): void {
     const state = this.game.state;
-    const c0 = this.keyToCoords(state.selectedMarbles[0]);
-    const c1 = this.keyToCoords(state.selectedMarbles[1]);
-    const c2 = this.keyToCoords(key);
+    const c0 = notationToCube(state.selectedMarbles[0]);
+    const c1 = notationToCube(state.selectedMarbles[1]);
+    const c2 = notationToCube(key);
     if (this.areInLine(c0, c1, c2)) {
       state.selectedMarbles.push(key);
     }
@@ -261,7 +226,6 @@ export class AbaloneGameWindowComponent
     return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z)) / 2;
   }
 
-
   private areInLine(a: ICubeCoords, b: ICubeCoords, c: ICubeCoords): boolean {
     const points = [a, b, c];
 
@@ -270,12 +234,6 @@ export class AbaloneGameWindowComponent
       projections.sort((x, y) => x - y);
 
       if (projections[1] - projections[0] === 1 && projections[2] - projections[1] === 1) {
-        const otherAxes = this.HEX_AXIS_DIRS.filter(ax => ax !== axis);
-        const allSamePlane = otherAxes.some(oa => {
-          const pp = points.map(p => p.x * oa.x + p.y * oa.y + p.z * oa.z);
-          return true; 
-        });
-
         const sorted = [...points].sort((p1, p2) => {
           return (p1.x * axis.x + p1.y * axis.y + p1.z * axis.z) -
                  (p2.x * axis.x + p2.y * axis.y + p2.z * axis.z);
@@ -294,7 +252,7 @@ export class AbaloneGameWindowComponent
 
   private executeMove(dirIdx: number): void {
     const state = this.game.state;
-    const selected = state.selectedMarbles.map(k => this.keyToCoords(k));
+    const selected = state.selectedMarbles.map(k => notationToCube(k));
     const dir = this.directions[dirIdx];
 
     // Capture animation data BEFORE executing the move
@@ -339,7 +297,7 @@ export class AbaloneGameWindowComponent
   }
 
   private isMoveValid(dirIdx: number): boolean {
-    const selected = this.game.state.selectedMarbles.map(k => this.keyToCoords(k));
+    const selected = this.game.state.selectedMarbles.map(k => notationToCube(k));
     const dir = this.directions[dirIdx];
 
     if (selected.length === 1) {
@@ -570,8 +528,6 @@ export class AbaloneGameWindowComponent
     state.phase = 'SELECT';
   }
 
-
-
   private render(): void {
     const ctx = this._canvas.getContext('2d');
     if (!ctx) return;
@@ -594,15 +550,11 @@ export class AbaloneGameWindowComponent
       drawMarbles(ctx, this.game.state, this.HEX_SIZE, skipKeys);
     } else {
       drawMarbles(ctx, this.game.state, this.HEX_SIZE);
-      drawMoveGhosts(ctx, this.game.state, this.HEX_SIZE, this.directions, k => this.keyToCoords(k), p => this.isOnBoard(p));
-      drawDirectionCompass(ctx, this.game.state, this.HEX_SIZE, this.directions, this._dirKeyLabels, k => this.keyToCoords(k));
+      drawMoveGhosts(ctx, this.game.state, this.HEX_SIZE, this.directions, k => notationToCube(k), p => this.isOnBoard(p));
+      drawDirectionCompass(ctx, this.game.state, this.HEX_SIZE, this.directions, this._dirKeyLabels, k => notationToCube(k));
       drawHexCursor(ctx, this.game.state, this.HEX_SIZE);
     }
 
     ctx.restore();
-  }
-
-  private keyToCoords(key: string): ICubeCoords {
-    return notationToCube(key);
   }
 }
