@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable complexity */
 /* eslint-disable max-lines */
 import {
   ChangeDetectionStrategy,
@@ -59,11 +61,17 @@ export abstract class BaseGameWindowComponent
   private _lastFrameTime = performance.now();
   private _deltaTimeAccumulator = 0;
   private _frameCount = 0;
-  private _activeKeyBindings: Record<string, Set<string>> = {};
+  private _activeKeyBindings = new Map<string, Record<string, Set<string>>>();
   private _playerInactivityTimers = new Map<
     string,
     ReturnType<typeof setTimeout>
   >();
+
+  private _keyDownHandler: ((event: KeyboardEvent) => void) | null = null;
+  private _keyUpHandler: ((event: KeyboardEvent) => void) | null = null;
+  private _mouseDownHandler: ((event: MouseEvent) => void) | null = null;
+  private _visibilityChangeHandler: (() => void) | null = null;
+  private _blurHandler: (() => void) | null = null;
 
   protected _updateTimeout: ReturnType<typeof setTimeout> | undefined;
   protected isPaused = false;
@@ -86,16 +94,20 @@ export abstract class BaseGameWindowComponent
   public ngAfterViewInit(): void {
     this._canvas = this.gameCanvas.canvasElement.nativeElement;
 
-    window.addEventListener('keydown', event => this.onKeyDown(event));
-    window.addEventListener('keyup', event => this.onKeyUp(event));
-    window.addEventListener('mousedown', event =>
-      this.onMouseDownOutsideCanvas(event)
-    );
-    document.addEventListener('visibilitychange', () =>
-      this.onVisibilityChange()
-    );
-    window.addEventListener('blur', () => this.onWindowBlur());
+    this._keyDownHandler = (event: KeyboardEvent): void => this.onKeyDown(event);
+    this._keyUpHandler = (event: KeyboardEvent): void => this.onKeyUp(event);
+    this._mouseDownHandler = (event: MouseEvent): void =>
+      this.onMouseDownOutsideCanvas(event);
+    this._visibilityChangeHandler = (): void => this.onVisibilityChange();
+    this._blurHandler = (): void => this.onWindowBlur();
 
+    window.addEventListener('keydown', this._keyDownHandler);
+    window.addEventListener('keyup', this._keyUpHandler);
+    window.addEventListener('mousedown', this._mouseDownHandler);
+    document.addEventListener('visibilitychange', this._visibilityChangeHandler);
+    window.addEventListener('blur', this._blurHandler);
+
+    console.error('🎮 Event listeners ADDED successfully');
     this.update();
     setTimeout(() => this.restart());
   }
@@ -105,15 +117,21 @@ export abstract class BaseGameWindowComponent
     this._restartSubscription.unsubscribe();
     this._pauseSubscription.unsubscribe();
 
-    window.removeEventListener('keydown', event => this.onKeyDown(event));
-    window.removeEventListener('keyup', event => this.onKeyUp(event));
-    window.removeEventListener('mousedown', event =>
-      this.onMouseDownOutsideCanvas(event)
-    );
-    document.removeEventListener('visibilitychange', () =>
-      this.onVisibilityChange()
-    );
-    window.removeEventListener('blur', () => this.onWindowBlur());
+    if (this._keyDownHandler) {
+      window.removeEventListener('keydown', this._keyDownHandler);
+    }
+    if (this._keyUpHandler) {
+      window.removeEventListener('keyup', this._keyUpHandler);
+    }
+    if (this._mouseDownHandler) {
+      window.removeEventListener('mousedown', this._mouseDownHandler);
+    }
+    if (this._visibilityChangeHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
+    }
+    if (this._blurHandler) {
+      window.removeEventListener('blur', this._blurHandler);
+    }
 
     this._playerInactivityTimers.forEach(timer => clearTimeout(timer));
     this._playerInactivityTimers.clear();
@@ -165,7 +183,7 @@ export abstract class BaseGameWindowComponent
   }
 
   private resetActiveKeyBindings(): void {
-    this._activeKeyBindings = {};
+    this._activeKeyBindings.clear();
 
     for (const player of this.game.players) {
       if (player.playerType === PlayerSourceType.KEYBOARD) {
@@ -190,8 +208,11 @@ export abstract class BaseGameWindowComponent
         player.inputData[variableName] = releasedValue;
       }
 
-      for (const variableName in this._activeKeyBindings) {
-        this._activeKeyBindings[variableName]?.clear();
+      const playerBindings = this._activeKeyBindings.get(player.id.toString());
+      if (playerBindings) {
+        for (const variableName in playerBindings) {
+          playerBindings[variableName]?.clear();
+        }
       }
     }, 1000);
 
@@ -202,6 +223,7 @@ export abstract class BaseGameWindowComponent
     for (const player of this.game.players) {
       if (
         player.playerType === PlayerSourceType.KEYBOARD &&
+        player.isActive &&
         player.controlsBinding[event.key] !== undefined &&
         document.activeElement?.id !== 'inGameMenuInputFocusAction'
       ) {
@@ -211,12 +233,17 @@ export abstract class BaseGameWindowComponent
         const variableName = control.variableName;
         const pressedValue = control.pressedValue;
 
-        if (!this._activeKeyBindings[variableName]) {
-          this._activeKeyBindings[variableName] = new Set<string>();
+        const playerId = player.id.toString();
+        if (!this._activeKeyBindings.has(playerId)) {
+          this._activeKeyBindings.set(playerId, {});
         }
 
-        this._activeKeyBindings[variableName].add(event.key);
+        const playerBindings = this._activeKeyBindings.get(playerId)!;
+        if (!playerBindings[variableName]) {
+          playerBindings[variableName] = new Set<string>();
+        }
 
+        playerBindings[variableName].add(event.key);
         player.inputData[variableName] = pressedValue;
 
         this.resetInactivityTimer(player);
@@ -228,6 +255,7 @@ export abstract class BaseGameWindowComponent
     for (const player of this.game.players) {
       if (
         player.playerType === PlayerSourceType.KEYBOARD &&
+        player.isActive &&
         player.controlsBinding[event.key] !== undefined &&
         document.activeElement?.id !== 'inGameMenuInputFocusAction'
       ) {
@@ -237,12 +265,15 @@ export abstract class BaseGameWindowComponent
         const variableName = control.variableName;
         const releasedValue = control.releasedValue;
 
-        if (this._activeKeyBindings[variableName]) {
-          this._activeKeyBindings[variableName].delete(event.key);
-        }
+        const playerId = player.id.toString();
+        const playerBindings = this._activeKeyBindings.get(playerId);
 
-        if (this._activeKeyBindings[variableName].size === 0) {
-          player.inputData[variableName] = releasedValue;
+        if (playerBindings?.[variableName]) {
+          playerBindings[variableName].delete(event.key);
+
+          if (playerBindings[variableName].size === 0) {
+            player.inputData[variableName] = releasedValue;
+          }
         }
 
         this.resetInactivityTimer(player);

@@ -224,7 +224,9 @@ export class PlayerSocketConnectionMenuComponent
   };
   //
   private emitSocketInput(data: TExchangeData): void {
-    this.receivedDataEmitter.emit({ player: this.player, data: data });
+    if (this.player?.isActive) {
+      this.receivedDataEmitter.emit({ player: this.player, data: data });
+    }
   }
   private saveRecentPhrase(phrase: string): void {
     if (this.recentPhrases.includes(phrase)) return;
