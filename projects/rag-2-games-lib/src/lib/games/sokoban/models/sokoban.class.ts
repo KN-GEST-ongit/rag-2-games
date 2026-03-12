@@ -11,6 +11,7 @@ export class SokobanState implements TGameState {
   public player: IPoint = { x: 2, y: 2 };
   public boxes: IPoint[] = [];
   public walls: IPoint[] = [];
+  public goals: IPoint[] = [];
   public gridSize = 40;
 }
 
