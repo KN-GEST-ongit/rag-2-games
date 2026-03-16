@@ -79,78 +79,75 @@ export class Soccer extends Game {
     `;
     public override players = [
         new Player(
-      0,
-      true,
-      'Player 1 (Red)',
-      { move: 0 },  
-      {
-        w: {
-          variableName: 'move',
-          pressedValue: 4, 
-          releasedValue: 0,
-        },
-        s: {
-          variableName: 'move',
-          pressedValue: 3, 
-          releasedValue: 0,
-        },
-        a: {
-          variableName: 'move',
-          pressedValue: 2, 
-          releasedValue: 0,
-        },
-        d: {
-          variableName: 'move',
-          pressedValue: 1, 
-          releasedValue: 0,
-        },
-        
+            0,
+            true,
+            'Player 1 (Red)',
+            { moveX: 0, moveY: 0 },
+            {
+                w: {
+                    variableName: 'moveY',
+                    pressedValue: -1,
+                    releasedValue: 0,
+                },
+                s: {
+                    variableName: 'moveY',
+                    pressedValue: 1,
+                    releasedValue: 0,
+                },
+                a: {
+                    variableName: 'moveX',
+                    pressedValue: -1,
+                    releasedValue: 0,
+                },
+                d: {
+                    variableName: 'moveX',
+                    pressedValue: 1,
+                    releasedValue: 0,
+                },
+            },
+            '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down',
+            {
+                up: '[W]',
+                down: '[S]',
+                left: '[A]',
+                right: '[D]',
+            }
+        ),
 
-      },
-      '<move>: value of {0, 1, 2, 3, 4}, 0: stop, 1: right, 2: left, 3: down, 4: up;',
-      {
-        up: '[W]',
-        down: '[S]',
-        left: '[A]',
-        right: '[D]',
-      }
-    ),
-
-    
-    new Player(
-      1,
-      true,
-      'Player 2 (Blue)',
-      { move: 0 },
-      {
-        ArrowUp: {
-          variableName: 'move',
-          pressedValue: 4,
-          releasedValue: 0,
-        },
-        ArrowDown: {
-          variableName: 'move',
-          pressedValue: 3, 
-          releasedValue: 0,
-        },
-        ArrowLeft: {
-          variableName: 'move',
-          pressedValue: 2, 
-          releasedValue: 0,
-        },
-        ArrowRight: {
-          variableName: 'move',
-          pressedValue: 1, 
-          releasedValue: 0,
-        },
-      },
-      '<move>: value of {0, 1, 2, 3, 4}, 0: stop, 1: right, 2: left, 3: down, 4: up;',
-      {
-        up: '[ARROW_UP]',
-        down: '[ARROW_DOWN]',
-        left: '[ARROW_LEFT]',
-        right: '[ARROW_RIGHT]',
-      }
-    ),
+        new Player(
+            1,
+            true,
+            'Player 2 (Blue)',
+            { moveX: 0, moveY: 0 },
+            {
+                ArrowUp: {
+                    variableName: 'moveY',
+                    pressedValue: -1,
+                    releasedValue: 0,
+                },
+                ArrowDown: {
+                    variableName: 'moveY',
+                    pressedValue: 1,
+                    releasedValue: 0,
+                },
+                ArrowLeft: {
+                    variableName: 'moveX',
+                    pressedValue: -1,
+                    releasedValue: 0,
+                },
+                ArrowRight: {
+                    variableName: 'moveX',
+                    pressedValue: 1,
+                    releasedValue: 0,
+                },
+            },
+            '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down',
+            {
+                up: '[ARROW_UP]',
+                down: '[ARROW_DOWN]',
+                left: '[ARROW_LEFT]',
+                right: '[ARROW_RIGHT]',
+            }
+        ),
     ];
 }
