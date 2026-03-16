@@ -1,0 +1,89 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+/* eslint-disable @typescript-eslint/explicit-member-accessibility */
+import { TGameState } from '../../../models/game-state.type';
+import { Game } from '../../../models/game.class';
+import { Player } from '../../../models/player.class';
+import { ILane } from './crossyroad.interfaces';
+
+export class CrossyRoadState implements TGameState {
+  public playerX = 0; 
+  public playerZ = 0;
+  
+  public score = 0;
+  public highestZ = 0;
+  public isGameOver = false;
+  
+  public moveCooldown = 0; 
+  public isMoving = false;
+
+  public lanes: ILane[] = [];
+  public nextObstacleId = 0;
+
+  public deathReason: string = '';
+
+  constructor() {
+    for (let i = -7; i < 15; i++) {
+      this.lanes.push({
+        z: i,
+        type: (i <= 0) ? 'grass' : 'road',
+        obstacles: []
+      });
+    }
+  }
+}
+
+export class CrossyRoad extends Game {
+  public override author = 'Norbert Mazur';
+  public override name = 'crossyroad';
+  public override state = new CrossyRoadState();
+
+  public override outputSpec = `
+  output:
+    playerX: int, <-8, 12>;
+    playerZ: int, <0, inf>;
+    score: int, <0, inf>;
+    highestZ: int, <0, inf>;
+    isGameOver: boolean;
+    deathReason: string;
+    lanes: array;
+
+  default values:
+    playerX: ${this.state.playerX};
+    playerZ: ${this.state.playerZ};
+    score: ${this.state.score};
+    highestZ: ${this.state.highestZ};
+    isGameOver: ${this.state.isGameOver};
+    deathReason: '';
+    lanes: [...];
+  `;
+
+  public override players = [
+    new Player(
+      0,
+      true,
+      'Player 1',
+      { move: 0, action: 0 },
+      {
+        ArrowUp: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        ArrowDown: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        ArrowLeft: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+        ArrowRight: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+        w: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        s: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        a: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+        d: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+        ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'action', pressedValue: 1, releasedValue: 0 },
+      },
+      `<move>: value of {1: forward/up, 2: backward/down, 3: left, 4: right, 0: idle};
+      <action>: value of {1: action, 0: idle};`,
+      { 
+        up: '[W]/[↑]',
+        down: '[S]/[↓]',
+        left: '[A]/[←]',
+        right: '[D]/[→]',
+        restart: '[SPACE] / [ENTER]'
+      }
+    ),
+  ];
+}

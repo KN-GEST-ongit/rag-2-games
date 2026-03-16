@@ -7,7 +7,10 @@ import { Spaceinvaders } from '../games/spaceinvaders/models/spaceinvaders.class
 import { Snake } from '../games/snake/models/snake.class';
 import { Pacman } from '../games/pacman/models/pacman.class';
 import { TowerDefense } from '../games/towerdefense/models/towerdefense.class';
+import { Tetris } from '../games/tetris/models/tetris.class';
+import { CrossyRoad } from '../games/crossyroad/models/crossyroad.class';
 import { Soccer } from '../games/soccer/models/soccer.class';
+
 export const games: Record<string, Game> = {
   pong: new Pong(),
   skijump: new SkiJump(),
@@ -17,5 +20,7 @@ export const games: Record<string, Game> = {
   snake: new Snake(),
   pacman: new Pacman(),
   towerdefense: new TowerDefense(),
+  tetris: new Tetris(),
+  crossyroad: new CrossyRoad(),
   soccer: new Soccer(),
 };
