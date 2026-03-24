@@ -37,7 +37,7 @@ export class AbaloneGameWindowComponent
   implements OnInit, AfterViewInit
 {
   public override game!: Abalone;
-  private readonly HEX_SIZE = 30;
+  private readonly _hexSize = 30;
 
   public get cursorNotation(): string {
     return cubeToNotation(this.game.state.cursor);
@@ -48,7 +48,7 @@ export class AbaloneGameWindowComponent
   private _animationFrame = 0;
   private readonly _animFramesTotal = 20;
 
-  private readonly directions: Record<number, ICubeCoords> = {
+  private readonly _directions: Record<number, ICubeCoords> = {
     1: { x: 0, y: -1, z: 1 },
     2: { x: 1, y: -1, z: 0 },
     3: { x: 1, y: 0, z: -1 },
@@ -58,7 +58,7 @@ export class AbaloneGameWindowComponent
   };
 
   // 6 znormalizowanych kierunków osi hex (używane do walidacji linii)
-  private readonly HEX_AXIS_DIRS: ICubeCoords[] = [
+  private readonly _hexAxisDirs: ICubeCoords[] = [
     { x: 1, y: -1, z: 0 },
     { x: 1, y: 0, z: -1 },
     { x: 0, y: 1, z: -1 },
@@ -141,7 +141,7 @@ export class AbaloneGameWindowComponent
   }
 
   private moveCursor(dirIdx: number): void {
-    const d = this.directions[dirIdx];
+    const d = this._directions[dirIdx];
     if (!d) return;
 
     const cur = this.game.state.cursor;
@@ -229,7 +229,7 @@ export class AbaloneGameWindowComponent
   private areInLine(a: ICubeCoords, b: ICubeCoords, c: ICubeCoords): boolean {
     const points = [a, b, c];
 
-    for (const axis of this.HEX_AXIS_DIRS) {
+    for (const axis of this._hexAxisDirs) {
       const projections = points.map(p => p.x * axis.x + p.y * axis.y + p.z * axis.z);
       projections.sort((x, y) => x - y);
 
@@ -253,7 +253,7 @@ export class AbaloneGameWindowComponent
   private executeMove(dirIdx: number): void {
     const state = this.game.state;
     const selected = state.selectedMarbles.map(k => notationToCube(k));
-    const dir = this.directions[dirIdx];
+    const dir = this._directions[dirIdx];
 
     // Capture animation data BEFORE executing the move
     if (selected.length === 1) {
@@ -298,7 +298,7 @@ export class AbaloneGameWindowComponent
 
   private isMoveValid(dirIdx: number): boolean {
     const selected = this.game.state.selectedMarbles.map(k => notationToCube(k));
-    const dir = this.directions[dirIdx];
+    const dir = this._directions[dirIdx];
 
     if (selected.length === 1) {
       return this.isInlineMoveValid(selected, dir);
@@ -542,17 +542,17 @@ export class AbaloneGameWindowComponent
       ctx.rotate(Math.PI);
     }
 
-    drawHexGrid(ctx, this.HEX_SIZE);
-    drawBoardLabels(ctx, this.HEX_SIZE, this.game.state.currentPlayer === 'WHITE');
+    drawHexGrid(ctx, this._hexSize);
+    drawBoardLabels(ctx, this._hexSize, this.game.state.currentPlayer === 'WHITE');
 
     if (this.game.state.phase === 'ANIMATING' && this._animation.length > 0) {
-      const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this.HEX_SIZE);
-      drawMarbles(ctx, this.game.state, this.HEX_SIZE, skipKeys);
+      const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this._hexSize);
+      drawMarbles(ctx, this.game.state, this._hexSize, skipKeys);
     } else {
-      drawMarbles(ctx, this.game.state, this.HEX_SIZE);
-      drawMoveGhosts(ctx, this.game.state, this.HEX_SIZE, this.directions, k => notationToCube(k), p => this.isOnBoard(p));
-      drawDirectionCompass(ctx, this.game.state, this.HEX_SIZE, this.directions, this._dirKeyLabels, k => notationToCube(k));
-      drawHexCursor(ctx, this.game.state, this.HEX_SIZE);
+      drawMarbles(ctx, this.game.state, this._hexSize);
+      drawMoveGhosts(ctx, this.game.state, this._hexSize, this._directions, k => notationToCube(k), p => this.isOnBoard(p));
+      drawDirectionCompass(ctx, this.game.state, this._hexSize, this._directions, this._dirKeyLabels, k => notationToCube(k));
+      drawHexCursor(ctx, this.game.state, this._hexSize);
     }
 
     ctx.restore();
