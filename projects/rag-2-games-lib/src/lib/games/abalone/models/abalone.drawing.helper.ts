@@ -227,3 +227,76 @@ export function drawBoardLabels(ctx: CanvasRenderingContext2D, hexSize: number, 
   drawRowLabels(ctx, hexSize, isRotated);
   drawColumnLabels(ctx, hexSize, isRotated);
 }
+
+export function drawCemetery(
+  ctx: CanvasRenderingContext2D,
+  state: AbaloneState,
+  canvasWidth: number,
+  canvasHeight: number,
+  hexSize: number
+): void {
+  const marbleRadius = hexSize * 0.8;
+  const maxDead = 6;
+  const spacing = hexSize * 2.2;
+
+  // Strefa czarnych kulek (po lewej stronie ekranu dla P1 / Białego gracza "u dołu", ale narysujemy obie z boku).
+  // Aby była ładna prezentacja, narysujmy je symetrycznie.
+  
+  const drawPlayerCemetery = (
+    colorId: 'BLACK' | 'WHITE',
+    count: number,
+    xCenter: number,
+    startBottom: boolean,
+    label: string
+  ): void => {
+    ctx.save();
+    // Tło dla cmentarza
+    const w = hexSize * 2.5;
+    const h = (maxDead * spacing) + hexSize * 2;
+    const yTop = canvasHeight / 2 - h / 2;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.beginPath();
+    ctx.roundRect(xCenter - w / 2, yTop, w, h, 10);
+    ctx.fill();
+
+    // Etykieta
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = `bold ${hexSize * 0.5}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, xCenter, startBottom ? yTop + h - hexSize : yTop + hexSize);
+
+    // Kulki
+    for (let i = 0; i < maxDead; i++) {
+        const slotY = startBottom
+          ? yTop + h - hexSize * 2.5 - i * spacing
+          : yTop + hexSize * 2.5 + i * spacing;
+
+        ctx.beginPath();
+        ctx.arc(xCenter, slotY, marbleRadius, 0, Math.PI * 2);
+
+        if (i < count) {
+          // Namaluj martwą kulkę o wybranym kolorze
+          ctx.fillStyle = colorId === 'BLACK' ? '#000000' : '#ffffff';
+          ctx.fill();
+        } else {
+          // Puste miejsce (slot) oznaczające ile kulek jeszcze pozostało do wypchnięcia
+          ctx.fillStyle = 'rgba(0,0,0,0.05)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(100,100,100,0.3)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+    }
+    ctx.restore();
+  };
+
+  // Czarne kulki (Cmentarz dla czarnych wypchniętych z planszy) -> Zmarłe Czarne znajdują się w cmentarzu
+  const leftX = canvasWidth * 0.1;
+  const rightX = canvasWidth * 0.9;
+
+  drawPlayerCemetery('BLACK', state.deadMarbles.BLACK, leftX, false, 'CZARNE');
+  drawPlayerCemetery('WHITE', state.deadMarbles.WHITE, rightX, true, 'BIAŁE');
+}
+

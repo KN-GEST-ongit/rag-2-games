@@ -1,7 +1,6 @@
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player, IPlayerControlsBinding } from '../../../models/player.class';
-import { PlayerSourceType } from '../../../models/player-source-type.enum';
 
 export type TPlayerColor = 'BLACK' | 'WHITE';
 
@@ -102,24 +101,43 @@ export class Abalone extends Game {
       currentPlayer: 'BLACK' | 'WHITE';
       deadMarbles: { BLACK: int, WHITE: int }; 
       isGameOver: boolean;
+      phase: string;
       winner: 'BLACK' | 'WHITE' | null;
+
+    default values:
+      currentPlayer: 'WHITE';
+      deadMarbles: { BLACK: 0, WHITE: 0 };
+      isGameOver: false;
+      phase: 'SELECT';
+      winner: null;
+      board: {};
   `;
 
   public override players = [
     new Player(
-      1,                                 
-      true,                             
-      'Gracz',                        
-      { move: 0, action: 0 },            
-      Abalone.getKeyboardBindings(),      
+      0,
+      true,
+      'Bialy',
+      { move: 0, action: 0 },
+      Abalone.getKeyboardBindings(),
       '<move>: 1-6 (kierunki hex), <action>: 1:Wybierz/Odznacz, 2:Zatwierdź ruch, 3:Anuluj wybór',
-      { 
-        move: 'Q,W,E,D,S,A', 
-        action: 'Space, Enter, Esc' 
-      },
-      PlayerSourceType.KEYBOARD
+      {
+        move: 'Q,W,E,D,S,A',
+        action: 'Space, Enter, Esc'
+      }
     ),
-
+    new Player(
+      1,
+      true,
+      'Czarny',
+      { move: 0, action: 0 },
+      Abalone.getKeyboardBindings(),
+      '<move>: 1-6 (kierunki hex), <action>: 1:Wybierz/Odznacz, 2:Zatwierdź ruch, 3:Anuluj wybór',
+      {
+        move: 'Q,W,E,D,S,A',
+        action: 'Space, Enter, Esc'
+      }
+    ),
   ];
 
   private static getKeyboardBindings(): Record<string, IPlayerControlsBinding> {

@@ -4,7 +4,9 @@ import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Abalone, AbaloneState, ICubeCoords, IMarbleAnim, cubeToNotation, notationToCube } from './models/abalone.class';
-import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCursor as drawHexCursor, drawAnimatingMarbles, drawBoardLabels } from './models/abalone.drawing.helper';
+import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCursor as drawHexCursor, drawAnimatingMarbles, drawBoardLabels, drawCemetery } from './models/abalone.drawing.helper';
+import { captureBroadsideAnimData, captureInlineAnimData, executeBroadsideMove, executeInlineMove } from './models/abalone.move_executor.helper';
+import { TExchangeData } from '../../models/exchange-data.type';
 
 @Component({
   selector: 'app-abalone',
@@ -99,7 +101,29 @@ export class AbaloneGameWindowComponent
     const state = this.game.state;
     if (state.isGameOver) return;
 
-    const input = this.game.players[0].inputData;
+    const input = this.getCurrentTurnInput();
+
+    // 🔴 === OBSŁUGA BOTA Z WEBSOCKETA === 🔴
+    // Sprawdzamy, czy w danych wejściowych z Pythona przyszedł gotowy ruch
+    if (input['marbles'] && input['direction']) {
+      const dirIdx = input['direction'] as number;
+      const marbles = input['marbles'] as string[];
+      
+      // Czyścimy input, by uniknąć wielokrotnego wykonania tego samego ruchu w kolejnych klatkach
+      input['marbles'] = null;
+      input['direction'] = 0;
+
+      // Sprawdzamy, czy wylosowany przez bota ruch jest na pewno legalny
+      if (this.isMoveValid(dirIdx, marbles)) {
+        state.selectedMarbles = marbles;
+        this.executeMove(dirIdx);
+      }
+      return; // ⚠️ Ważne: kończymy tutaj, żeby nie wykonywać kodu od klawiatury!
+    }
+    // =========================================
+
+
+    // 🟢 === OBSŁUGA ZWYKŁEGO GRACZA (KLAWIATURA) === 🟢
     let move = input['move'] as number;
     const action = input['action'] as number;
 
@@ -118,6 +142,24 @@ export class AbaloneGameWindowComponent
       this.handleSelectPhaseInput(move, action);
     } else if (state.phase === 'MOVE') {
       this.handleMovePhaseInput(move, action);
+    }
+  }
+
+  private getCurrentTurnInput(): TExchangeData {
+    const playerIndex = this.game.state.currentPlayer === 'WHITE' ? 0 : 1;
+    const currentPlayer = this.game.players[playerIndex] ?? this.game.players[0];
+    return currentPlayer?.inputData ?? {};
+  }
+
+  private resetInactivePlayerInput(): void {
+    const activePlayerIndex = this.game.state.currentPlayer === 'WHITE' ? 0 : 1;
+    for (let i = 0; i < this.game.players.length; i++) {
+      if (i === activePlayerIndex) continue;
+      const player = this.game.players[i];
+      if (player) {
+        player.inputData['move'] = 0;
+        player.inputData['action'] = 0;
+      }
     }
   }
 
@@ -257,16 +299,16 @@ export class AbaloneGameWindowComponent
 
     // Capture animation data BEFORE executing the move
     if (selected.length === 1) {
-      this._animation = this.captureInlineAnimData(selected, dir);
-      this.executeInlineMove(selected, dir);
+      this._animation = captureInlineAnimData(state, selected, dir, this.sortMarblesAlongDir, this.isOnBoard);
+      executeInlineMove(state, selected, dir, this.sortMarblesAlongDir, this.isOnBoard);
     } else {
       const axis = this.getLineAxis(selected);
       if (this.isInlineDirection(axis, dir)) {
-        this._animation = this.captureInlineAnimData(selected, dir);
-        this.executeInlineMove(selected, dir);
+        this._animation = captureInlineAnimData(state, selected, dir, this.sortMarblesAlongDir, this.isOnBoard);
+        executeInlineMove(state, selected, dir, this.sortMarblesAlongDir, this.isOnBoard);
       } else {
-        this._animation = this.captureBroadsideAnimData(selected, dir);
-        this.executeBroadsideMove(selected, dir);
+        this._animation = captureBroadsideAnimData(state, selected, dir);
+        executeBroadsideMove(state, selected, dir);
       }
     }
 
@@ -296,10 +338,19 @@ export class AbaloneGameWindowComponent
     return valid;
   }
 
-  private isMoveValid(dirIdx: number): boolean {
-    const selected = this.game.state.selectedMarbles.map(k => notationToCube(k));
+public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
+    // 1. Zamiast brać zawsze state.selectedMarbles, bierzemy overrideSelection (jeśli bot go podał)
+    const selectionKeys = overrideSelection ?? this.game.state.selectedMarbles;
+    const selected = selectionKeys.map(k => notationToCube(k));
+    
+    // 2. Zabezpieczenie na wypadek, gdyby bot lub gracz spróbowali sprawdzić pusty ruch
+    if (selected.length === 0) {
+      return false;
+    }
+
     const dir = this._directions[dirIdx];
 
+    // Reszta logiki walidacji pozostaje Twoja – nic tu nie zmieniamy!
     if (selected.length === 1) {
       return this.isInlineMoveValid(selected, dir);
     }
@@ -390,114 +441,6 @@ export class AbaloneGameWindowComponent
     return Math.max(Math.abs(pos.x), Math.abs(pos.y), Math.abs(pos.z)) <= 4;
   }
 
-  // ── Wykonanie ruchów ───────────────────────────────────────
-
-  private executeInlineMove(selected: ICubeCoords[], dir: ICubeCoords): void {
-    const state = this.game.state;
-    const sorted = this.sortMarblesAlongDir(selected, dir);
-    const front = sorted[sorted.length - 1];
-
-    // Zebranie kuleczek przeciwnika do zepchnięcia
-    let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
-    const opponentMarbles: ICubeCoords[] = [];
-
-    while (this.isOnBoard(pushPos)) {
-      const key = cubeToNotation(pushPos);
-      const color = state.board[key];
-      if (!color || color === state.currentPlayer) break;
-      opponentMarbles.push({ ...pushPos });
-      pushPos = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
-    }
-
-    // Przesuwanie kulek przeciwnika (od najdalszej)
-    for (let i = opponentMarbles.length - 1; i >= 0; i--) {
-      const opp = opponentMarbles[i];
-      const oppKey = cubeToNotation(opp);
-      const oppColor = state.board[oppKey];
-      delete state.board[oppKey];
-
-      if (!oppColor) continue;
-
-      const newPos: ICubeCoords = { x: opp.x + dir.x, y: opp.y + dir.y, z: opp.z + dir.z };
-      if (this.isOnBoard(newPos)) {
-        state.board[cubeToNotation(newPos)] = oppColor;
-      } else {
-        state.deadMarbles[oppColor]++;
-      }
-    }
-
-    // Przesuwanie własnych kulek
-    const colors = sorted.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
-    sorted.forEach(m => delete state.board[cubeToNotation(m)]);
-    sorted.forEach((m, i) => {
-      state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
-    });
-  }
-
-  private executeBroadsideMove(selected: ICubeCoords[], dir: ICubeCoords): void {
-    const state = this.game.state;
-    const colors = selected.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
-    selected.forEach(m => delete state.board[cubeToNotation(m)]);
-    selected.forEach((m, i) => {
-      state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
-    });
-  }
-
-  // ── Animacja ───────────────────────────────────────────────
-
-  private captureInlineAnimData(selected: ICubeCoords[], dir: ICubeCoords): IMarbleAnim[] {
-    const state = this.game.state;
-    const sorted = this.sortMarblesAlongDir(selected, dir);
-    const front = sorted[sorted.length - 1];
-    const anims: IMarbleAnim[] = [];
-
-    // Kulki przeciwnika (przesuwane / wypychane)
-    let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
-    while (this.isOnBoard(pushPos)) {
-      const key = cubeToNotation(pushPos);
-      const color = state.board[key];
-      if (!color || color === state.currentPlayer) break;
-
-      const newPos: ICubeCoords = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
-      anims.push({
-        fromX: pushPos.x, fromY: pushPos.y,
-        toX: newPos.x, toY: newPos.y,
-        color,
-        isDying: !this.isOnBoard(newPos)
-      });
-      pushPos = newPos;
-    }
-
-    // Własne kulki
-    for (const marble of sorted) {
-      const color = state.board[cubeToNotation(marble)] ?? state.currentPlayer;
-      anims.push({
-        fromX: marble.x, fromY: marble.y,
-        toX: marble.x + dir.x, toY: marble.y + dir.y,
-        color,
-        isDying: false
-      });
-    }
-
-    return anims;
-  }
-
-  private captureBroadsideAnimData(selected: ICubeCoords[], dir: ICubeCoords): IMarbleAnim[] {
-    const state = this.game.state;
-    const anims: IMarbleAnim[] = [];
-
-    for (const marble of selected) {
-      const color = state.board[cubeToNotation(marble)] ?? state.currentPlayer;
-      anims.push({
-        fromX: marble.x, fromY: marble.y,
-        toX: marble.x + dir.x, toY: marble.y + dir.y,
-        color,
-        isDying: false
-      });
-    }
-
-    return anims;
-  }
 
   private updateAnimation(): void {
     if (this.game.state.phase !== 'ANIMATING') return;
@@ -523,6 +466,7 @@ export class AbaloneGameWindowComponent
     }
 
     state.currentPlayer = state.currentPlayer === 'BLACK' ? 'WHITE' : 'BLACK';
+    this.resetInactivePlayerInput();
     state.selectedMarbles = [];
     state.possibleMoves = [];
     state.phase = 'SELECT';
@@ -556,5 +500,7 @@ export class AbaloneGameWindowComponent
     }
 
     ctx.restore();
+
+    drawCemetery(ctx, this.game.state, this._canvas.width, this._canvas.height, this._hexSize);
   }
 }
