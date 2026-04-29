@@ -25,7 +25,7 @@ export class SoccerState implements TGameState {
     y: this.height / 2,
     vx: 0,
     vy: 0,
-    radius: 20,
+    radius: 15,
     color: this.teamRedColor,
     speed: 5,
   };
@@ -35,7 +35,7 @@ export class SoccerState implements TGameState {
     y: this.height / 2,
     vx: 0,
     vy: 0,
-    radius: 20,
+    radius: 15,
     color: this.teamBlueColor,
     speed: 5,
   };

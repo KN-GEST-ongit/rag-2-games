@@ -133,8 +133,13 @@ export class SoccerGameWindowComponent
         this.resolveRectCollision(state.ball, post);
       });
 
-      this.checkPlayerBallCollision(state.player1, state.ball, 'red');
-      this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
+      if (Math.random() > 0.5) {
+        this.checkPlayerBallCollision(state.player1, state.ball, 'red');
+        this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
+      } else {
+        this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
+        this.checkPlayerBallCollision(state.player1, state.ball, 'red');
+      }
 
       this.checkBallWallCollision();
     }
@@ -395,25 +400,39 @@ export class SoccerGameWindowComponent
       const minOverlapX = Math.min(overlapLeft, overlapRight);
       const minOverlapY = Math.min(overlapTop, overlapBottom);
 
+      const speed1Sq = p1.vx * p1.vx + p1.vy * p1.vy;
+      const speed2Sq = p2.vx * p2.vx + p2.vy * p2.vy;
+
+      let ratio1 = 0.5;
+      let ratio2 = 0.5;
+
+      if (speed1Sq > 0 || speed2Sq > 0) {
+        const totalSpeedSq = speed1Sq + speed2Sq;
+        ratio1 = speed2Sq / totalSpeedSq;
+        ratio2 = speed1Sq / totalSpeedSq;
+      }
+
       if (minOverlapX < minOverlapY) {
-        const separation = minOverlapX / 2;
+        const separation1 = minOverlapX * ratio1;
+        const separation2 = minOverlapX * ratio2;
 
         if (overlapLeft < overlapRight) {
-          p1.x -= separation;
-          p2.x += separation;
+          p1.x -= separation1;
+          p2.x += separation2;
         } else {
-          p1.x += separation;
-          p2.x -= separation;
+          p1.x += separation1;
+          p2.x -= separation2;
         }
       } else {
-        const separation = minOverlapY / 2;
+        const separation1 = minOverlapY * ratio1;
+        const separation2 = minOverlapY * ratio2;
 
         if (overlapTop < overlapBottom) {
-          p1.y -= separation;
-          p2.y += separation;
+          p1.y -= separation1;
+          p2.y += separation2;
         } else {
-          p1.y += separation;
-          p2.y -= separation;
+          p1.y += separation1;
+          p2.y -= separation2;
         }
       }
     }
@@ -508,6 +527,12 @@ export class SoccerGameWindowComponent
 
         ball.vx += impulse * nx;
         ball.vy += impulse * ny;
+      }
+
+      const pDot = player.vx * nx + player.vy * ny;
+      if (pDot > 0) {
+        player.vx -= pDot * nx;
+        player.vy -= pDot * ny;
       }
     }
   }
