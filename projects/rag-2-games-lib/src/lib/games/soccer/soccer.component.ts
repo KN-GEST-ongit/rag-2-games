@@ -7,26 +7,23 @@ import { Soccer, SoccerState } from './models/soccer.class';
 import { IMovableEntity } from './models/soccer.object';
 import { IEntity } from './models/soccer.object';
 
-
 @Component({
   selector: 'app-soccer',
   standalone: true,
   imports: [CanvasComponent],
   template: `
-  <div>{{ game.state.scoreRed }}:{{ game.state.scoreBlue }}</div>
+    <div>{{ game.state.scoreRed }}:{{ game.state.scoreBlue }}</div>
 
-    <app-canvas
-      [displayMode]="'horizontal'"
-      #gameCanvas></app-canvas>
-    <b>FPS: {{ fps }}</b> `,
+    <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
+    <b>FPS: {{ fps }}</b>
+  `,
 })
 export class SoccerGameWindowComponent
   extends BaseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
-
   public override game!: Soccer;
-  
+
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Soccer;
@@ -42,13 +39,13 @@ export class SoccerGameWindowComponent
   public override restart(): void {
     const savedScoreRed = this.game.state.scoreRed;
     const savedScoreBlue = this.game.state.scoreBlue;
-    const savedKickoffTeam = this.game.state.kickoffTeam; 
+    const savedKickoffTeam = this.game.state.kickoffTeam;
 
     this.game.state = new SoccerState();
 
     this.game.state.scoreRed = savedScoreRed;
     this.game.state.scoreBlue = savedScoreBlue;
-    this.game.state.kickoffTeam = savedKickoffTeam; 
+    this.game.state.kickoffTeam = savedKickoffTeam;
   }
 
   protected override update(): void {
@@ -58,7 +55,7 @@ export class SoccerGameWindowComponent
       this.handleInput();
       this.physicsStep();
     }
-    
+
     this.render();
   }
 
@@ -86,152 +83,159 @@ export class SoccerGameWindowComponent
   private handleInput(): void {
     //gracz1
     const p1 = this.game.state.player1;
-    const mx1 = this.game.players[0].inputData['moveX'] as number;
-    const my1 = this.game.players[0].inputData['moveY'] as number;
+    const mx1 = (this.game.players[0].inputData['moveX'] as number) || 0;
+    const my1 = (this.game.players[0].inputData['moveY'] as number) || 0;
     this.applyMove(p1, mx1, my1);
 
     //gracz2
     if (this.game.players.length > 1) {
       const p2 = this.game.state.player2;
-      const mx2 = this.game.players[1].inputData['moveX'] as number;
-      const my2 = this.game.players[1].inputData['moveY'] as number;
-    this.applyMove(p2, mx2, my2);
+      const mx2 = (this.game.players[1].inputData['moveX'] as number) || 0;
+      const my2 = (this.game.players[1].inputData['moveY'] as number) || 0;
+      this.applyMove(p2, mx2, my2);
     }
   }
 
-  private applyMove(player: IMovableEntity, moveX: number, moveY: number): void {
+  private applyMove(
+    player: IMovableEntity,
+    moveX: number,
+    moveY: number
+  ): void {
     player.vx = moveX * player.speed;
-    player.vy = moveY * player.speed;;
-    
-    if (moveX !== 0 && moveY !== 0) {
-    const normalization = Math.SQRT1_2; 
-    player.vx *= normalization;
-    player.vy *= normalization;
-  }
+    player.vy = moveY * player.speed;
 
+    if (moveX !== 0 && moveY !== 0) {
+      const normalization = Math.SQRT1_2;
+      player.vx *= normalization;
+      player.vy *= normalization;
+    }
   }
 
   private physicsStep(): void {
     const state = this.game.state;
     const posts = this.getPosts();
 
-    const steps = 10; 
+    const steps = 10;
     const dt = 1 / steps;
 
     for (let i = 0; i < steps; i++) {
-        this.moveEntity(state.player1, 'red', dt);
-        this.moveEntity(state.player2, 'blue', dt);
+      this.moveEntity(state.player1, 'red', dt);
+      this.moveEntity(state.player2, 'blue', dt);
 
-        state.ball.x += state.ball.vx * dt;
-        state.ball.y += state.ball.vy * dt;
+      state.ball.x += state.ball.vx * dt;
+      state.ball.y += state.ball.vy * dt;
 
-        this.checkPlayersCollision(state.player1, state.player2);
+      this.checkPlayersCollision(state.player1, state.player2);
 
-        posts.forEach(post => {
-            this.resolveAABBCollision(state.player1, post);
-            this.resolveAABBCollision(state.player2, post);
-            this.resolveRectCollision(state.ball, post);
-        });
+      posts.forEach(post => {
+        this.resolveAABBCollision(state.player1, post);
+        this.resolveAABBCollision(state.player2, post);
+        this.resolveRectCollision(state.ball, post);
+      });
 
-        this.checkPlayerBallCollision(state.player1, state.ball, 'red');
-        this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
+      this.checkPlayerBallCollision(state.player1, state.ball, 'red');
+      this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
 
-        this.checkBallWallCollision();
+      this.checkBallWallCollision();
     }
 
     state.ball.vx *= state.friction;
     state.ball.vy *= state.friction;
   }
 
-  private moveEntity(entity: IMovableEntity, team: 'red' | 'blue', dt: number): void {
+  private moveEntity(
+    entity: IMovableEntity,
+    team: 'red' | 'blue',
+    dt: number
+  ): void {
     entity.x += entity.vx * dt;
-    entity.y += entity.vy * dt;  
+    entity.y += entity.vy * dt;
 
     if (entity.x < entity.radius) entity.x = entity.radius;
-    if (entity.x > this.game.state.width - entity.radius) entity.x = this.game.state.width - entity.radius;
+    if (entity.x > this.game.state.width - entity.radius)
+      entity.x = this.game.state.width - entity.radius;
     if (entity.y < entity.radius) entity.y = entity.radius;
-    if (entity.y > this.game.state.height - entity.radius) entity.y = this.game.state.height - entity.radius;
+    if (entity.y > this.game.state.height - entity.radius)
+      entity.y = this.game.state.height - entity.radius;
 
-    if (this.game.state.kickoffTeam !== null && this.game.state.kickoffTeam !== team) {
-        const midX = this.game.state.width / 2;
-        const midY = this.game.state.height / 2;
-        
-        if (team === 'red' && entity.x > midX - entity.radius) {
-            entity.x = midX - entity.radius;
-            entity.vx = 0;
-        }
-        if (team === 'blue' && entity.x < midX + entity.radius) {
-            entity.x = midX + entity.radius;
-            entity.vx = 0;
-        }
+    if (
+      this.game.state.kickoffTeam !== null &&
+      this.game.state.kickoffTeam !== team
+    ) {
+      const midX = this.game.state.width / 2;
+      const midY = this.game.state.height / 2;
 
-        const dx = entity.x - midX;
-        const dy = entity.y - midY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        const centerRadius = 50; 
-        const minAllowedDist = centerRadius + entity.radius;
+      if (team === 'red' && entity.x > midX - entity.radius) {
+        entity.x = midX - entity.radius;
+        entity.vx = 0;
+      }
+      if (team === 'blue' && entity.x < midX + entity.radius) {
+        entity.x = midX + entity.radius;
+        entity.vx = 0;
+      }
 
-        if (dist < minAllowedDist && dist > 0) {
-            const overlap = minAllowedDist - dist;
-            entity.x += (dx / dist) * overlap;
-            entity.y += (dy / dist) * overlap;
-        }
+      const dx = entity.x - midX;
+      const dy = entity.y - midY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const centerRadius = 50;
+      const minAllowedDist = centerRadius + entity.radius;
+
+      if (dist < minAllowedDist && dist > 0) {
+        const overlap = minAllowedDist - dist;
+        entity.x += (dx / dist) * overlap;
+        entity.y += (dy / dist) * overlap;
+      }
     }
-    
   }
 
   private getPosts(): { x: number; y: number; w: number; h: number }[] {
     const w = this.game.state.width;
     const h = this.game.state.height;
-    
-    const goalHeight = 145  ; 
-    const goalDepth = 40;   
-    
-    const postWidth = 40;   
+
+    const goalHeight = 145;
+    const goalDepth = 40;
+
+    const postWidth = 40;
     const postHeight = 5;
 
     const topY = (h - goalHeight) / 2;
     const bottomY = topY + goalHeight;
 
     return [
-      { x: goalDepth - postWidth, 
-        y: topY - postHeight - 5, 
-        w: postWidth, 
-        h: postHeight },
+      {
+        x: goalDepth - postWidth,
+        y: topY - postHeight - 5,
+        w: postWidth,
+        h: postHeight,
+      },
 
-      { x: goalDepth - postWidth, 
-        y: bottomY + 5, 
-        w: postWidth, 
-        h: postHeight },
+      { x: goalDepth - postWidth, y: bottomY + 5, w: postWidth, h: postHeight },
 
-      { x: w - goalDepth, 
-        y: topY - postHeight -5, 
-        w: postWidth, 
-        h: postHeight },
+      {
+        x: w - goalDepth,
+        y: topY - postHeight - 5,
+        w: postWidth,
+        h: postHeight,
+      },
 
-      { x: w - goalDepth, 
-        y: bottomY + 5, 
-        w: postWidth, 
-        h: postHeight }
+      { x: w - goalDepth, y: bottomY + 5, w: postWidth, h: postHeight },
     ];
   }
 
   private handleGoal(scorer: 'red' | 'blue'): void {
-      if (scorer === 'red') {
-        this.game.state.scoreRed++;
-        this.game.state.kickoffTeam = 'blue'; 
-      }
-
-      else {
-        this.game.state.scoreBlue++;
-        this.game.state.kickoffTeam = 'red'; 
-      }
-      this.restart();
+    if (scorer === 'red') {
+      this.game.state.scoreRed++;
+      this.game.state.kickoffTeam = 'blue';
+    } else {
+      this.game.state.scoreBlue++;
+      this.game.state.kickoffTeam = 'red';
+    }
+    this.restart();
   }
 
   private resolveRectCollision(
-    ball: IMovableEntity, 
+    ball: IMovableEntity,
     rect: { x: number; y: number; w: number; h: number }
   ): void {
     const closestX = Math.max(rect.x, Math.min(ball.x, rect.x + rect.w));
@@ -239,41 +243,41 @@ export class SoccerGameWindowComponent
 
     const dx = ball.x - closestX;
     const dy = ball.y - closestY;
-    
+
     const distSq = dx * dx + dy * dy;
 
     if (distSq >= ball.radius * ball.radius && distSq !== 0) {
-        return;
+      return;
     }
 
     if (distSq === 0) {
-        const dLeft = ball.x - rect.x;
-        const dRight = (rect.x + rect.w) - ball.x;
-        const dTop = ball.y - rect.y;
-        const dBottom = (rect.y + rect.h) - ball.y;
+      const dLeft = ball.x - rect.x;
+      const dRight = rect.x + rect.w - ball.x;
+      const dTop = ball.y - rect.y;
+      const dBottom = rect.y + rect.h - ball.y;
 
-        const min = Math.min(dLeft, dRight, dTop, dBottom);
-        const bounciness = this.game.state.wallBounciness;
+      const min = Math.min(dLeft, dRight, dTop, dBottom);
+      const bounciness = this.game.state.wallBounciness;
 
-        if (min === dLeft) { 
-             ball.x = rect.x - ball.radius; 
-             ball.vx = -Math.abs(ball.vx) * bounciness; 
-        } else if (min === dRight) { 
-             ball.x = rect.x + rect.w + ball.radius; 
-             ball.vx = Math.abs(ball.vx) * bounciness; 
-        } else if (min === dTop) { 
-             ball.y = rect.y - ball.radius; 
-             ball.vy = -Math.abs(ball.vy) * bounciness; 
-        } else { 
-             ball.y = rect.y + rect.h + ball.radius; 
-             ball.vy = Math.abs(ball.vy) * bounciness; 
-        }
-        return; 
+      if (min === dLeft) {
+        ball.x = rect.x - ball.radius;
+        ball.vx = -Math.abs(ball.vx) * bounciness;
+      } else if (min === dRight) {
+        ball.x = rect.x + rect.w + ball.radius;
+        ball.vx = Math.abs(ball.vx) * bounciness;
+      } else if (min === dTop) {
+        ball.y = rect.y - ball.radius;
+        ball.vy = -Math.abs(ball.vy) * bounciness;
+      } else {
+        ball.y = rect.y + rect.h + ball.radius;
+        ball.vy = Math.abs(ball.vy) * bounciness;
+      }
+      return;
     }
 
     const dist = Math.sqrt(distSq);
     const overlap = ball.radius - dist;
-    
+
     const nx = dx / dist;
     const ny = dy / dist;
 
@@ -282,12 +286,17 @@ export class SoccerGameWindowComponent
 
     const dotProduct = ball.vx * nx + ball.vy * ny;
     if (dotProduct < 0) {
-        ball.vx = (ball.vx - 2 * dotProduct * nx) * this.game.state.wallBounciness;
-        ball.vy = (ball.vy - 2 * dotProduct * ny) * this.game.state.wallBounciness;
+      ball.vx =
+        (ball.vx - 2 * dotProduct * nx) * this.game.state.wallBounciness;
+      ball.vy =
+        (ball.vy - 2 * dotProduct * ny) * this.game.state.wallBounciness;
     }
   }
 
-  private resolveAABBCollision(player: IMovableEntity, rect: { x: number; y: number; w: number; h: number }): void {
+  private resolveAABBCollision(
+    player: IMovableEntity,
+    rect: { x: number; y: number; w: number; h: number }
+  ): void {
     const r = player.radius;
     const pLeft = player.x - r;
     const pRight = player.x + r;
@@ -305,7 +314,12 @@ export class SoccerGameWindowComponent
       const overlapTop = pBottom - rTop;
       const overlapBottom = rBottom - pTop;
 
-      const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+      const minOverlap = Math.min(
+        overlapLeft,
+        overlapRight,
+        overlapTop,
+        overlapBottom
+      );
 
       if (minOverlap === overlapLeft) player.x -= overlapLeft;
       else if (minOverlap === overlapRight) player.x += overlapRight;
@@ -321,35 +335,35 @@ export class SoccerGameWindowComponent
     const r = ball.radius;
     const wallBounce = -this.game.state.wallBounciness;
 
-    if (ball.y - r < 0) { 
-      ball.y = r; 
-      ball.vy *= wallBounce; 
+    if (ball.y - r < 0) {
+      ball.y = r;
+      ball.vy *= wallBounce;
     }
 
-    if (ball.y + r > h) { 
-      ball.y = h - r; 
-      ball.vy *= wallBounce; 
+    if (ball.y + r > h) {
+      ball.y = h - r;
+      ball.vy *= wallBounce;
     }
 
-    const goalTop = (h / 2) - 80;
-    const goalBottom = (h / 2) + 80;
+    const goalTop = h / 2 - 80;
+    const goalBottom = h / 2 + 80;
 
     if (ball.x - r < 0) {
-        if (ball.y > goalTop && ball.y < goalBottom) {
-          this.handleGoal('blue');
-        } else { 
-          ball.x = r; 
-          ball.vx *= wallBounce; 
-        }
+      if (ball.y > goalTop && ball.y < goalBottom) {
+        this.handleGoal('blue');
+      } else {
+        ball.x = r;
+        ball.vx *= wallBounce;
+      }
     }
-    
+
     if (ball.x + r > w) {
-        if (ball.y > goalTop && ball.y < goalBottom) {
-          this.handleGoal('red');
-        } else { 
-          ball.x = w - r; 
-          ball.vx *= wallBounce; 
-        }
+      if (ball.y > goalTop && ball.y < goalBottom) {
+        this.handleGoal('red');
+      } else {
+        ball.x = w - r;
+        ball.vx *= wallBounce;
+      }
     }
   }
 
@@ -367,9 +381,12 @@ export class SoccerGameWindowComponent
     const p2Top = p2.y - r2;
     const p2Bottom = p2.y + r2;
 
-    if (p1Left < p2Right && p1Right > p2Left &&
-        p1Top < p2Bottom && p1Bottom > p2Top) {
-
+    if (
+      p1Left < p2Right &&
+      p1Right > p2Left &&
+      p1Top < p2Bottom &&
+      p1Bottom > p2Top
+    ) {
       const overlapLeft = p1Right - p2Left;
       const overlapRight = p2Right - p1Left;
       const overlapTop = p1Bottom - p2Top;
@@ -380,52 +397,60 @@ export class SoccerGameWindowComponent
 
       if (minOverlapX < minOverlapY) {
         const separation = minOverlapX / 2;
-        
+
         if (overlapLeft < overlapRight) {
-           p1.x -= separation;
-           p2.x += separation;
+          p1.x -= separation;
+          p2.x += separation;
         } else {
-           p1.x += separation;
-           p2.x -= separation;
+          p1.x += separation;
+          p2.x -= separation;
         }
       } else {
         const separation = minOverlapY / 2;
 
         if (overlapTop < overlapBottom) {
-           p1.y -= separation;
-           p2.y += separation;
+          p1.y -= separation;
+          p2.y += separation;
         } else {
-           p1.y += separation;
-           p2.y -= separation;
+          p1.y += separation;
+          p2.y -= separation;
         }
       }
     }
   }
 
-  private checkPlayerBallCollision(player: IMovableEntity, ball: IMovableEntity, team: 'red' | 'blue'): void {
-    if (this.game.state.kickoffTeam !== null && this.game.state.kickoffTeam !== team) {
-        return; 
+  private checkPlayerBallCollision(
+    player: IMovableEntity,
+    ball: IMovableEntity,
+    team: 'red' | 'blue'
+  ): void {
+    if (
+      this.game.state.kickoffTeam !== null &&
+      this.game.state.kickoffTeam !== team
+    ) {
+      return;
     }
 
-    const halfSize = player.radius; 
-    
+    const halfSize = player.radius;
+
     let testX = ball.x;
     let testY = ball.y;
 
-    if (ball.x < player.x - halfSize) testX = player.x - halfSize;      // lewa
+    if (ball.x < player.x - halfSize)
+      testX = player.x - halfSize; // lewa
     else if (ball.x > player.x + halfSize) testX = player.x + halfSize; // prawa
 
-    if (ball.y < player.y - halfSize) testY = player.y - halfSize;      // gorna 
+    if (ball.y < player.y - halfSize)
+      testY = player.y - halfSize; // gorna
     else if (ball.y > player.y + halfSize) testY = player.y + halfSize; // dolna
 
     const distX = ball.x - testX;
     const distY = ball.y - testY;
-    const distance = Math.sqrt((distX * distX) + (distY * distY));
+    const distance = Math.sqrt(distX * distX + distY * distY);
 
     if (distance <= ball.radius) {
-      
       if (this.game.state.kickoffTeam === team) {
-          this.game.state.kickoffTeam = null;
+        this.game.state.kickoffTeam = null;
       }
 
       let nx = 0;
@@ -433,32 +458,34 @@ export class SoccerGameWindowComponent
       let penetration = 0;
 
       if (distance === 0) {
-          const distLeft = ball.x - (player.x - halfSize);
-          const distRight = (player.x + halfSize) - ball.x;
-          const distTop = ball.y - (player.y - halfSize);
-          const distBottom = (player.y + halfSize) - ball.y;
+        const distLeft = ball.x - (player.x - halfSize);
+        const distRight = player.x + halfSize - ball.x;
+        const distTop = ball.y - (player.y - halfSize);
+        const distBottom = player.y + halfSize - ball.y;
 
-          const min = Math.min(distLeft, distRight, distTop, distBottom);
+        const min = Math.min(distLeft, distRight, distTop, distBottom);
 
-          if (min === distLeft) { 
-            nx = -1; ny = 0; 
-            penetration = ball.radius + distLeft; 
-          }
-          else if (min === distRight) { 
-            nx = 1; ny = 0; 
-            penetration = ball.radius + distRight; 
-          }
-          else if (min === distTop) { 
-            nx = 0; ny = -1; 
-            penetration = ball.radius + distTop; 
-          }
-          else { nx = 0; ny = 1; 
-            penetration = ball.radius + distBottom; 
-          }
+        if (min === distLeft) {
+          nx = -1;
+          ny = 0;
+          penetration = ball.radius + distLeft;
+        } else if (min === distRight) {
+          nx = 1;
+          ny = 0;
+          penetration = ball.radius + distRight;
+        } else if (min === distTop) {
+          nx = 0;
+          ny = -1;
+          penetration = ball.radius + distTop;
+        } else {
+          nx = 0;
+          ny = 1;
+          penetration = ball.radius + distBottom;
+        }
       } else {
-          nx = distX / distance;
-          ny = distY / distance;
-          penetration = ball.radius - distance;
+        nx = distX / distance;
+        ny = distY / distance;
+        penetration = ball.radius - distance;
       }
 
       const ballPush = 0.8;
@@ -471,23 +498,27 @@ export class SoccerGameWindowComponent
       player.y -= ny * (penetration * playerPush);
 
       const bounce = 0.5;
-      
+
       const rvx = ball.vx - player.vx;
       const rvy = ball.vy - player.vy;
       const velAlongNormal = rvx * nx + rvy * ny;
 
       if (velAlongNormal < 0) {
-          const impulse = -(1 + bounce) * velAlongNormal;
-          
-          ball.vx += impulse * nx;
-          ball.vy += impulse * ny;
+        const impulse = -(1 + bounce) * velAlongNormal;
+
+        ball.vx += impulse * nx;
+        ball.vy += impulse * ny;
       }
     }
   }
 
-  private drawGoals(context: CanvasRenderingContext2D, w: number, h: number): void {
+  private drawGoals(
+    context: CanvasRenderingContext2D,
+    w: number,
+    h: number
+  ): void {
     const goalHeight = 160;
-    const goalDepth = 40; 
+    const goalDepth = 40;
     const topY = (h - goalHeight) / 2;
     const bottomY = topY + goalHeight;
 
@@ -497,68 +528,72 @@ export class SoccerGameWindowComponent
     context.strokeStyle = this.game.state.teamRedColor;
 
     context.beginPath();
-    context.moveTo(0, topY);           
-    context.lineTo(goalDepth, topY);   
+    context.moveTo(0, topY);
+    context.lineTo(goalDepth, topY);
     context.lineTo(goalDepth, bottomY);
-    context.lineTo(0, bottomY);        
+    context.lineTo(0, bottomY);
     context.stroke();
 
     //prawa
     context.strokeStyle = this.game.state.teamBlueColor;
 
     context.beginPath();
-    context.moveTo(w, topY);              
-    context.lineTo(w - goalDepth, topY);  
+    context.moveTo(w, topY);
+    context.lineTo(w - goalDepth, topY);
     context.lineTo(w - goalDepth, bottomY);
-    context.lineTo(w, bottomY);           
+    context.lineTo(w, bottomY);
     context.stroke();
-    
-    const gridSize = 8; 
+
+    const gridSize = 8;
     context.lineWidth = 1;
-    context.strokeStyle = 'rgba(0, 0, 0, 0.4)'; 
+    context.strokeStyle = 'rgba(0, 0, 0, 0.4)';
     context.beginPath();
 
     for (let x = 0; x <= goalDepth; x += gridSize) {
-        context.moveTo(x, topY);
-        context.lineTo(x, bottomY);
+      context.moveTo(x, topY);
+      context.lineTo(x, bottomY);
     }
     for (let y = topY; y <= bottomY; y += gridSize) {
-        context.moveTo(0, y);
-        context.lineTo(goalDepth, y);
+      context.moveTo(0, y);
+      context.lineTo(goalDepth, y);
     }
 
     for (let x = w - goalDepth; x <= w; x += gridSize) {
-        context.moveTo(x, topY);
-        context.lineTo(x, bottomY);
+      context.moveTo(x, topY);
+      context.lineTo(x, bottomY);
     }
     for (let y = topY; y <= bottomY; y += gridSize) {
-        context.moveTo(w - goalDepth, y);
-        context.lineTo(w, y);
+      context.moveTo(w - goalDepth, y);
+      context.lineTo(w, y);
     }
     context.stroke();
-
-
-    
   }
 
-  private drawEntity(context: CanvasRenderingContext2D, entity: IMovableEntity): void {
+  private drawEntity(
+    context: CanvasRenderingContext2D,
+    entity: IMovableEntity
+  ): void {
     const sideLength = entity.radius * 2;
     const topLeftX = entity.x - entity.radius;
     const topLeftY = entity.y - entity.radius;
 
     context.fillStyle = entity.color;
     context.fillRect(topLeftX, topLeftY, sideLength, sideLength);
-    context.strokeStyle = '#000000'; 
+    context.strokeStyle = '#000000';
     context.lineWidth = 2;
     context.strokeRect(topLeftX, topLeftY, sideLength, sideLength);
   }
 
-  private drawPitchLines(context: CanvasRenderingContext2D, w: number, h: number): void {
+  private drawPitchLines(
+    context: CanvasRenderingContext2D,
+    w: number,
+    h: number
+  ): void {
     context.strokeStyle = '#474545';
     context.lineWidth = 3;
-    
+
     context.strokeRect(0, 0, w, h);
-    
+
     context.beginPath();
     context.moveTo(w / 2, 0);
     context.lineTo(w / 2, h);
@@ -569,22 +604,25 @@ export class SoccerGameWindowComponent
     context.arc(w / 2, h / 2, centerRadius, 0, Math.PI * 2);
     context.stroke();
 
-    const dotRadius = 6; 
+    const dotRadius = 6;
     context.beginPath();
     context.arc(w / 2, h / 2, dotRadius, 0, Math.PI * 2);
-    context.fillStyle = '#474545'; 
+    context.fillStyle = '#474545';
     context.fill();
 
-    const penaltyWidth = 125;  
-    const penaltyHeight = 250; 
-    const penaltyY = (h - penaltyHeight) / 2; 
+    const penaltyWidth = 125;
+    const penaltyHeight = 250;
+    const penaltyY = (h - penaltyHeight) / 2;
 
     context.strokeRect(0, penaltyY, penaltyWidth, penaltyHeight);
 
     context.strokeRect(w - penaltyWidth, penaltyY, penaltyWidth, penaltyHeight);
   }
 
-  private drawBall(context: CanvasRenderingContext2D, ball: IMovableEntity): void {
+  private drawBall(
+    context: CanvasRenderingContext2D,
+    ball: IMovableEntity
+  ): void {
     context.beginPath();
     context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     context.fillStyle = ball.color;
@@ -592,6 +630,5 @@ export class SoccerGameWindowComponent
     context.strokeStyle = 'black';
     context.lineWidth = 2;
     context.stroke();
-
   }
-} 
+}
