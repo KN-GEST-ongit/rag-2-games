@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
-import { BaseGameWindowComponent } from '../base-game.component';
 import { CrossyRoad, CrossyRoadState } from './models/crossyroad.class';
 import { CrossyRoadRenderer } from './models/crossyroad.renderer';
 import { ILane } from './models/crossyroad.interfaces';
+
+import { Base3DGameWindowComponent } from '../../engine-3d/base-3d-game.component';
+import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
 
 @Component({
   selector: 'app-crossyroad',
   standalone: true,
   imports: [CanvasComponent],
   template: `<div>
-    Score: <b>{{ game.state.score }}</b> |
+    Score: <b>{{ game.state.score }}</b> | 
     Best: <b>{{ game.state.highestZ }}</b>
   </div>
     <app-canvas
@@ -23,31 +25,20 @@ import { ILane } from './models/crossyroad.interfaces';
     <b>FPS: {{ fps }}</b>
   `,
 })
-export class CrossyRoadGameWindowComponent
-  extends BaseGameWindowComponent
-  implements OnInit, AfterViewInit, OnDestroy
-{
+export class CrossyRoadGameWindowComponent extends Base3DGameWindowComponent implements OnInit {
   public override game!: CrossyRoad;
-  private renderer3D?: CrossyRoadRenderer;
+  
+  protected override renderer3D?: CrossyRoadRenderer;
 
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as CrossyRoad;
   }
 
-  public override ngAfterViewInit(): void {
-    super.ngAfterViewInit();
-    setTimeout(() => {
-      this.initBabylon();
-    }, 300);
-  }
-
-  private initBabylon(): void {
-    try {
-      this.renderer3D = new CrossyRoadRenderer(this._canvas);
-    } catch (error) {
-      console.error('Babylon.js initialization failed: ', error);
-    }
+  protected override createRenderer(canvas: HTMLCanvasElement): Base3DRenderer {
+    const renderer = new CrossyRoadRenderer(canvas);
+    this.renderer3D = renderer;
+    return renderer;
   }
 
   public override restart(): void {
@@ -62,7 +53,7 @@ export class CrossyRoadGameWindowComponent
     if (savedHighScore) {
       state.highestZ = parseInt(savedHighScore, 10);
     }
-
+    
     for (const lane of state.lanes) {
       if (lane.z > 3) {
         if (Math.random() > 0.7) {
@@ -411,13 +402,6 @@ export class CrossyRoadGameWindowComponent
           state.deathReason = 'Better stay in safe area!';
         }
       }
-    }
-  }
-
-  public override ngOnDestroy(): void {
-    super.ngOnDestroy();
-    if (this.renderer3D) {
-      this.renderer3D.dispose();
     }
   }
 }
