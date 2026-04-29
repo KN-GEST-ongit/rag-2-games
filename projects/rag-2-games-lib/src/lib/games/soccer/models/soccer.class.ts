@@ -79,7 +79,7 @@ export class Soccer extends Game {
     new Player(
       0,
       true,
-      'Player 1 (Red)',
+      'Player 1',
       { moveX: 0, moveY: 0, kick: 0 },
       {
         w: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
@@ -95,7 +95,7 @@ export class Soccer extends Game {
     new Player(
       1,
       true,
-      'Player 2 (Blue)',
+      'Player 2',
       { moveX: 0, moveY: 0, kick: 0 },
       {
         ArrowUp: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },

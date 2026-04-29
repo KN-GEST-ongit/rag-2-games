@@ -561,8 +561,8 @@ export class SoccerGameWindowComponent
         penetration = minDist - distance;
       }
 
-      const ballPush = 0.85;
-      const playerPush = 0.15;
+      const ballPush = isKicking ? 1.0 : 0.85;
+      const playerPush = isKicking ? 0 : 0.15;
 
       ball.x += nx * (penetration * ballPush);
       ball.y += ny * (penetration * ballPush);
