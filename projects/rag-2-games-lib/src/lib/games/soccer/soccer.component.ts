@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
@@ -23,6 +25,8 @@ export class SoccerGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
   public override game!: Soccer;
+  private p1Kicking: boolean = false;
+  private p2Kicking: boolean = false;
 
   public override ngOnInit(): void {
     super.ngOnInit();
@@ -85,6 +89,9 @@ export class SoccerGameWindowComponent
     const p1 = this.game.state.player1;
     const mx1 = (this.game.players[0].inputData['moveX'] as number) || 0;
     const my1 = (this.game.players[0].inputData['moveY'] as number) || 0;
+
+    this.p1Kicking = (this.game.players[0].inputData['kick'] as number) === 1;
+
     this.applyMove(p1, mx1, my1);
 
     //gracz2
@@ -92,6 +99,9 @@ export class SoccerGameWindowComponent
       const p2 = this.game.state.player2;
       const mx2 = (this.game.players[1].inputData['moveX'] as number) || 0;
       const my2 = (this.game.players[1].inputData['moveY'] as number) || 0;
+
+      this.p2Kicking = (this.game.players[1].inputData['kick'] as number) === 1;
+
       this.applyMove(p2, mx2, my2);
     }
   }
@@ -134,11 +144,31 @@ export class SoccerGameWindowComponent
       });
 
       if (Math.random() > 0.5) {
-        this.checkPlayerBallCollision(state.player1, state.ball, 'red');
-        this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
+        this.checkPlayerBallCollision(
+          state.player1,
+          state.ball,
+          'red',
+          this.p1Kicking
+        );
+        this.checkPlayerBallCollision(
+          state.player2,
+          state.ball,
+          'blue',
+          this.p2Kicking
+        );
       } else {
-        this.checkPlayerBallCollision(state.player2, state.ball, 'blue');
-        this.checkPlayerBallCollision(state.player1, state.ball, 'red');
+        this.checkPlayerBallCollision(
+          state.player2,
+          state.ball,
+          'blue',
+          this.p2Kicking
+        );
+        this.checkPlayerBallCollision(
+          state.player1,
+          state.ball,
+          'red',
+          this.p1Kicking
+        );
       }
 
       this.checkBallWallCollision();
@@ -373,75 +403,31 @@ export class SoccerGameWindowComponent
   }
 
   private checkPlayersCollision(p1: IMovableEntity, p2: IMovableEntity): void {
-    const r1 = p1.radius;
-    const r2 = p2.radius;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const minDist = p1.radius + p2.radius;
 
-    const p1Left = p1.x - r1;
-    const p1Right = p1.x + r1;
-    const p1Top = p1.y - r1;
-    const p1Bottom = p1.y + r1;
+    if (distance < minDist && distance > 0) {
+      const penetration = minDist - distance;
+      const nx = dx / distance;
+      const ny = dy / distance;
 
-    const p2Left = p2.x - r2;
-    const p2Right = p2.x + r2;
-    const p2Top = p2.y - r2;
-    const p2Bottom = p2.y + r2;
+      const push = penetration * 0.5;
 
-    if (
-      p1Left < p2Right &&
-      p1Right > p2Left &&
-      p1Top < p2Bottom &&
-      p1Bottom > p2Top
-    ) {
-      const overlapLeft = p1Right - p2Left;
-      const overlapRight = p2Right - p1Left;
-      const overlapTop = p1Bottom - p2Top;
-      const overlapBottom = p2Bottom - p1Top;
+      p1.x -= nx * push;
+      p1.y -= ny * push;
 
-      const minOverlapX = Math.min(overlapLeft, overlapRight);
-      const minOverlapY = Math.min(overlapTop, overlapBottom);
-
-      const speed1Sq = p1.vx * p1.vx + p1.vy * p1.vy;
-      const speed2Sq = p2.vx * p2.vx + p2.vy * p2.vy;
-
-      let ratio1 = 0.5;
-      let ratio2 = 0.5;
-
-      if (speed1Sq > 0 || speed2Sq > 0) {
-        const totalSpeedSq = speed1Sq + speed2Sq;
-        ratio1 = speed2Sq / totalSpeedSq;
-        ratio2 = speed1Sq / totalSpeedSq;
-      }
-
-      if (minOverlapX < minOverlapY) {
-        const separation1 = minOverlapX * ratio1;
-        const separation2 = minOverlapX * ratio2;
-
-        if (overlapLeft < overlapRight) {
-          p1.x -= separation1;
-          p2.x += separation2;
-        } else {
-          p1.x += separation1;
-          p2.x -= separation2;
-        }
-      } else {
-        const separation1 = minOverlapY * ratio1;
-        const separation2 = minOverlapY * ratio2;
-
-        if (overlapTop < overlapBottom) {
-          p1.y -= separation1;
-          p2.y += separation2;
-        } else {
-          p1.y += separation1;
-          p2.y -= separation2;
-        }
-      }
+      p2.x += nx * push;
+      p2.y += ny * push;
     }
   }
 
   private checkPlayerBallCollision(
     player: IMovableEntity,
     ball: IMovableEntity,
-    team: 'red' | 'blue'
+    team: 'red' | 'blue',
+    isKicking: boolean = false
   ): void {
     if (
       this.game.state.kickoffTeam !== null &&
@@ -450,24 +436,12 @@ export class SoccerGameWindowComponent
       return;
     }
 
-    const halfSize = player.radius;
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const minDist = ball.radius + player.radius;
 
-    let testX = ball.x;
-    let testY = ball.y;
-
-    if (ball.x < player.x - halfSize)
-      testX = player.x - halfSize; // lewa
-    else if (ball.x > player.x + halfSize) testX = player.x + halfSize; // prawa
-
-    if (ball.y < player.y - halfSize)
-      testY = player.y - halfSize; // gorna
-    else if (ball.y > player.y + halfSize) testY = player.y + halfSize; // dolna
-
-    const distX = ball.x - testX;
-    const distY = ball.y - testY;
-    const distance = Math.sqrt(distX * distX + distY * distY);
-
-    if (distance <= ball.radius) {
+    if (distance <= minDist) {
       if (this.game.state.kickoffTeam === team) {
         this.game.state.kickoffTeam = null;
       }
@@ -477,38 +451,17 @@ export class SoccerGameWindowComponent
       let penetration = 0;
 
       if (distance === 0) {
-        const distLeft = ball.x - (player.x - halfSize);
-        const distRight = player.x + halfSize - ball.x;
-        const distTop = ball.y - (player.y - halfSize);
-        const distBottom = player.y + halfSize - ball.y;
-
-        const min = Math.min(distLeft, distRight, distTop, distBottom);
-
-        if (min === distLeft) {
-          nx = -1;
-          ny = 0;
-          penetration = ball.radius + distLeft;
-        } else if (min === distRight) {
-          nx = 1;
-          ny = 0;
-          penetration = ball.radius + distRight;
-        } else if (min === distTop) {
-          nx = 0;
-          ny = -1;
-          penetration = ball.radius + distTop;
-        } else {
-          nx = 0;
-          ny = 1;
-          penetration = ball.radius + distBottom;
-        }
+        nx = 1;
+        ny = 0;
+        penetration = minDist;
       } else {
-        nx = distX / distance;
-        ny = distY / distance;
-        penetration = ball.radius - distance;
+        nx = dx / distance;
+        ny = dy / distance;
+        penetration = minDist - distance;
       }
 
-      const ballPush = 0.8;
-      const playerPush = 0.2;
+      const ballPush = 0.85;
+      const playerPush = 0.15;
 
       ball.x += nx * (penetration * ballPush);
       ball.y += ny * (penetration * ballPush);
@@ -516,23 +469,31 @@ export class SoccerGameWindowComponent
       player.x -= nx * (penetration * playerPush);
       player.y -= ny * (penetration * playerPush);
 
-      const bounce = 0.5;
+      const bounce = 0.0;
 
       const rvx = ball.vx - player.vx;
       const rvy = ball.vy - player.vy;
       const velAlongNormal = rvx * nx + rvy * ny;
 
       if (velAlongNormal < 0) {
-        const impulse = -(1 + bounce) * velAlongNormal;
+        const impulse = -(1 + bounce) * velAlongNormal * 0.1;
 
-        ball.vx += impulse * nx;
-        ball.vy += impulse * ny;
+        ball.vx += impulse * ballPush * nx;
+        ball.vy += impulse * ballPush * ny;
+
+        player.vx -= impulse * playerPush * nx;
+        player.vy -= impulse * playerPush * ny;
       }
 
-      const pDot = player.vx * nx + player.vy * ny;
-      if (pDot > 0) {
-        player.vx -= pDot * nx;
-        player.vy -= pDot * ny;
+      if (isKicking) {
+        const kickBoost = this.game.state.kickPower * 2.5;
+        const currentSpeedInKickDirection = ball.vx * nx + ball.vy * ny;
+
+        if (currentSpeedInKickDirection < kickBoost) {
+          const force = kickBoost - Math.max(0, currentSpeedInKickDirection);
+          ball.vx += nx * force;
+          ball.vy += ny * force;
+        }
       }
     }
   }
@@ -598,15 +559,13 @@ export class SoccerGameWindowComponent
     context: CanvasRenderingContext2D,
     entity: IMovableEntity
   ): void {
-    const sideLength = entity.radius * 2;
-    const topLeftX = entity.x - entity.radius;
-    const topLeftY = entity.y - entity.radius;
-
+    context.beginPath();
+    context.arc(entity.x, entity.y, entity.radius, 0, Math.PI * 2);
     context.fillStyle = entity.color;
-    context.fillRect(topLeftX, topLeftY, sideLength, sideLength);
+    context.fill();
     context.strokeStyle = '#000000';
     context.lineWidth = 2;
-    context.strokeRect(topLeftX, topLeftY, sideLength, sideLength);
+    context.stroke();
   }
 
   private drawPitchLines(

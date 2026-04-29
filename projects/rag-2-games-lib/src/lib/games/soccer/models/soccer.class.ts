@@ -25,9 +25,9 @@ export class SoccerState implements TGameState {
     y: this.height / 2,
     vx: 0,
     vy: 0,
-    radius: 15,
+    radius: 20,
     color: this.teamRedColor,
-    speed: 5,
+    speed: 3,
   };
 
   public player2: IMovableEntity = {
@@ -35,9 +35,9 @@ export class SoccerState implements TGameState {
     y: this.height / 2,
     vx: 0,
     vy: 0,
-    radius: 15,
+    radius: 20,
     color: this.teamBlueColor,
-    speed: 5,
+    speed: 3,
   };
 
   public ball: IMovableEntity = {
