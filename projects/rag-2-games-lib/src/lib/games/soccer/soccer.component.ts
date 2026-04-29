@@ -186,19 +186,61 @@ export class SoccerGameWindowComponent
     entity.x += entity.vx * dt;
     entity.y += entity.vy * dt;
 
-    if (entity.x < entity.radius) entity.x = entity.radius;
-    if (entity.x > this.game.state.width - entity.radius)
-      entity.x = this.game.state.width - entity.radius;
-    if (entity.y < entity.radius) entity.y = entity.radius;
-    if (entity.y > this.game.state.height - entity.radius)
-      entity.y = this.game.state.height - entity.radius;
+    const marginX = 40;
+    const marginY = 40;
+    const h = this.game.state.height;
+    const w = this.game.state.width;
+    const goalTop = h / 2 - 80;
+    const goalBottom = h / 2 + 80;
+
+    let minX = marginX;
+    let maxX = w - marginX;
+
+    if (
+      entity.y > goalTop + entity.radius &&
+      entity.y < goalBottom - entity.radius
+    ) {
+      minX = 0;
+      maxX = w;
+    }
+
+    if (entity.x < minX + entity.radius) entity.x = minX + entity.radius;
+    if (entity.x > maxX - entity.radius) entity.x = maxX - entity.radius;
+
+    if (entity.y < marginY + entity.radius) entity.y = marginY + entity.radius;
+    if (entity.y > h - marginY - entity.radius)
+      entity.y = h - marginY - entity.radius;
+
+    const cornerR = 120;
+    let cx = -1;
+    let cy = -1;
+
+    if (entity.x < marginX + cornerR) cx = marginX + cornerR;
+    else if (entity.x > w - marginX - cornerR) cx = w - marginX - cornerR;
+
+    if (entity.y < marginY + cornerR) cy = marginY + cornerR;
+    else if (entity.y > h - marginY - cornerR) cy = h - marginY - cornerR;
+
+    if (cx !== -1 && cy !== -1) {
+      const dx = entity.x - cx;
+      const dy = entity.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = cornerR - entity.radius;
+
+      if (dist > maxDist && dist > 0) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        entity.x = cx + nx * maxDist;
+        entity.y = cy + ny * maxDist;
+      }
+    }
 
     if (
       this.game.state.kickoffTeam !== null &&
       this.game.state.kickoffTeam !== team
     ) {
-      const midX = this.game.state.width / 2;
-      const midY = this.game.state.height / 2;
+      const midX = w / 2;
+      const midY = h / 2;
 
       if (team === 'red' && entity.x > midX - entity.radius) {
         entity.x = midX - entity.radius;
@@ -370,33 +412,88 @@ export class SoccerGameWindowComponent
     const r = ball.radius;
     const wallBounce = -this.game.state.wallBounciness;
 
-    if (ball.y - r < 0) {
-      ball.y = r;
+    const marginX = 40;
+    const marginY = 40;
+    const cornerR = 120;
+
+    let cx = -1;
+    let cy = -1;
+
+    if (ball.x < marginX + cornerR) cx = marginX + cornerR;
+    else if (ball.x > w - marginX - cornerR) cx = w - marginX - cornerR;
+
+    if (ball.y < marginY + cornerR) cy = marginY + cornerR;
+    else if (ball.y > h - marginY - cornerR) cy = h - marginY - cornerR;
+
+    if (cx !== -1 && cy !== -1) {
+      const dx = ball.x - cx;
+      const dy = ball.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = cornerR - r;
+
+      if (dist > maxDist && dist > 0) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        ball.x = cx + nx * maxDist;
+        ball.y = cy + ny * maxDist;
+
+        const dot = ball.vx * nx + ball.vy * ny;
+        if (dot > 0) {
+          ball.vx = (ball.vx - 2 * dot * nx) * Math.abs(wallBounce);
+          ball.vy = (ball.vy - 2 * dot * ny) * Math.abs(wallBounce);
+        }
+      }
+    }
+
+    if (ball.y - r < marginY) {
+      ball.y = marginY + r;
       ball.vy *= wallBounce;
     }
 
-    if (ball.y + r > h) {
-      ball.y = h - r;
+    if (ball.y + r > h - marginY) {
+      ball.y = h - marginY - r;
       ball.vy *= wallBounce;
     }
 
     const goalTop = h / 2 - 80;
     const goalBottom = h / 2 + 80;
 
-    if (ball.x - r < 0) {
+    //lewa
+    if (ball.x - r < marginX) {
       if (ball.y > goalTop && ball.y < goalBottom) {
-        this.handleGoal('blue');
+        if (ball.y - r < goalTop) {
+          ball.y = goalTop + r;
+          ball.vy *= wallBounce;
+        } else if (ball.y + r > goalBottom) {
+          ball.y = goalBottom - r;
+          ball.vy *= wallBounce;
+        }
+
+        if (ball.x < 0) {
+          this.handleGoal('blue');
+        }
       } else {
-        ball.x = r;
+        ball.x = marginX + r;
         ball.vx *= wallBounce;
       }
     }
 
-    if (ball.x + r > w) {
+    //prawa
+    if (ball.x + r > w - marginX) {
       if (ball.y > goalTop && ball.y < goalBottom) {
-        this.handleGoal('red');
+        if (ball.y - r < goalTop) {
+          ball.y = goalTop + r;
+          ball.vy *= wallBounce;
+        } else if (ball.y + r > goalBottom) {
+          ball.y = goalBottom - r;
+          ball.vy *= wallBounce;
+        }
+
+        if (ball.x > w) {
+          this.handleGoal('red');
+        }
       } else {
-        ball.x = w - r;
+        ball.x = w - marginX - r;
         ball.vx *= wallBounce;
       }
     }
@@ -571,30 +668,52 @@ export class SoccerGameWindowComponent
     w: number,
     h: number
   ): void {
-    const margin = 40;
+    const marginX = 40;
+    const marginY = 40;
     const cornerR = 120;
 
     context.strokeStyle = '#474545';
     context.lineWidth = 3;
 
     context.beginPath();
-    context.moveTo(margin + cornerR, 0);
-    context.lineTo(w - margin - cornerR, 0);
-    context.arc(w - margin - cornerR, cornerR, cornerR, -Math.PI / 2, 0);
-    context.lineTo(w - margin, h - cornerR);
-    // Prawy dolny róg
-    context.arc(w - margin - cornerR, h - cornerR, cornerR, 0, Math.PI / 2);
-    context.lineTo(margin + cornerR, h);
-    // Lewy dolny róg
-    context.arc(margin + cornerR, h - cornerR, cornerR, Math.PI / 2, Math.PI);
-    context.lineTo(margin, cornerR);
-    // Lewy górny róg
-    context.arc(margin + cornerR, cornerR, cornerR, Math.PI, -Math.PI / 2);
+    context.moveTo(marginX + cornerR, marginY);
+    context.lineTo(w - marginX - cornerR, marginY);
+    context.arc(
+      w - marginX - cornerR,
+      marginY + cornerR,
+      cornerR,
+      -Math.PI / 2,
+      0
+    );
+    context.lineTo(w - marginX, h - marginY - cornerR);
+    context.arc(
+      w - marginX - cornerR,
+      h - marginY - cornerR,
+      cornerR,
+      0,
+      Math.PI / 2
+    );
+    context.lineTo(marginX + cornerR, h - marginY);
+    context.arc(
+      marginX + cornerR,
+      h - marginY - cornerR,
+      cornerR,
+      Math.PI / 2,
+      Math.PI
+    );
+    context.lineTo(marginX, marginY + cornerR);
+    context.arc(
+      marginX + cornerR,
+      marginY + cornerR,
+      cornerR,
+      Math.PI,
+      -Math.PI / 2
+    );
     context.stroke();
 
     context.beginPath();
-    context.moveTo(w / 2, 0);
-    context.lineTo(w / 2, h);
+    context.moveTo(w / 2, marginY);
+    context.lineTo(w / 2, h - marginY);
     context.stroke();
 
     const centerRadius = 50;
@@ -612,9 +731,9 @@ export class SoccerGameWindowComponent
     const penaltyHeight = 250;
     const penaltyY = (h - penaltyHeight) / 2;
 
-    context.strokeRect(margin, penaltyY, penaltyWidth, penaltyHeight);
+    context.strokeRect(marginX, penaltyY, penaltyWidth, penaltyHeight);
     context.strokeRect(
-      w - margin - penaltyWidth,
+      w - marginX - penaltyWidth,
       penaltyY,
       penaltyWidth,
       penaltyHeight

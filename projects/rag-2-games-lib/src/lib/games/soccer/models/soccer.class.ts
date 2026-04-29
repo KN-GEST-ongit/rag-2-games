@@ -5,13 +5,13 @@ import { IMovableEntity } from '../../../games/soccer/models/soccer.object';
 import { IEntity } from '../../../games/soccer/models/soccer.object';
 
 export class SoccerState implements TGameState {
-  public width = 960;
-  public height = 500;
+  public width = 1000;
+  public height = 550;
 
   public scoreRed = 0;
   public scoreBlue = 0;
 
-  public kickPower = 6;
+  public kickPower = 2.3;
   public friction = 0.98;
   public wallBounciness = 0.5;
 
@@ -25,7 +25,7 @@ export class SoccerState implements TGameState {
     y: this.height / 2,
     vx: 0,
     vy: 0,
-    radius: 20,
+    radius: 16,
     color: this.teamRedColor,
     speed: 3,
   };
@@ -35,7 +35,7 @@ export class SoccerState implements TGameState {
     y: this.height / 2,
     vx: 0,
     vy: 0,
-    radius: 20,
+    radius: 16,
     color: this.teamBlueColor,
     speed: 3,
   };
@@ -46,7 +46,7 @@ export class SoccerState implements TGameState {
     vx: 0,
     vy: 0,
     radius: 12,
-    color: '#FFFFFF',
+    color: '#1b1a1a',
     speed: 0,
   };
 }
