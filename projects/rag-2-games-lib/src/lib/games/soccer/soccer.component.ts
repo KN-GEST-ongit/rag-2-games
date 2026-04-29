@@ -504,7 +504,7 @@ export class SoccerGameWindowComponent
     h: number
   ): void {
     const goalHeight = 160;
-    const goalDepth = 40;
+    const margin = 40;
     const topY = (h - goalHeight) / 2;
     const bottomY = topY + goalHeight;
 
@@ -512,22 +512,20 @@ export class SoccerGameWindowComponent
 
     //lewa
     context.strokeStyle = this.game.state.teamRedColor;
-
     context.beginPath();
-    context.moveTo(0, topY);
-    context.lineTo(goalDepth, topY);
-    context.lineTo(goalDepth, bottomY);
+    context.moveTo(margin, topY);
+    context.lineTo(0, topY);
     context.lineTo(0, bottomY);
+    context.lineTo(margin, bottomY);
     context.stroke();
 
     //prawa
     context.strokeStyle = this.game.state.teamBlueColor;
-
     context.beginPath();
-    context.moveTo(w, topY);
-    context.lineTo(w - goalDepth, topY);
-    context.lineTo(w - goalDepth, bottomY);
+    context.moveTo(w - margin, topY);
+    context.lineTo(w, topY);
     context.lineTo(w, bottomY);
+    context.lineTo(w - margin, bottomY);
     context.stroke();
 
     const gridSize = 8;
@@ -535,21 +533,21 @@ export class SoccerGameWindowComponent
     context.strokeStyle = 'rgba(0, 0, 0, 0.4)';
     context.beginPath();
 
-    for (let x = 0; x <= goalDepth; x += gridSize) {
+    for (let x = 0; x <= margin; x += gridSize) {
       context.moveTo(x, topY);
       context.lineTo(x, bottomY);
     }
     for (let y = topY; y <= bottomY; y += gridSize) {
       context.moveTo(0, y);
-      context.lineTo(goalDepth, y);
+      context.lineTo(margin, y);
     }
 
-    for (let x = w - goalDepth; x <= w; x += gridSize) {
+    for (let x = w - margin; x <= w; x += gridSize) {
       context.moveTo(x, topY);
       context.lineTo(x, bottomY);
     }
     for (let y = topY; y <= bottomY; y += gridSize) {
-      context.moveTo(w - goalDepth, y);
+      context.moveTo(w - margin, y);
       context.lineTo(w, y);
     }
     context.stroke();
@@ -573,10 +571,26 @@ export class SoccerGameWindowComponent
     w: number,
     h: number
   ): void {
+    const margin = 40;
+    const cornerR = 120;
+
     context.strokeStyle = '#474545';
     context.lineWidth = 3;
 
-    context.strokeRect(0, 0, w, h);
+    context.beginPath();
+    context.moveTo(margin + cornerR, 0);
+    context.lineTo(w - margin - cornerR, 0);
+    context.arc(w - margin - cornerR, cornerR, cornerR, -Math.PI / 2, 0);
+    context.lineTo(w - margin, h - cornerR);
+    // Prawy dolny róg
+    context.arc(w - margin - cornerR, h - cornerR, cornerR, 0, Math.PI / 2);
+    context.lineTo(margin + cornerR, h);
+    // Lewy dolny róg
+    context.arc(margin + cornerR, h - cornerR, cornerR, Math.PI / 2, Math.PI);
+    context.lineTo(margin, cornerR);
+    // Lewy górny róg
+    context.arc(margin + cornerR, cornerR, cornerR, Math.PI, -Math.PI / 2);
+    context.stroke();
 
     context.beginPath();
     context.moveTo(w / 2, 0);
@@ -598,9 +612,13 @@ export class SoccerGameWindowComponent
     const penaltyHeight = 250;
     const penaltyY = (h - penaltyHeight) / 2;
 
-    context.strokeRect(0, penaltyY, penaltyWidth, penaltyHeight);
-
-    context.strokeRect(w - penaltyWidth, penaltyY, penaltyWidth, penaltyHeight);
+    context.strokeRect(margin, penaltyY, penaltyWidth, penaltyHeight);
+    context.strokeRect(
+      w - margin - penaltyWidth,
+      penaltyY,
+      penaltyWidth,
+      penaltyHeight
+    );
   }
 
   private drawBall(
