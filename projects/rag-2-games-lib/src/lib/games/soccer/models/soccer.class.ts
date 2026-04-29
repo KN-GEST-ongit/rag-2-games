@@ -80,54 +80,26 @@ export class Soccer extends Game {
       0,
       true,
       'Player 1 (Red)',
-      { moveX: 0, moveY: 0 },
+      { moveX: 0, moveY: 0, kick: 0 },
       {
-        w: {
-          variableName: 'moveY',
-          pressedValue: -1,
-          releasedValue: 0,
-        },
-        s: {
-          variableName: 'moveY',
-          pressedValue: 1,
-          releasedValue: 0,
-        },
-        a: {
-          variableName: 'moveX',
-          pressedValue: -1,
-          releasedValue: 0,
-        },
-        d: {
-          variableName: 'moveX',
-          pressedValue: 1,
-          releasedValue: 0,
-        },
+        w: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
+        s: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
+        a: { variableName: 'moveX', pressedValue: -1, releasedValue: 0 },
+        d: { variableName: 'moveX', pressedValue: 1, releasedValue: 0 },
+        ' ': { variableName: 'kick', pressedValue: 1, releasedValue: 0 },
       },
-      '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down',
-      {
-        up: '[W]',
-        down: '[S]',
-        left: '[A]',
-        right: '[D]',
-      }
+      '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down; <kick>: 1 kick',
+      { up: '[W]', down: '[S]', left: '[A]', right: '[D]', kick: '[SPACE]' }
     ),
 
     new Player(
       1,
       true,
       'Player 2 (Blue)',
-      { moveX: 0, moveY: 0 },
+      { moveX: 0, moveY: 0, kick: 0 },
       {
-        ArrowUp: {
-          variableName: 'moveY',
-          pressedValue: -1,
-          releasedValue: 0,
-        },
-        ArrowDown: {
-          variableName: 'moveY',
-          pressedValue: 1,
-          releasedValue: 0,
-        },
+        ArrowUp: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
+        ArrowDown: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
         ArrowLeft: {
           variableName: 'moveX',
           pressedValue: -1,
@@ -138,13 +110,15 @@ export class Soccer extends Game {
           pressedValue: 1,
           releasedValue: 0,
         },
+        Enter: { variableName: 'kick', pressedValue: 1, releasedValue: 0 },
       },
-      '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down',
+      '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down; <kick>: 1 kick',
       {
         up: '[ARROW_UP]',
         down: '[ARROW_DOWN]',
         left: '[ARROW_LEFT]',
         right: '[ARROW_RIGHT]',
+        kick: '[ENTER]',
       }
     ),
   ];
