@@ -455,21 +455,25 @@ export class SoccerGameWindowComponent
       ball.vy *= wallBounce;
     }
 
-    const goalTop = h / 2 - 80;
-    const goalBottom = h / 2 + 80;
+    const goalHeight = 160;
+    const goalTop = (h - goalHeight) / 2;
+    const goalBottom = goalTop + goalHeight;
+    const postSize = 10;
+    const netTop = goalTop + postSize;
+    const netBottom = goalBottom - postSize;
 
-    //lewa
+    // lewa strona
     if (ball.x - r < marginX) {
-      if (ball.y > goalTop && ball.y < goalBottom) {
-        if (ball.y - r < goalTop) {
-          ball.y = goalTop + r;
+      if (ball.y > netTop && ball.y < netBottom) {
+        if (ball.y - r < netTop) {
+          ball.y = netTop + r;
           ball.vy *= wallBounce;
-        } else if (ball.y + r > goalBottom) {
-          ball.y = goalBottom - r;
+        } else if (ball.y + r > netBottom) {
+          ball.y = netBottom - r;
           ball.vy *= wallBounce;
         }
 
-        if (ball.x < 0) {
+        if (ball.x + r < marginX) {
           this.handleGoal('blue');
         }
       } else {
@@ -478,18 +482,18 @@ export class SoccerGameWindowComponent
       }
     }
 
-    //prawa
+    // prawa strona
     if (ball.x + r > w - marginX) {
-      if (ball.y > goalTop && ball.y < goalBottom) {
-        if (ball.y - r < goalTop) {
-          ball.y = goalTop + r;
+      if (ball.y > netTop && ball.y < netBottom) {
+        if (ball.y - r < netTop) {
+          ball.y = netTop + r;
           ball.vy *= wallBounce;
-        } else if (ball.y + r > goalBottom) {
-          ball.y = goalBottom - r;
+        } else if (ball.y + r > netBottom) {
+          ball.y = netBottom - r;
           ball.vy *= wallBounce;
         }
 
-        if (ball.x > w) {
+        if (ball.x - r > w - marginX) {
           this.handleGoal('red');
         }
       } else {
