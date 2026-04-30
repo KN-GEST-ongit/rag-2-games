@@ -1,13 +1,8 @@
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
-import { IMovableEntity } from '../../../games/soccer/models/soccer.object';
-import { IEntity } from '../../../games/soccer/models/soccer.object';
 
 export class SoccerState implements TGameState {
-  public width = 1000;
-  public height = 550;
-
   public scoreRed = 0;
   public scoreBlue = 0;
 
@@ -15,40 +10,25 @@ export class SoccerState implements TGameState {
   public friction = 0.98;
   public wallBounciness = 0.5;
 
-  public teamRedColor = '#FF0000';
-  public teamBlueColor = '#0000FF';
-
   public kickoffTeam: 'red' | 'blue' | null = null;
 
-  public player1: IMovableEntity = {
-    x: 100,
-    y: this.height / 2,
-    vx: 0,
-    vy: 0,
-    radius: 16,
-    color: this.teamRedColor,
-    speed: 3,
-  };
+  //gracz1
+  public player1X = 100;
+  public player1Y = 275;
+  public player1VX = 0;
+  public player1VY = 0;
 
-  public player2: IMovableEntity = {
-    x: this.width - 100,
-    y: this.height / 2,
-    vx: 0,
-    vy: 0,
-    radius: 16,
-    color: this.teamBlueColor,
-    speed: 3,
-  };
+  //gracz2
+  public player2X = 900;
+  public player2Y = 275;
+  public player2VX = 0;
+  public player2VY = 0;
 
-  public ball: IMovableEntity = {
-    x: this.width / 2,
-    y: this.height / 2,
-    vx: 0,
-    vy: 0,
-    radius: 12,
-    color: '#1b1a1a',
-    speed: 0,
-  };
+  //pilka
+  public ballX = 500;
+  public ballY = 275;
+  public ballVX = 0;
+  public ballVY = 0;
 }
 
 export class Soccer extends Game {
@@ -58,22 +38,30 @@ export class Soccer extends Game {
 
   public override outputSpec = `
         output:
-            width: int;
-            height: int;
-            scoreRed: int;
-            scoreBlue: int;
-            player1: { x: float, y: float, vx: float, vy: float, radius: int, color: string, speed: float };
-            player2: { x: float, y: float, vx: float, vy: float, radius: int, color: string, speed: float };
-            ball: { x: float, y: float, vx: float, vy: float, radius: int };
+            scoreRed: int, <0, inf>;
+            scoreBlue: int, <0, inf>;
+            player1X: float, <16, 984>;
+            player1Y: float, <56, 494>;
+            player1VX: float, <-15, 15>;
+            player1VY: float, <-15, 15>;
+            player2X: float, <16, 984>;
+            player2Y: float, <56, 494>;
+            player2VX: float, <-15, 15>;
+            player2VY: float, <-15, 15>;
+            ballX: float, <0, 1000>;
+            ballY: float, <52, 498>;
+            ballVX: float, <-inf, inf>;
+            ballVY: float, <-inf, inf>;
 
         default values:
-            width: 960;
-            height: 500;
             scoreRed: 0;
             scoreBlue: 0;
-            player1: { x: 100, y: 250, radius: 20, speed: 5 };
-            player2: { x: 860, y: 250, radius: 20, speed: 5 };    
-            ball: { x: 480, y: 250, radius: 12 };
+            player1X: 100;
+            player1Y: 275;
+            player2X: 900;
+            player2Y: 275;    
+            ballX: 500;
+            ballY: 275;
     `;
   public override players = [
     new Player(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable max-lines */
@@ -6,8 +7,14 @@ import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Soccer, SoccerState } from './models/soccer.class';
-import { IMovableEntity } from './models/soccer.object';
-import { IEntity } from './models/soccer.object';
+
+type TPhysicsEntity = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+};
 
 @Component({
   selector: 'app-soccer',
@@ -28,6 +35,17 @@ export class SoccerGameWindowComponent
   private p1Kicking: boolean = false;
   private p2Kicking: boolean = false;
 
+  private readonly GAME_WIDTH = 1000;
+  private readonly GAME_HEIGHT = 550;
+
+  private readonly PLAYER_RADIUS = 16;
+  private readonly BALL_RADIUS = 12;
+  private readonly PLAYER_SPEED = 3;
+
+  private readonly TEAM_RED_COLOR = '#FF0000';
+  private readonly TEAM_BLUE_COLOR = '#0000FF';
+  private readonly BALL_COLOR = '#1b1a1a';
+
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Soccer;
@@ -35,8 +53,8 @@ export class SoccerGameWindowComponent
 
   public override ngAfterViewInit(): void {
     super.ngAfterViewInit();
-    this._canvas.width = this.game.state.width;
-    this._canvas.height = this.game.state.height;
+    this._canvas.width = this.GAME_WIDTH;
+    this._canvas.height = this.GAME_HEIGHT;
     this.render();
   }
 
@@ -63,11 +81,27 @@ export class SoccerGameWindowComponent
     this.render();
   }
 
+  private drawCircle(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    radius: number,
+    color: string
+  ): void {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fillStyle = color;
+    context.fill();
+    context.strokeStyle = '#000000';
+    context.lineWidth = 2;
+    context.stroke();
+  }
+
   private render(): void {
     const context = this._canvas.getContext('2d');
     if (context) {
-      const gameW = this.game.state.width;
-      const gameH = this.game.state.height;
+      const gameW = this.GAME_WIDTH;
+      const gameH = this.GAME_HEIGHT;
 
       context.clearRect(0, 0, gameW, gameH);
 
@@ -75,111 +109,139 @@ export class SoccerGameWindowComponent
 
       this.drawGoals(context, gameW, gameH);
 
-      this.drawEntity(context, this.game.state.player1);
-      this.drawEntity(context, this.game.state.player2);
-
-      this.drawBall(context, this.game.state.ball);
+      this.drawCircle(
+        context,
+        this.game.state.player1X,
+        this.game.state.player1Y,
+        this.PLAYER_RADIUS,
+        this.TEAM_RED_COLOR
+      );
+      this.drawCircle(
+        context,
+        this.game.state.player2X,
+        this.game.state.player2Y,
+        this.PLAYER_RADIUS,
+        this.TEAM_BLUE_COLOR
+      );
+      this.drawCircle(
+        context,
+        this.game.state.ballX,
+        this.game.state.ballY,
+        this.BALL_RADIUS,
+        this.BALL_COLOR
+      );
 
       context.restore();
     }
   }
 
   private handleInput(): void {
+    const state = this.game.state;
+
     //gracz1
-    const p1 = this.game.state.player1;
     const mx1 = (this.game.players[0].inputData['moveX'] as number) || 0;
     const my1 = (this.game.players[0].inputData['moveY'] as number) || 0;
-
     this.p1Kicking = (this.game.players[0].inputData['kick'] as number) === 1;
 
-    this.applyMove(p1, mx1, my1);
+    let vx1 = mx1 * this.PLAYER_SPEED;
+    let vy1 = my1 * this.PLAYER_SPEED;
+    if (mx1 !== 0 && my1 !== 0) {
+      vx1 *= Math.SQRT1_2;
+      vy1 *= Math.SQRT1_2;
+    }
+    state.player1VX = vx1;
+    state.player1VY = vy1;
 
     //gracz2
     if (this.game.players.length > 1) {
-      const p2 = this.game.state.player2;
       const mx2 = (this.game.players[1].inputData['moveX'] as number) || 0;
       const my2 = (this.game.players[1].inputData['moveY'] as number) || 0;
-
       this.p2Kicking = (this.game.players[1].inputData['kick'] as number) === 1;
 
-      this.applyMove(p2, mx2, my2);
-    }
-  }
-
-  private applyMove(
-    player: IMovableEntity,
-    moveX: number,
-    moveY: number
-  ): void {
-    player.vx = moveX * player.speed;
-    player.vy = moveY * player.speed;
-
-    if (moveX !== 0 && moveY !== 0) {
-      const normalization = Math.SQRT1_2;
-      player.vx *= normalization;
-      player.vy *= normalization;
+      let vx2 = mx2 * this.PLAYER_SPEED;
+      let vy2 = my2 * this.PLAYER_SPEED;
+      if (mx2 !== 0 && my2 !== 0) {
+        vx2 *= Math.SQRT1_2;
+        vy2 *= Math.SQRT1_2;
+      }
+      state.player2VX = vx2;
+      state.player2VY = vy2;
     }
   }
 
   private physicsStep(): void {
     const state = this.game.state;
     const posts = this.getPosts();
-
     const steps = 10;
     const dt = 1 / steps;
 
     for (let i = 0; i < steps; i++) {
-      this.moveEntity(state.player1, 'red', dt);
-      this.moveEntity(state.player2, 'blue', dt);
+      const p1: TPhysicsEntity = {
+        x: state.player1X,
+        y: state.player1Y,
+        vx: state.player1VX,
+        vy: state.player1VY,
+        radius: this.PLAYER_RADIUS,
+      };
+      const p2: TPhysicsEntity = {
+        x: state.player2X,
+        y: state.player2Y,
+        vx: state.player2VX,
+        vy: state.player2VY,
+        radius: this.PLAYER_RADIUS,
+      };
+      const ball: TPhysicsEntity = {
+        x: state.ballX,
+        y: state.ballY,
+        vx: state.ballVX,
+        vy: state.ballVY,
+        radius: this.BALL_RADIUS,
+      };
 
-      state.ball.x += state.ball.vx * dt;
-      state.ball.y += state.ball.vy * dt;
+      this.moveEntity(p1, 'red', dt);
+      this.moveEntity(p2, 'blue', dt);
 
-      this.checkPlayersCollision(state.player1, state.player2);
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
+
+      this.checkPlayersCollision(p1, p2);
 
       posts.forEach(post => {
-        this.resolveAABBCollision(state.player1, post);
-        this.resolveAABBCollision(state.player2, post);
-        this.resolveRectCollision(state.ball, post);
+        this.resolveAABBCollision(p1, post);
+        this.resolveAABBCollision(p2, post);
+        this.resolveRectCollision(ball, post);
       });
 
       if (Math.random() > 0.5) {
-        this.checkPlayerBallCollision(
-          state.player1,
-          state.ball,
-          'red',
-          this.p1Kicking
-        );
-        this.checkPlayerBallCollision(
-          state.player2,
-          state.ball,
-          'blue',
-          this.p2Kicking
-        );
+        this.checkPlayerBallCollision(p1, ball, 'red', this.p1Kicking);
+        this.checkPlayerBallCollision(p2, ball, 'blue', this.p2Kicking);
       } else {
-        this.checkPlayerBallCollision(
-          state.player2,
-          state.ball,
-          'blue',
-          this.p2Kicking
-        );
-        this.checkPlayerBallCollision(
-          state.player1,
-          state.ball,
-          'red',
-          this.p1Kicking
-        );
+        this.checkPlayerBallCollision(p2, ball, 'blue', this.p2Kicking);
+        this.checkPlayerBallCollision(p1, ball, 'red', this.p1Kicking);
       }
 
-      this.checkBallWallCollision();
+      this.checkBallWallCollision(ball);
+
+      state.player1X = p1.x;
+      state.player1Y = p1.y;
+      state.player1VX = p1.vx;
+      state.player1VY = p1.vy;
+      state.player2X = p2.x;
+      state.player2Y = p2.y;
+      state.player2VX = p2.vx;
+      state.player2VY = p2.vy;
+      state.ballX = ball.x;
+      state.ballY = ball.y;
+      state.ballVX = ball.vx;
+      state.ballVY = ball.vy;
     }
 
-    state.ball.vx *= state.friction;
-    state.ball.vy *= state.friction;
+    state.ballVX *= state.friction;
+    state.ballVY *= state.friction;
   }
 
   private moveEntity(
-    entity: IMovableEntity,
+    entity: TPhysicsEntity,
     team: 'red' | 'blue',
     dt: number
   ): void {
@@ -188,8 +250,8 @@ export class SoccerGameWindowComponent
 
     const marginX = 40;
     const marginY = 40;
-    const h = this.game.state.height;
-    const w = this.game.state.width;
+    const h = this.GAME_HEIGHT;
+    const w = this.GAME_WIDTH;
     const goalTop = h / 2 - 80;
     const goalBottom = h / 2 + 80;
 
@@ -267,8 +329,8 @@ export class SoccerGameWindowComponent
   }
 
   private getPosts(): { x: number; y: number; w: number; h: number }[] {
-    const w = this.game.state.width;
-    const h = this.game.state.height;
+    const w = this.GAME_WIDTH;
+    const h = this.GAME_HEIGHT;
 
     const goalHeight = 145;
     const goalDepth = 40;
@@ -312,7 +374,7 @@ export class SoccerGameWindowComponent
   }
 
   private resolveRectCollision(
-    ball: IMovableEntity,
+    ball: TPhysicsEntity,
     rect: { x: number; y: number; w: number; h: number }
   ): void {
     const closestX = Math.max(rect.x, Math.min(ball.x, rect.x + rect.w));
@@ -371,7 +433,7 @@ export class SoccerGameWindowComponent
   }
 
   private resolveAABBCollision(
-    player: IMovableEntity,
+    player: TPhysicsEntity,
     rect: { x: number; y: number; w: number; h: number }
   ): void {
     const r = player.radius;
@@ -405,10 +467,9 @@ export class SoccerGameWindowComponent
     }
   }
 
-  private checkBallWallCollision(): void {
-    const ball = this.game.state.ball;
-    const w = this.game.state.width;
-    const h = this.game.state.height;
+  private checkBallWallCollision(ball: TPhysicsEntity): void {
+    const w = this.GAME_WIDTH;
+    const h = this.GAME_HEIGHT;
     const r = ball.radius;
     const wallBounce = -this.game.state.wallBounciness;
 
@@ -503,7 +564,7 @@ export class SoccerGameWindowComponent
     }
   }
 
-  private checkPlayersCollision(p1: IMovableEntity, p2: IMovableEntity): void {
+  private checkPlayersCollision(p1: TPhysicsEntity, p2: TPhysicsEntity): void {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -525,8 +586,8 @@ export class SoccerGameWindowComponent
   }
 
   private checkPlayerBallCollision(
-    player: IMovableEntity,
-    ball: IMovableEntity,
+    player: TPhysicsEntity,
+    ball: TPhysicsEntity,
     team: 'red' | 'blue',
     isKicking: boolean = false
   ): void {
@@ -599,6 +660,96 @@ export class SoccerGameWindowComponent
     }
   }
 
+  private isPlayerBallColliding(
+    player: TPhysicsEntity,
+    ball: TPhysicsEntity
+  ): boolean {
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const minDist = ball.radius + player.radius;
+    return distance <= minDist;
+  }
+
+  private checkPlayerBallCollisionBalanced(
+    player1: TPhysicsEntity,
+    player2: TPhysicsEntity,
+    ball: TPhysicsEntity
+  ): void {
+    const state = this.game.state;
+
+    if (state.kickoffTeam !== null) {
+      if (state.kickoffTeam === 'red') {
+        this.checkPlayerBallCollision(player1, ball, 'red', true);
+      } else {
+        this.checkPlayerBallCollision(player2, ball, 'blue', true);
+      }
+      return;
+    }
+
+    const dx1 = ball.x - player1.x;
+    const dy1 = ball.y - player1.y;
+    const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+
+    const dx2 = ball.x - player2.x;
+    const dy2 = ball.y - player2.y;
+    const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+    const minDist = ball.radius + player1.radius;
+
+    if (distance1 <= minDist && distance2 <= minDist) {
+      let nx1 = 0,
+        ny1 = 0;
+      let nx2 = 0,
+        ny2 = 0;
+
+      if (distance1 > 0) {
+        nx1 = dx1 / distance1;
+        ny1 = dy1 / distance1;
+      } else {
+        nx1 = 1;
+      }
+
+      if (distance2 > 0) {
+        nx2 = dx2 / distance2;
+        ny2 = dy2 / distance2;
+      } else {
+        nx2 = -1;
+      }
+
+      const dotProduct = nx1 * nx2 + ny1 * ny2;
+
+      if (dotProduct < -0.5) {
+        const penetration1 = minDist - distance1;
+        const penetration2 = minDist - distance2;
+
+        ball.x += nx1 * (penetration1 * 0.5);
+        ball.y += ny1 * (penetration1 * 0.5);
+
+        ball.x += nx2 * (penetration2 * 0.5);
+        ball.y += ny2 * (penetration2 * 0.5);
+
+        const kickBoost = state.kickPower * 2.5;
+
+        const currentVelAlongAxis1 = ball.vx * nx1 + ball.vy * ny1;
+        const currentVelAlongAxis2 = ball.vx * nx2 + ball.vy * ny2;
+
+        const impulse1 = Math.max(0, kickBoost - currentVelAlongAxis1) * 0.5;
+        const impulse2 = Math.max(0, kickBoost - currentVelAlongAxis2) * 0.5;
+
+        ball.vx += impulse1 * nx1 - impulse2 * nx2;
+        ball.vy += impulse1 * ny1 - impulse2 * ny2;
+      } else {
+        this.checkPlayerBallCollision(player1, ball, 'red', true);
+        this.checkPlayerBallCollision(player2, ball, 'blue', true);
+      }
+    } else if (distance1 <= minDist) {
+      this.checkPlayerBallCollision(player1, ball, 'red', true);
+    } else if (distance2 <= minDist) {
+      this.checkPlayerBallCollision(player2, ball, 'blue', true);
+    }
+  }
+
   private drawGoals(
     context: CanvasRenderingContext2D,
     w: number,
@@ -612,7 +763,7 @@ export class SoccerGameWindowComponent
     context.lineWidth = 4;
 
     //lewa
-    context.strokeStyle = this.game.state.teamRedColor;
+    context.strokeStyle = '#FF0000';
     context.beginPath();
     context.moveTo(margin, topY);
     context.lineTo(0, topY);
@@ -621,7 +772,7 @@ export class SoccerGameWindowComponent
     context.stroke();
 
     //prawa
-    context.strokeStyle = this.game.state.teamBlueColor;
+    context.strokeStyle = '#0000FF';
     context.beginPath();
     context.moveTo(w - margin, topY);
     context.lineTo(w, topY);
@@ -651,19 +802,6 @@ export class SoccerGameWindowComponent
       context.moveTo(w - margin, y);
       context.lineTo(w, y);
     }
-    context.stroke();
-  }
-
-  private drawEntity(
-    context: CanvasRenderingContext2D,
-    entity: IMovableEntity
-  ): void {
-    context.beginPath();
-    context.arc(entity.x, entity.y, entity.radius, 0, Math.PI * 2);
-    context.fillStyle = entity.color;
-    context.fill();
-    context.strokeStyle = '#000000';
-    context.lineWidth = 2;
     context.stroke();
   }
 
@@ -742,18 +880,5 @@ export class SoccerGameWindowComponent
       penaltyWidth,
       penaltyHeight
     );
-  }
-
-  private drawBall(
-    context: CanvasRenderingContext2D,
-    ball: IMovableEntity
-  ): void {
-    context.beginPath();
-    context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    context.fillStyle = ball.color;
-    context.fill();
-    context.strokeStyle = 'black';
-    context.lineWidth = 2;
-    context.stroke();
   }
 }
