@@ -41,7 +41,7 @@ export class SoccerGameWindowComponent
 
   private readonly PLAYER_RADIUS = 17;
   private readonly BALL_RADIUS = 12;
-  private readonly PLAYER_SPEED = 2.35;
+  private readonly PLAYER_SPEED = 2.5;
 
   private readonly TEAM_RED_COLOR = '#FF0000';
   private readonly TEAM_BLUE_COLOR = '#0000FF';
@@ -401,33 +401,18 @@ export class SoccerGameWindowComponent
     const w = this.GAME_WIDTH;
     const h = this.GAME_HEIGHT;
 
-    const goalHeight = 145;
-    const goalDepth = 40;
+    const goalHeight = 160;
+    const margin = 40;
 
-    const postWidth = 40;
-    const postHeight = 5;
-
+    const postSize = 10;
     const topY = (h - goalHeight) / 2;
     const bottomY = topY + goalHeight;
 
     return [
-      {
-        x: goalDepth - postWidth,
-        y: topY - postHeight - 5,
-        w: postWidth,
-        h: postHeight,
-      },
-
-      { x: goalDepth - postWidth, y: bottomY + 5, w: postWidth, h: postHeight },
-
-      {
-        x: w - goalDepth,
-        y: topY - postHeight - 5,
-        w: postWidth,
-        h: postHeight,
-      },
-
-      { x: w - goalDepth, y: bottomY + 5, w: postWidth, h: postHeight },
+      { x: 0, y: topY - postSize, w: margin, h: postSize },
+      { x: 0, y: bottomY, w: margin, h: postSize },
+      { x: w - margin, y: topY - postSize, w: margin, h: postSize },
+      { x: w - margin, y: bottomY, w: margin, h: postSize },
     ];
   }
 
@@ -494,10 +479,9 @@ export class SoccerGameWindowComponent
 
     const dotProduct = ball.vx * nx + ball.vy * ny;
     if (dotProduct < 0) {
-      ball.vx =
-        (ball.vx - 2 * dotProduct * nx) * this.game.state.wallBounciness;
-      ball.vy =
-        (ball.vy - 2 * dotProduct * ny) * this.game.state.wallBounciness;
+      const bounce = this.game.state.wallBounciness;
+      ball.vx -= (1 + bounce) * dotProduct * nx;
+      ball.vy -= (1 + bounce) * dotProduct * ny;
     }
   }
 
@@ -569,8 +553,9 @@ export class SoccerGameWindowComponent
 
         const dot = ball.vx * nx + ball.vy * ny;
         if (dot > 0) {
-          ball.vx = (ball.vx - 2 * dot * nx) * Math.abs(wallBounce);
-          ball.vy = (ball.vy - 2 * dot * ny) * Math.abs(wallBounce);
+          const bounce = Math.abs(wallBounce);
+          ball.vx -= (1 + bounce) * dot * nx;
+          ball.vy -= (1 + bounce) * dot * ny;
         }
       }
     }
@@ -586,26 +571,20 @@ export class SoccerGameWindowComponent
     }
 
     const goalHeight = 160;
-    const goalTop = (h - goalHeight) / 2;
-    const goalBottom = goalTop + goalHeight;
-    const postSize = 10;
-    const netTop = goalTop + postSize;
-    const netBottom = goalBottom - postSize;
+    const topY = (h - goalHeight) / 2;
+    const bottomY = topY + goalHeight;
 
-    // lewa strona
+    //lewa strona boiska
     if (ball.x - r < marginX) {
-      if (ball.y > netTop && ball.y < netBottom) {
-        if (ball.y - r < netTop) {
-          ball.y = netTop + r;
-          ball.vy *= wallBounce;
-        } else if (ball.y + r > netBottom) {
-          ball.y = netBottom - r;
-          ball.vy *= wallBounce;
-        }
-
+      if (ball.y >= topY && ball.y <= bottomY) {
         if (ball.x + r < marginX) {
           this.handleGoal('blue');
           return true;
+        }
+
+        if (ball.x - r < 0) {
+          ball.x = r;
+          ball.vx *= wallBounce;
         }
       } else {
         ball.x = marginX + r;
@@ -613,26 +592,23 @@ export class SoccerGameWindowComponent
       }
     }
 
-    // prawa strona
+    //prawa strona boiska
     if (ball.x + r > w - marginX) {
-      if (ball.y > netTop && ball.y < netBottom) {
-        if (ball.y - r < netTop) {
-          ball.y = netTop + r;
-          ball.vy *= wallBounce;
-        } else if (ball.y + r > netBottom) {
-          ball.y = netBottom - r;
-          ball.vy *= wallBounce;
-        }
-
+      if (ball.y >= topY && ball.y <= bottomY) {
         if (ball.x - r > w - marginX) {
           this.handleGoal('red');
           return true;
+        }
+        if (ball.x + r > w) {
+          ball.x = w - r;
+          ball.vx *= wallBounce;
         }
       } else {
         ball.x = w - marginX - r;
         ball.vx *= wallBounce;
       }
     }
+
     return false;
   }
 
