@@ -39,9 +39,9 @@ export class SoccerGameWindowComponent
   private readonly GAME_WIDTH = 1000;
   private readonly GAME_HEIGHT = 550;
 
-  private readonly PLAYER_RADIUS = 17;
-  private readonly BALL_RADIUS = 12;
-  private readonly PLAYER_SPEED = 2.5;
+  private readonly PLAYER_RADIUS = 15;
+  private readonly BALL_RADIUS = 10;
+  private readonly PLAYER_SPEED = 2.35;
 
   private readonly TEAM_RED_COLOR = '#FF0000';
   private readonly TEAM_BLUE_COLOR = '#0000FF';

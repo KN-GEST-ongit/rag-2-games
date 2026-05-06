@@ -42,12 +42,12 @@ export class Soccer extends Game {
             scoreBlue: int, <0, inf>;
             player1X: float, <16, 984>;
             player1Y: float, <56, 494>;
-            player1VX: float, <-2.35, 2.35>;
-            player1VY: float, <-2.35, 2.35>;
+            player1VX: float, <-2.4, 2.4>;
+            player1VY: float, <-2.4, 2.4>;
             player2X: float, <16, 984>;
             player2Y: float, <56, 494>;
-            player2VX: float, <-3, 3>;
-            player2VY: float, <-3, 3>;
+            player2VX: float, <-2.35, 2.35>;
+            player2VY: float, <-2.35, 2.35>;
             ballX: float, <0, 1000>;
             ballY: float, <52, 498>;
             ballVX: float, <-12, 12>;
