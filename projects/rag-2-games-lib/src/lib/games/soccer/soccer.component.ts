@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -38,9 +39,9 @@ export class SoccerGameWindowComponent
   private readonly GAME_WIDTH = 1000;
   private readonly GAME_HEIGHT = 550;
 
-  private readonly PLAYER_RADIUS = 16;
+  private readonly PLAYER_RADIUS = 17;
   private readonly BALL_RADIUS = 12;
-  private readonly PLAYER_SPEED = 3;
+  private readonly PLAYER_SPEED = 2.35;
 
   private readonly TEAM_RED_COLOR = '#FF0000';
   private readonly TEAM_BLUE_COLOR = '#0000FF';
@@ -145,10 +146,12 @@ export class SoccerGameWindowComponent
 
     let vx1 = mx1 * this.PLAYER_SPEED;
     let vy1 = my1 * this.PLAYER_SPEED;
+
     if (mx1 !== 0 && my1 !== 0) {
       vx1 *= Math.SQRT1_2;
       vy1 *= Math.SQRT1_2;
     }
+
     state.player1VX = vx1;
     state.player1VY = vy1;
 
@@ -158,14 +161,16 @@ export class SoccerGameWindowComponent
       const my2 = (this.game.players[1].inputData['moveY'] as number) || 0;
       this.p2Kicking = (this.game.players[1].inputData['kick'] as number) === 1;
 
-      let vx2 = mx2 * this.PLAYER_SPEED;
-      let vy2 = my2 * this.PLAYER_SPEED;
+      let vx2 = mx2;
+      let vy2 = my2;
+
       if (mx2 !== 0 && my2 !== 0) {
         vx2 *= Math.SQRT1_2;
         vy2 *= Math.SQRT1_2;
       }
-      state.player2VX = vx2;
-      state.player2VY = vy2;
+
+      state.player2VX = vx2 * this.PLAYER_SPEED;
+      state.player2VY = vy2 * this.PLAYER_SPEED;
     }
   }
 
@@ -212,15 +217,17 @@ export class SoccerGameWindowComponent
         this.resolveRectCollision(ball, post);
       });
 
-      if (Math.random() > 0.5) {
-        this.checkPlayerBallCollision(p1, ball, 'red', this.p1Kicking);
-        this.checkPlayerBallCollision(p2, ball, 'blue', this.p2Kicking);
-      } else {
-        this.checkPlayerBallCollision(p2, ball, 'blue', this.p2Kicking);
-        this.checkPlayerBallCollision(p1, ball, 'red', this.p1Kicking);
-      }
+      this.checkPlayerBallCollisionBalanced(
+        p1,
+        p2,
+        ball,
+        this.p1Kicking,
+        this.p2Kicking
+      );
 
-      this.checkBallWallCollision(ball);
+      if (this.checkBallWallCollision(ball)) {
+        break;
+      }
 
       state.player1X = p1.x;
       state.player1Y = p1.y;
@@ -325,6 +332,68 @@ export class SoccerGameWindowComponent
         entity.x += (dx / dist) * overlap;
         entity.y += (dy / dist) * overlap;
       }
+    }
+  }
+
+  private checkPlayerBallCollisionBalanced(
+    player1: TPhysicsEntity,
+    player2: TPhysicsEntity,
+    ball: TPhysicsEntity,
+    p1Kicking: boolean,
+    p2Kicking: boolean
+  ): void {
+    const state = this.game.state;
+
+    if (state.kickoffTeam !== null) {
+      if (state.kickoffTeam === 'red') {
+        this.checkPlayerBallCollision(player1, ball, 'red', p1Kicking);
+      } else {
+        this.checkPlayerBallCollision(player2, ball, 'blue', p2Kicking);
+      }
+      return;
+    }
+
+    const dx1 = ball.x - player1.x;
+    const dy1 = ball.y - player1.y;
+    const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+
+    const dx2 = ball.x - player2.x;
+    const dy2 = ball.y - player2.y;
+    const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+    const minDist = ball.radius + player1.radius;
+
+    if (distance1 <= minDist && distance2 <= minDist) {
+      let nx1 = distance1 > 0 ? dx1 / distance1 : 1;
+      let ny1 = distance1 > 0 ? dy1 / distance1 : 0;
+      let nx2 = distance2 > 0 ? dx2 / distance2 : -1;
+      let ny2 = distance2 > 0 ? dy2 / distance2 : 0;
+
+      const dotProduct = nx1 * nx2 + ny1 * ny2;
+
+      if (dotProduct < -0.5) {
+        const penetration1 = minDist - distance1;
+        const penetration2 = minDist - distance2;
+
+        ball.x += (nx1 * penetration1 + nx2 * penetration2) * 0.5;
+        ball.y += (ny1 * penetration1 + ny2 * penetration2) * 0.5;
+
+        player1.x -= nx1 * penetration1 * 0.5;
+        player1.y -= ny1 * penetration1 * 0.5;
+
+        player2.x -= nx2 * penetration2 * 0.5;
+        player2.y -= ny2 * penetration2 * 0.5;
+
+        ball.vx *= 0.5;
+        ball.vy *= 0.5;
+      } else {
+        this.checkPlayerBallCollision(player1, ball, 'red', p1Kicking);
+        this.checkPlayerBallCollision(player2, ball, 'blue', p2Kicking);
+      }
+    } else if (distance1 <= minDist) {
+      this.checkPlayerBallCollision(player1, ball, 'red', p1Kicking);
+    } else if (distance2 <= minDist) {
+      this.checkPlayerBallCollision(player2, ball, 'blue', p2Kicking);
     }
   }
 
@@ -467,7 +536,7 @@ export class SoccerGameWindowComponent
     }
   }
 
-  private checkBallWallCollision(ball: TPhysicsEntity): void {
+  private checkBallWallCollision(ball: TPhysicsEntity): boolean {
     const w = this.GAME_WIDTH;
     const h = this.GAME_HEIGHT;
     const r = ball.radius;
@@ -536,6 +605,7 @@ export class SoccerGameWindowComponent
 
         if (ball.x + r < marginX) {
           this.handleGoal('blue');
+          return true;
         }
       } else {
         ball.x = marginX + r;
@@ -556,12 +626,14 @@ export class SoccerGameWindowComponent
 
         if (ball.x - r > w - marginX) {
           this.handleGoal('red');
+          return true;
         }
       } else {
         ball.x = w - marginX - r;
         ball.vx *= wallBounce;
       }
     }
+    return false;
   }
 
   private checkPlayersCollision(p1: TPhysicsEntity, p2: TPhysicsEntity): void {
@@ -622,8 +694,8 @@ export class SoccerGameWindowComponent
         penetration = minDist - distance;
       }
 
-      const ballPush = isKicking ? 1.0 : 0.85;
-      const playerPush = isKicking ? 0 : 0.15;
+      const ballPush = isKicking ? 0.35 : 0.35;
+      const playerPush = isKicking ? 0.65 : 0.65;
 
       ball.x += nx * (penetration * ballPush);
       ball.y += ny * (penetration * ballPush);
@@ -669,85 +741,6 @@ export class SoccerGameWindowComponent
     const distance = Math.sqrt(dx * dx + dy * dy);
     const minDist = ball.radius + player.radius;
     return distance <= minDist;
-  }
-
-  private checkPlayerBallCollisionBalanced(
-    player1: TPhysicsEntity,
-    player2: TPhysicsEntity,
-    ball: TPhysicsEntity
-  ): void {
-    const state = this.game.state;
-
-    if (state.kickoffTeam !== null) {
-      if (state.kickoffTeam === 'red') {
-        this.checkPlayerBallCollision(player1, ball, 'red', true);
-      } else {
-        this.checkPlayerBallCollision(player2, ball, 'blue', true);
-      }
-      return;
-    }
-
-    const dx1 = ball.x - player1.x;
-    const dy1 = ball.y - player1.y;
-    const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-
-    const dx2 = ball.x - player2.x;
-    const dy2 = ball.y - player2.y;
-    const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
-    const minDist = ball.radius + player1.radius;
-
-    if (distance1 <= minDist && distance2 <= minDist) {
-      let nx1 = 0,
-        ny1 = 0;
-      let nx2 = 0,
-        ny2 = 0;
-
-      if (distance1 > 0) {
-        nx1 = dx1 / distance1;
-        ny1 = dy1 / distance1;
-      } else {
-        nx1 = 1;
-      }
-
-      if (distance2 > 0) {
-        nx2 = dx2 / distance2;
-        ny2 = dy2 / distance2;
-      } else {
-        nx2 = -1;
-      }
-
-      const dotProduct = nx1 * nx2 + ny1 * ny2;
-
-      if (dotProduct < -0.5) {
-        const penetration1 = minDist - distance1;
-        const penetration2 = minDist - distance2;
-
-        ball.x += nx1 * (penetration1 * 0.5);
-        ball.y += ny1 * (penetration1 * 0.5);
-
-        ball.x += nx2 * (penetration2 * 0.5);
-        ball.y += ny2 * (penetration2 * 0.5);
-
-        const kickBoost = state.kickPower * 2.5;
-
-        const currentVelAlongAxis1 = ball.vx * nx1 + ball.vy * ny1;
-        const currentVelAlongAxis2 = ball.vx * nx2 + ball.vy * ny2;
-
-        const impulse1 = Math.max(0, kickBoost - currentVelAlongAxis1) * 0.5;
-        const impulse2 = Math.max(0, kickBoost - currentVelAlongAxis2) * 0.5;
-
-        ball.vx += impulse1 * nx1 - impulse2 * nx2;
-        ball.vy += impulse1 * ny1 - impulse2 * ny2;
-      } else {
-        this.checkPlayerBallCollision(player1, ball, 'red', true);
-        this.checkPlayerBallCollision(player2, ball, 'blue', true);
-      }
-    } else if (distance1 <= minDist) {
-      this.checkPlayerBallCollision(player1, ball, 'red', true);
-    } else if (distance2 <= minDist) {
-      this.checkPlayerBallCollision(player2, ball, 'blue', true);
-    }
   }
 
   private drawGoals(
