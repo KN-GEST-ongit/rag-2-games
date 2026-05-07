@@ -188,6 +188,12 @@ export class Abalone extends Game {
       'd': { variableName: 'move', pressedValue: 4, releasedValue: 0 },
       's': { variableName: 'move', pressedValue: 5, releasedValue: 0 },
       'a': { variableName: 'move', pressedValue: 6, releasedValue: 0 },
+      'Q': { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+      'W': { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+      'E': { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+      'D': { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+      'S': { variableName: 'move', pressedValue: 5, releasedValue: 0 },
+      'A': { variableName: 'move', pressedValue: 6, releasedValue: 0 },
       ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       'Enter': { variableName: 'action', pressedValue: 2, releasedValue: 0 },
       'Escape': { variableName: 'action', pressedValue: 3, releasedValue: 0 }
