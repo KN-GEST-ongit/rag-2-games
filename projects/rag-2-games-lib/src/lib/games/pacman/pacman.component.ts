@@ -44,12 +44,16 @@ export class PacmanGameWindowComponent
     this.render();
   }
 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
   public override restart(): void {
     const randomIndex = Math.floor(Math.random() * PacmanMaps.length);
     const selectedMap = PacmanMaps[randomIndex].map(row => [...row]);
-  
+
     this.game.state = new PacmanState(selectedMap);
-  
+
     this._canvas.width = selectedMap[0].length * this.game.state.tileSize;
     this._canvas.height = selectedMap.length * this.game.state.tileSize;
   }
@@ -334,7 +338,7 @@ export class PacmanGameWindowComponent
   private drawPowerMode(context: CanvasRenderingContext2D): void {
     const secondsLeft =
           ((this.game.state.maxPowerModeTime - this.game.state.powerModeTimer) / 60).toFixed(1);
-      
+
         if (context) {
           context.fillStyle = 'lime';
           context.font = '20px Consolas';

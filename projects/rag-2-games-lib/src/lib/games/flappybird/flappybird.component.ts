@@ -53,6 +53,10 @@ export class FlappyBirdGameWindowComponent
     this.render();
   }
 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
   public override restart(): void {
     const tempFailCounter = this.game.state.failCounter;
     this.game.state = new FlappyBirdState();

@@ -80,6 +80,18 @@ import { SideMenuHelperComponent } from '../ai-socket-menu/sections/side-menu-he
                 class="size-3 text-mainOrange group-hover:text-darkGray transition-all ease-in-out duration-300"></i>
             </button>
           </div>
+          @if (!player.isObligatory) {
+            <div>
+              Active:
+              <input
+                #playerActive
+                id="playerActive"
+                type="checkbox"
+                class="accent-mainOrange"
+                (change)="updatePlayerActive(player, playerActive.checked)"
+                [defaultValue]="player.isActive" />
+            </div>
+          }
           <span class="text-mainCreme font-bold">Select player source:</span>
           <select
             #playerSourceSelect
@@ -94,18 +106,6 @@ import { SideMenuHelperComponent } from '../ai-socket-menu/sections/side-menu-he
               </option>
             }
           </select>
-          @if (!player.isObligatory) {
-            <div>
-              Active:
-              <input
-                #playerActive
-                id="playerActive"
-                type="checkbox"
-                class="accent-mainOrange"
-                (change)="updatePlayerActive(player, playerActive.checked)"
-                [defaultValue]="player.isActive" />
-            </div>
-          }
         </div>
       }
     </div>

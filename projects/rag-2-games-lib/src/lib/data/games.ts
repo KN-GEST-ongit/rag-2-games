@@ -8,6 +8,9 @@ import { Snake } from '../games/snake/models/snake.class';
 import { Pacman } from '../games/pacman/models/pacman.class';
 import { TowerDefense } from '../games/towerdefense/models/towerdefense.class';
 import { Abalone } from '../games/abalone/models/abalone.class';
+import { Tetris } from '../games/tetris/models/tetris.class';
+import { CrossyRoad } from '../games/crossyroad/models/crossyroad.class';
+
 export const games: Record<string, Game> = {
   pong: new Pong(),
   skijump: new SkiJump(),
@@ -18,4 +21,6 @@ export const games: Record<string, Game> = {
   pacman: new Pacman(),
   towerdefense: new TowerDefense(),
   abalone: new Abalone(),
+  tetris: new Tetris(),
+  crossyroad: new CrossyRoad(),
 };

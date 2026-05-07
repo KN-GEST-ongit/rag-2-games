@@ -167,10 +167,17 @@ export class AbaloneGameWindowComponent
       return; 
     }
 
-    const move = input['move'] as number;
+    const rawMove = input['move'] as number;
     const action = input['action'] as number;
 
-    this.clearInputCommands(input, move, action);
+    this.clearInputCommands(input, rawMove, action);
+
+    let move = rawMove;
+    // Invert the keyboard movement mapping if the board is visually rotated.
+    // This translates visual directions into correct physical board coordinates.
+    if (move && move >= 1 && move <= 6 && this.getShouldRotate()) {
+      move = ((move - 1 + 3) % 6) + 1;
+    }
 
     if (state.phase === 'SELECT') {
       this.handleSelectPhaseInput(move, action);
