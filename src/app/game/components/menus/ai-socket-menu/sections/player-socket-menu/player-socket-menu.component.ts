@@ -46,7 +46,7 @@ import * as feather from 'feather-icons';
         <i data-feather="chevron-down" class="size-5"></i>
       </span>
     </button>
-    <div class="{{ editedPlayerId === player.id ? 'block' : 'hidden' }}">
+    <div class="{{ (editedPlayerId === player.id) || (editedPlayersLength === 1) ? 'block' : 'hidden' }}">
       <app-debug-mode-menu
         [canApplyDebugMode]="!isConnected"
         (debugModeEmitter)="isDebugModeActive = $event" />

@@ -17,31 +17,31 @@ import * as Drawing from './models/towerdefense.drawing.helper';
   imports: [CanvasComponent, CommonModule],
   template: `
     <div>
-      Base Health: <b>{{ game.state.baseHealth }}</b> | 
-      Gold: <b>{{ game.state.gold }}</b> | 
+      Base Health: <b>{{ game.state.baseHealth }}</b> |
+      Gold: <b>{{ game.state.gold }}</b> |
       Wave: <b>{{ game.state.waveNumber + 1 }}</b> |
-      Maps Cleared: <b>{{ game.state.mapsCompleted }}</b> | 
+      Maps Cleared: <b>{{ game.state.mapsCompleted }}</b> |
       <b>{{ getCursorActionText() }}</b>
     </div>
 
     <app-canvas
       [displayMode]="'horizontal'"
       #gameCanvas></app-canvas>
-    
+
     <b>Next wave: <span class="text-lightOragne">{{ getNextWaveInfo() }}</span></b>
     <b>FPS: {{ fps }}</b>
     <button (click)="toggleInfo()">Click [I] or HERE to check how to play.</button>
 
     <div *ngIf="showInfo" class="absolute inset-0 w-full h-full flex justify-center items-center bg-darkGray bg-opacity-90 z-50">
       <div class="bg-mainGray text-gray-200 p-5 md:p-10 rounded-lg border-2 border-mainOrange max-w-3xl max-h-[80vh] overflow-y-auto relative">
-        
+
         <button (click)="toggleInfo()" class="absolute top-2 right-3 w-10 h-10 text-mainOrange text-xl font-bold">X</button>
-        
+
         <h2 class="text-center text-2xl text-mainOrange mb-4">Game Guide</h2>
-        
+
         <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Objective</h3>
         <p class="mb-4 text-mainCreme">Stop the enemy waves before they reach your base (red tile). Build towers on empty fields (dark green) to destroy them. Earn gold for every enemy defeated.</p>
-        
+
         <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Your Towers</h3>
         <ul>
           <li class="mb-2 text-mainCreme"><b>Turret</b>: Versatile tower. Attacks <strong>ground and air</strong> targets. Good against everything.</li>
@@ -66,7 +66,7 @@ export class TowerDefenseGameWindowComponent
   implements OnInit, AfterViewInit, OnDestroy
 {
   public override game!: TowerDefense;
-  
+
   public showInfo = false;
 
   public override ngOnInit(): void {
@@ -87,8 +87,12 @@ export class TowerDefenseGameWindowComponent
     this.calculatePath();
   }
 
-  public override restart(): void { 
-    this.game.state = new TowerDefenseState(); 
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+  }
+
+  public override restart(): void {
+    this.game.state = new TowerDefenseState();
     this.setupGame();
   }
 
@@ -177,9 +181,9 @@ export class TowerDefenseGameWindowComponent
       const action = player.inputData['action'] as number;
 
       if (action === 1 || action === 2) {
-        let mapsDone = this.game.state.mapsCompleted; 
+        let mapsDone = this.game.state.mapsCompleted;
         if (this.game.state.isGameWon) {
-          mapsDone++; 
+          mapsDone++;
         }
         this.restart()
         this.game.state.mapsCompleted = mapsDone;
@@ -236,7 +240,7 @@ export class TowerDefenseGameWindowComponent
 
     if (action === 1) {
       const towerOnTile = state.towers.find(t => t.x === state.cursorX && t.y === state.cursorY);
-      
+
       if (towerOnTile) {
         this.tryUpgradeTower(towerOnTile);
       } else {
@@ -245,11 +249,11 @@ export class TowerDefenseGameWindowComponent
     } else if (action === 2 && !state.isWaveActive) {
       this.startWave();
     }
-    
+
     if (action === 3) {
       const availableTowers = Object.keys(TowerTypes) as (keyof typeof TowerTypes)[];
       let currentIndex = availableTowers.indexOf(this.game.state.selectedTowerType);
-      
+
       do {
         currentIndex = (currentIndex + 1) % availableTowers.length;
         this.game.state.selectedTowerType = availableTowers[currentIndex];
@@ -269,8 +273,8 @@ export class TowerDefenseGameWindowComponent
 
     if (towerIndex !== -1) {
       const tower = state.towers[towerIndex];
-      const refundAmount = Math.floor(tower.totalInvestedCost * 0.8); 
-      
+      const refundAmount = Math.floor(tower.totalInvestedCost * 0.8);
+
       state.gold += refundAmount;
       state.towers.splice(towerIndex, 1);
     }
@@ -278,7 +282,7 @@ export class TowerDefenseGameWindowComponent
 
   private tryPlaceTower(x: number, y: number): void {
     const state = this.game.state;
-    const selectedTower = this.getSelectedTowerData(); 
+    const selectedTower = this.getSelectedTowerData();
     const isFreeTile = state.map[y]?.[x] === 0;
     const isTowerAlreadyHere = state.towers.some(t => t.x === x && t.y === y);
 
@@ -317,7 +321,7 @@ export class TowerDefenseGameWindowComponent
 
     state.gold -= currentTowerData.upgradeCost;
     towerToUpgrade.type = nextTowerKey.toLowerCase();
-    
+
     towerToUpgrade.damage = nextTowerData.damage;
     towerToUpgrade.range = nextTowerData.range * state.tileSize;
     towerToUpgrade.fireRate = nextTowerData.fireRate;
@@ -328,7 +332,7 @@ export class TowerDefenseGameWindowComponent
     const state = this.game.state;
     if (state.isWaveActive) return;
     if (state.path.length === 0) return;
-    
+
     const mapKey = `map${state.currentMapIndex}` as keyof typeof WaveDefinitions;
     const wavesForThisMap = WaveDefinitions[mapKey];
 
@@ -341,15 +345,15 @@ export class TowerDefenseGameWindowComponent
 
     state.isWaveActive = true;
     let totalDelay = 0;
-    let enemiesToSpawnThisWave = 0; 
+    let enemiesToSpawnThisWave = 0;
 
     for (const group of waveData) {
       const enemyData = EnemyTypes[group.type as keyof typeof EnemyTypes];
       if (!enemyData) {
         console.error(`Error: Did not find enemy data for type: ${group.type}`);
-        continue; 
+        continue;
       }
-      enemiesToSpawnThisWave += group.count; 
+      enemiesToSpawnThisWave += group.count;
 
       for (let i = 0; i < group.count; i++) {
         setTimeout(() => {
@@ -374,7 +378,7 @@ export class TowerDefenseGameWindowComponent
 
   private updateBullets(): void {
     const state = this.game.state;
- 
+
     for (let i = state.bullets.length - 1; i >= 0; i--) {
       const bullet = state.bullets[i];
       const target = state.enemies.find(e => e.id === bullet.targetEnemyId);
@@ -421,15 +425,15 @@ export class TowerDefenseGameWindowComponent
     const state = this.game.state;
 
     if (state.enemies.length === 0 && state.enemiesToSpawn === 0 && state.isWaveActive) {
-      state.isWaveActive = false; 
-      
+      state.isWaveActive = false;
+
       const mapKey = `map${state.currentMapIndex}` as keyof typeof WaveDefinitions;
       const wavesForThisMap = WaveDefinitions[mapKey];
-      
-      if (!wavesForThisMap || state.waveNumber + 1 >= wavesForThisMap.length) { 
-        state.isGameWon = true; 
+
+      if (!wavesForThisMap || state.waveNumber + 1 >= wavesForThisMap.length) {
+        state.isGameWon = true;
       } else {
-        state.waveNumber++; 
+        state.waveNumber++;
       }
     }
   }
@@ -453,11 +457,11 @@ export class TowerDefenseGameWindowComponent
       if (enemy.isFlying) {
         dx = baseTargetX - enemy.x;
         dy = baseTargetY - enemy.y;
-        
+
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < enemy.speed) {
-          enemy.pathIndex = state.path.length; 
+          enemy.pathIndex = state.path.length;
         } else {
           enemy.x += (dx / distance) * enemy.speed;
           enemy.y += (dy / distance) * enemy.speed;
@@ -472,7 +476,7 @@ export class TowerDefenseGameWindowComponent
 
         dx = targetX - enemy.x;
         dy = targetY - enemy.y;
-        
+
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < enemy.speed) {
@@ -521,7 +525,7 @@ export class TowerDefenseGameWindowComponent
       }
     }
   }
-  
+
   private findTarget(tower: ITower): IEnemy | undefined {
     const towerCenterX = (tower.x + 0.5) * this.game.state.tileSize;
     const towerCenterY = (tower.y + 0.5) * this.game.state.tileSize;
@@ -563,11 +567,11 @@ export class TowerDefenseGameWindowComponent
           state.isGameOver = true;
           state.isWaveActive = false;
         }
-        
+
         state.enemies.splice(i, 1);
         continue;
       }
-      
+
       if (enemy.health <= 0) {
         state.gold += enemy.reward;
         state.enemies.splice(i, 1);
@@ -584,12 +588,12 @@ export class TowerDefenseGameWindowComponent
     const state = this.game.state;
 
     context.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    
+
     Drawing.drawMap(context, state);
     Drawing.drawTowers(context, state);
     Drawing.drawEnemies(context, state);
     Drawing.drawBullets(context, state);
-    
+
     if (!state.isGameOver && !state.isGameWon && !this.isPaused) {
       Drawing.drawCursor(context, state, () => this.getSelectedTowerData());
     }
