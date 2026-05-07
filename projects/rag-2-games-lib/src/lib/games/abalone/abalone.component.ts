@@ -19,11 +19,13 @@ import { PlayerSourceType } from '../../models/player-source-type.enum';
         {{ game.state.currentPlayer }}
       </b> | 
       Points - Black: <b>{{ game.state.deadMarbles.WHITE }}</b>, 
-      White: <b>{{ game.state.deadMarbles.BLACK }}</b> |
-      Phase: <b>{{ game.state.phase === 'SELECT' ? 'Selection' : 'Move' }}</b> |
-      Cursor: <b>{{ cursorNotation }}</b>
+      White: <b>{{ game.state.deadMarbles.BLACK }}</b>
+      <ng-container *ngIf="shouldDisplayCursor()">
+        | Phase: <b>{{ game.state.phase === 'SELECT' ? 'Selection' : 'Move' }}</b> |
+        Cursor: <b>{{ cursorNotation }}</b>
+      </ng-container>
     </div>
-    <div class="game-hint" *ngIf="!game.state.isGameOver">
+    <div class="game-hint" *ngIf="!game.state.isGameOver && shouldDisplayCursor()">
       {{ game.state.phase === 'SELECT'
         ? 'Space: select/deselect | Enter: confirm selection | Esc: cancel'
         : 'Q/W/E/D/S/A: execute move | Esc: return' }}
@@ -61,17 +63,17 @@ export class AbaloneGameWindowComponent
     1: 'Q', 2: 'W', 3: 'E', 4: 'D', 5: 'S', 6: 'A'
   };
 
-  private getSocketPlayerCount(): number {
+  public getSocketPlayerCount(): number {
     return this.game.players.filter(p => p && p.playerType === PlayerSourceType.SOCKET).length;
   }
 
-  private getHumanPlayerColor(): 'BLACK' | 'WHITE' | null {
+  public getHumanPlayerColor(): 'BLACK' | 'WHITE' | null {
     const humanPlayer = this.game.players.find(p => p && p.playerType === PlayerSourceType.KEYBOARD);
     if (!humanPlayer) return null;
     return humanPlayer.id === 0 ? 'WHITE' : 'BLACK';
   }
 
-  private shouldDisplayCursor(): boolean {
+  public shouldDisplayCursor(): boolean {
     return this.getSocketPlayerCount() !== 2;
   }
 
@@ -172,18 +174,22 @@ export class AbaloneGameWindowComponent
 
     this.clearInputCommands(input, rawMove, action);
 
-    let move = rawMove;
-    // Invert the keyboard movement mapping if the board is visually rotated.
-    // This translates visual directions into correct physical board coordinates.
-    if (move && move >= 1 && move <= 6 && this.getShouldRotate()) {
-      move = ((move - 1 + 3) % 6) + 1;
-    }
+    const move = this.translateMoveIfRotated(rawMove);
 
     if (state.phase === 'SELECT') {
       this.handleSelectPhaseInput(move, action);
     } else if (state.phase === 'MOVE') {
       this.handleMovePhaseInput(move, action);
     }
+  }
+
+  // Invert the keyboard movement mapping if the board is visually rotated.
+  // This translates visual directions into correct physical board coordinates.
+  private translateMoveIfRotated(move: number): number {
+    if (move >= 1 && move <= 6 && this.getShouldRotate()) {
+      return ((move - 1 + 3) % 6) + 1;
+    }
+    return move;
   }
 
   private handleQueuedMoveInput(state: AbaloneState, input: TExchangeData): boolean {
