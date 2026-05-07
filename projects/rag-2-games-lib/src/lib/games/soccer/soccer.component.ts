@@ -36,16 +36,19 @@ export class SoccerGameWindowComponent
   private p1Kicking: boolean = false;
   private p2Kicking: boolean = false;
 
-  private readonly GAME_WIDTH = 1000;
-  private readonly GAME_HEIGHT = 550;
+  private GAME_WIDTH = 1000;
+  private GAME_HEIGHT = 550;
 
-  private readonly PLAYER_RADIUS = 15;
-  private readonly BALL_RADIUS = 10;
-  private readonly PLAYER_SPEED = 2.35;
+  private PLAYER_RADIUS = 15;
+  private BALL_RADIUS = 10;
+  private PLAYER_SPEED = 2.35;
+  private KICK_POWER = 2.3;
+  private FRICTION = 0.98;
+  private WALL_BOUNCIES = 0.5;
 
-  private readonly TEAM_RED_COLOR = '#FF0000';
-  private readonly TEAM_BLUE_COLOR = '#0000FF';
-  private readonly BALL_COLOR = '#1b1a1a';
+  private TEAM_RED_COLOR = '#FF0000';
+  private TEAM_BLUE_COLOR = '#0000FF';
+  private BALL_COLOR = '#1b1a1a';
 
   public override ngOnInit(): void {
     super.ngOnInit();
@@ -243,8 +246,8 @@ export class SoccerGameWindowComponent
       state.ballVY = ball.vy;
     }
 
-    state.ballVX *= state.friction;
-    state.ballVY *= state.friction;
+    state.ballVX *= this.FRICTION;
+    state.ballVY *= this.FRICTION;
   }
 
   private moveEntity(
@@ -450,7 +453,7 @@ export class SoccerGameWindowComponent
       const dBottom = rect.y + rect.h - ball.y;
 
       const min = Math.min(dLeft, dRight, dTop, dBottom);
-      const bounciness = this.game.state.wallBounciness;
+      const bounciness = this.WALL_BOUNCIES;
 
       if (min === dLeft) {
         ball.x = rect.x - ball.radius;
@@ -479,7 +482,7 @@ export class SoccerGameWindowComponent
 
     const dotProduct = ball.vx * nx + ball.vy * ny;
     if (dotProduct < 0) {
-      const bounce = this.game.state.wallBounciness;
+      const bounce = this.WALL_BOUNCIES;
       ball.vx -= (1 + bounce) * dotProduct * nx;
       ball.vy -= (1 + bounce) * dotProduct * ny;
     }
@@ -524,7 +527,7 @@ export class SoccerGameWindowComponent
     const w = this.GAME_WIDTH;
     const h = this.GAME_HEIGHT;
     const r = ball.radius;
-    const wallBounce = -this.game.state.wallBounciness;
+    const wallBounce = -this.WALL_BOUNCIES;
 
     const marginX = 40;
     const marginY = 40;
@@ -696,7 +699,7 @@ export class SoccerGameWindowComponent
       }
 
       if (isKicking) {
-        const kickBoost = this.game.state.kickPower * 2.5;
+        const kickBoost = this.KICK_POWER * 2.5;
         const currentSpeedInKickDirection = ball.vx * nx + ball.vy * ny;
 
         if (currentSpeedInKickDirection < kickBoost) {
@@ -706,17 +709,6 @@ export class SoccerGameWindowComponent
         }
       }
     }
-  }
-
-  private isPlayerBallColliding(
-    player: TPhysicsEntity,
-    ball: TPhysicsEntity
-  ): boolean {
-    const dx = ball.x - player.x;
-    const dy = ball.y - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const minDist = ball.radius + player.radius;
-    return distance <= minDist;
   }
 
   private drawGoals(

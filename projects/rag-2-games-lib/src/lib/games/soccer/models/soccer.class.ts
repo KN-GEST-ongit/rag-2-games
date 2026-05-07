@@ -5,11 +5,6 @@ import { Player } from '../../../models/player.class';
 export class SoccerState implements TGameState {
   public scoreRed = 0;
   public scoreBlue = 0;
-
-  public kickPower = 2.3;
-  public friction = 0.98;
-  public wallBounciness = 0.5;
-
   public kickoffTeam: 'red' | 'blue' | null = null;
 
   //gracz1
@@ -74,6 +69,11 @@ export class Soccer extends Game {
         s: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
         a: { variableName: 'moveX', pressedValue: -1, releasedValue: 0 },
         d: { variableName: 'moveX', pressedValue: 1, releasedValue: 0 },
+
+        W: { variableName: 'moveY', pressedValue: -1, releasedValue: 0 },
+        S: { variableName: 'moveY', pressedValue: 1, releasedValue: 0 },
+        A: { variableName: 'moveX', pressedValue: -1, releasedValue: 0 },
+        D: { variableName: 'moveX', pressedValue: 1, releasedValue: 0 },
         ' ': { variableName: 'kick', pressedValue: 1, releasedValue: 0 },
       },
       '<moveX>: -1 left, 1 right; <moveY>: -1 up, 1 down; <kick>: 1 kick',
