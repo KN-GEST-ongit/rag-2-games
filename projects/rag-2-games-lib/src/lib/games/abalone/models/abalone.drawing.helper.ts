@@ -239,8 +239,7 @@ export function drawCemetery(
   const maxDead = 6;
   const spacing = hexSize * 2.2;
 
-  // Strefa czarnych kulek (po lewej stronie ekranu dla P1 / Białego gracza "u dołu", ale narysujemy obie z boku).
-  // Aby była ładna prezentacja, narysujmy je symetrycznie.
+  // Dead marbles area 
   
   const drawPlayerCemetery = (
     colorId: 'BLACK' | 'WHITE',
@@ -250,7 +249,7 @@ export function drawCemetery(
     label: string
   ): void => {
     ctx.save();
-    // Tło dla cmentarza
+    // Cemetery background
     const w = hexSize * 2.5;
     const h = (maxDead * spacing) + hexSize * 2;
     const yTop = canvasHeight / 2 - h / 2;
@@ -260,14 +259,14 @@ export function drawCemetery(
     ctx.roundRect(xCenter - w / 2, yTop, w, h, 10);
     ctx.fill();
 
-    // Etykieta
+    // Label
     ctx.fillStyle = '#94a3b8';
     ctx.font = `bold ${hexSize * 0.5}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, xCenter, startBottom ? yTop + h - hexSize : yTop + hexSize);
 
-    // Kulki
+    // Marbles
     for (let i = 0; i < maxDead; i++) {
         const slotY = startBottom
           ? yTop + h - hexSize * 2.5 - i * spacing
@@ -277,11 +276,9 @@ export function drawCemetery(
         ctx.arc(xCenter, slotY, marbleRadius, 0, Math.PI * 2);
 
         if (i < count) {
-          // Namaluj martwą kulkę o wybranym kolorze
           ctx.fillStyle = colorId === 'BLACK' ? '#000000' : '#ffffff';
           ctx.fill();
         } else {
-          // Puste miejsce (slot) oznaczające ile kulek jeszcze pozostało do wypchnięcia
           ctx.fillStyle = 'rgba(0,0,0,0.05)';
           ctx.fill();
           ctx.strokeStyle = 'rgba(100,100,100,0.3)';
@@ -292,11 +289,67 @@ export function drawCemetery(
     ctx.restore();
   };
 
-  // Czarne kulki (Cmentarz dla czarnych wypchniętych z planszy) -> Zmarłe Czarne znajdują się w cmentarzu
+  // Dead black marbles
   const leftX = canvasWidth * 0.1;
   const rightX = canvasWidth * 0.9;
 
-  drawPlayerCemetery('BLACK', state.deadMarbles.BLACK, leftX, false, 'CZARNE');
-  drawPlayerCemetery('WHITE', state.deadMarbles.WHITE, rightX, true, 'BIAŁE');
+  drawPlayerCemetery('BLACK', state.deadMarbles.BLACK, leftX, false, 'BLACK');
+  drawPlayerCemetery('WHITE', state.deadMarbles.WHITE, rightX, true, 'WHITE');
 }
 
+export function drawGameOver(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, state: AbaloneState): void {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  const panelWidth = 600;
+  const panelHeight = 300;
+  const panelX = centerX - panelWidth / 2;
+  const panelY = centerY - panelHeight / 2;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 10;
+
+  ctx.fillStyle = '#1e293b'; // Ciemnoniebieski z palety tailwind slate-800
+  ctx.beginPath();
+  ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 20);
+  ctx.fill();
+
+  ctx.strokeStyle = state.winner === 'BLACK' ? '#333' : '#f8fafc';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = state.winner === 'BLACK' ? '#0f172a' : '#f8fafc'; 
+  const strokeColor = state.winner === 'BLACK' ? '#f8fafc' : '#0f172a';
+  
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = strokeColor;
+  ctx.font = 'bold 50px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const winnerText = state.winner === 'BLACK' ? 'BLACK WINS!' : 'WHITE WINS!';
+  
+  ctx.fillStyle = '#fbbf24'; // amber-400
+  ctx.font = 'bold 36px monospace';
+  ctx.fillText('GAME OVER', centerX, centerY - 80);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  ctx.shadowBlur = 10;
+  ctx.font = 'bold 48px sans-serif';
+  ctx.fillStyle = state.winner === 'BLACK' ? '#334155' : '#f8fafc';
+  ctx.fillText(winnerText, centerX, centerY);
+  ctx.strokeText(winnerText, centerX, centerY);
+  ctx.restore();
+
+  ctx.font = '18px monospace';
+  ctx.fillStyle = '#94a3b8'; // slate-400
+  ctx.fillText('Press Space or Enter to play again.', centerX, centerY + 90);
+}

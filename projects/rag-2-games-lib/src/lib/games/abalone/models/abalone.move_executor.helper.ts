@@ -13,7 +13,7 @@ export function executeInlineMove(
   const sorted = sortMarblesAlongDir(selected, dir);
   const front = sorted[sorted.length - 1];
 
-  // Zebranie kuleczek przeciwnika do zepchniecia
+  // Collect opponent marbles to push
   let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
   const opponentMarbles: ICubeCoords[] = [];
 
@@ -25,7 +25,7 @@ export function executeInlineMove(
     pushPos = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
   }
 
-  // Przesuwanie kulek przeciwnika (od najdalszej)
+  // Move opponent marbles (starting from the furthest)
   for (let i = opponentMarbles.length - 1; i >= 0; i--) {
     const opp = opponentMarbles[i];
     const oppKey = cubeToNotation(opp);
@@ -42,7 +42,7 @@ export function executeInlineMove(
     }
   }
 
-  // Przesuwanie wlasnych kulek
+  // Move own marbles
   const colors = sorted.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
   sorted.forEach(m => delete state.board[cubeToNotation(m)]);
   sorted.forEach((m, i) => {
@@ -73,7 +73,7 @@ export function captureInlineAnimData(
   const front = sorted[sorted.length - 1];
   const anims: IMarbleAnim[] = [];
 
-  // Kulki przeciwnika (przesuwane / wypychane)
+  // Opponent marbles (pushed / moved)
   let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
   while (isOnBoard(pushPos)) {
     const key = cubeToNotation(pushPos);
@@ -92,7 +92,7 @@ export function captureInlineAnimData(
     pushPos = newPos;
   }
 
-  // Wlasne kulki
+  // Own marbles
   for (const marble of sorted) {
     const color = state.board[cubeToNotation(marble)] ?? state.currentPlayer;
     anims.push({

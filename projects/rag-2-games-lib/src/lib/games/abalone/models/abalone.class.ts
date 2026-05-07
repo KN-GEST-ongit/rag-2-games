@@ -10,27 +10,67 @@ export interface ICubeCoords {
   z: number;
 }
 
-// Pomocniczy typ dla klucza mapy planszy w notacji Abalone (np. "A1", "E5", "I5")
+// Helper type for the board map key in Abalone notation (e.g., "A1", "E5", "I5")
 export type THexKey = string;
 
-/**
- * Zamienia współrzędne cube (x,y,z) na notację Abalone (np. "E5").
- * Wiersz: A(y=4)..I(y=-4), Kolumna: od 1 (lewy skraj wiersza).
- */
+export const ABALONE_WIN_SCORE = 6;
+
+export const HEX_AXIS_DIRS: ICubeCoords[] = [
+  { x: 1, y: -1, z: 0 },
+  { x: 1, y: 0, z: -1 },
+  { x: 0, y: 1, z: -1 },
+];
+
+export function cubeDistance(a: ICubeCoords, b: ICubeCoords): number {
+  return (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z)) / 2;
+}
+
+export function areNeighbors(a: ICubeCoords, b: ICubeCoords): boolean {
+  return cubeDistance(a, b) === 1;
+}
+
+export function areInLine(a: ICubeCoords, b: ICubeCoords, c: ICubeCoords): boolean {
+  const points = [a, b, c];
+
+  for (const axis of HEX_AXIS_DIRS) {
+    const projections = points.map(p => p.x * axis.x + p.y * axis.y + p.z * axis.z);
+    projections.sort((x, y) => x - y);
+
+    if (projections[1] - projections[0] === 1 && projections[2] - projections[1] === 1) {
+      const sorted = [...points].sort((p1, p2) => {
+        return (p1.x * axis.x + p1.y * axis.y + p1.z * axis.z) -
+               (p2.x * axis.x + p2.y * axis.y + p2.z * axis.z);
+      });
+      const d1 = { x: sorted[1].x - sorted[0].x, y: sorted[1].y - sorted[0].y, z: sorted[1].z - sorted[0].z };
+      const d2 = { x: sorted[2].x - sorted[1].x, y: sorted[2].y - sorted[1].y, z: sorted[2].z - sorted[1].z };
+
+      if (d1.x === d2.x && d1.y === d2.y && d1.z === d2.z &&
+          cubeDistance({ x: 0, y: 0, z: 0 }, d1) === 1) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+const ROW_MIN_X = [-4, -4, -4, -4, -4, -3, -2, -1, 0];
+const ROW_START_COL = [1, 1, 1, 1, 1, 2, 3, 4, 5];
+
+/** Converts cube coordinates (x,y,z) to Abalone notation (e.g., "E5").
+ Row: A(y=4)..I(y=-4), Column: starting from 1 (leftmost edge of the row).*/
 export function cubeToNotation(c: ICubeCoords): string {
-  const row = String.fromCharCode(65 + (4 - c.y));
-  const col = c.x + 5 + Math.min(0, c.y);
+  const rowIndex = 4 - c.y;
+  const row = String.fromCharCode(65 + rowIndex);
+  const col = ROW_START_COL[rowIndex] + (c.x - ROW_MIN_X[rowIndex]);
   return `${row}${col}`;
 }
 
-/**
- * Zamienia notację Abalone (np. "E5") na współrzędne cube.
- */
+// Converts Abalone notation (e.g., "E5") to cube coordinates 
 export function notationToCube(notation: string): ICubeCoords {
   const rowIdx = notation.charCodeAt(0) - 65;
   const col = parseInt(notation.substring(1), 10);
   const y = 4 - rowIdx;
-  const x = col - 5 - Math.min(0, y);
+  const x = ROW_MIN_X[rowIdx] + (col - ROW_START_COL[rowIdx]);
   return { x, y, z: -x - y };
 }
 
@@ -46,7 +86,7 @@ export interface IMarbleAnim {
 export class AbaloneState implements TGameState {
   public board: Record<THexKey, TPlayerColor> = {};
   
-  public currentPlayer: TPlayerColor = 'WHITE';
+  public currentPlayer: TPlayerColor = 'BLACK';
   public cursor: ICubeCoords = { x: 0, y: 0, z: 0 };
   public selectedMarbles: THexKey[] = [];
   public deadMarbles: Record<TPlayerColor, number> = { BLACK: 0, WHITE: 0 };
@@ -75,17 +115,17 @@ export class AbaloneState implements TGameState {
   }
 
 private getInitialColor(x: number, y: number): TPlayerColor | null {
-    if (this.isInitialWhite(x, y)) return 'WHITE';
     if (this.isInitialBlack(x, y)) return 'BLACK';
+    if (this.isInitialWhite(x, y)) return 'WHITE';
     return null;
-  }
-
-  private isInitialWhite(x: number, y: number): boolean {
-    return y === -4 || y === -3 || (y === -2 && x >= 0 && x <= 2);
   }
 
   private isInitialBlack(x: number, y: number): boolean {
     return y === 4 || y === 3 || (y === 2 && x >= -2 && x <= 0);
+  }
+
+  private isInitialWhite(x: number, y: number): boolean {
+    return y === -4 || y === -3 || (y === -2 && x >= 0 && x <= 2);
   }
 }
 
@@ -97,7 +137,7 @@ export class Abalone extends Game {
 
   public override outputSpec = `
     state:
-      board: Map<string, 'BLACK' | 'WHITE'>; // klucze w notacji Abalone, np. "A1", "E5"
+      board: Map<string, 'BLACK' | 'WHITE'>; // keys in Abalone notation, e.g., "A1", "E5"
       currentPlayer: 'BLACK' | 'WHITE';
       deadMarbles: { BLACK: int, WHITE: int }; 
       isGameOver: boolean;
@@ -105,7 +145,7 @@ export class Abalone extends Game {
       winner: 'BLACK' | 'WHITE' | null;
 
     default values:
-      currentPlayer: 'WHITE';
+      currentPlayer: 'BLACK';
       deadMarbles: { BLACK: 0, WHITE: 0 };
       isGameOver: false;
       phase: 'SELECT';
@@ -117,10 +157,10 @@ export class Abalone extends Game {
     new Player(
       0,
       true,
-      'Bialy',
+      'White',
       { move: 0, action: 0 },
       Abalone.getKeyboardBindings(),
-      '<move>: 1-6 (kierunki hex), <action>: 1:Wybierz/Odznacz, 2:Zatwierdź ruch, 3:Anuluj wybór',
+      '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect, 2:Confirm move, 3:Cancel selection',
       {
         move: 'Q,W,E,D,S,A',
         action: 'Space, Enter, Esc'
@@ -129,10 +169,10 @@ export class Abalone extends Game {
     new Player(
       1,
       true,
-      'Czarny',
+      'Black',
       { move: 0, action: 0 },
       Abalone.getKeyboardBindings(),
-      '<move>: 1-6 (kierunki hex), <action>: 1:Wybierz/Odznacz, 2:Zatwierdź ruch, 3:Anuluj wybór',
+      '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect, 2:Confirm move, 3:Cancel selection',
       {
         move: 'Q,W,E,D,S,A',
         action: 'Space, Enter, Esc'
