@@ -107,6 +107,9 @@ export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
         case 'crossyroad':
           ComponentClass = (await import('./games/crossyroad/crossyroad.component')).CrossyRoadGameWindowComponent;
           break;
+        case 'abalone':
+          ComponentClass = (await import('./games/abalone/abalone.component')).AbaloneGameWindowComponent;
+          break;
         default:
           console.error(`Unknown game: ${gameName}`);
           this.isLoading = false;
