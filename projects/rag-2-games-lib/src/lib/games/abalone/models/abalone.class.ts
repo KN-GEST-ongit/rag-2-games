@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player, IPlayerControlsBinding } from '../../../models/player.class';
@@ -92,6 +93,7 @@ export class AbaloneState implements TGameState {
   public deadMarbles: Record<TPlayerColor, number> = { BLACK: 0, WHITE: 0 };
   public phase: 'SELECT' | 'MOVE' | 'ANIMATING' = 'SELECT';
   public possibleMoves: number[] = [];
+  public selectedDirection = 0;
   public isGameOver = false;
   public winner: TPlayerColor | null = null;
 
@@ -114,27 +116,23 @@ export class AbaloneState implements TGameState {
     }
   }
 
-private getInitialColor(x: number, y: number): TPlayerColor | null {
-    if (this.isInitialBlack(x, y)) return 'BLACK';
-    if (this.isInitialWhite(x, y)) return 'WHITE';
+  private getInitialColor(x: number, y: number): TPlayerColor | null {
+    if (y >= 3) return 'BLACK';
+    if (y <= -3) return 'WHITE';
+    const [min, max] = y > 0 ? [-2, 0] : [0, 2];
+    if (Math.abs(y) === 2 && x >= min && x <= max) return y > 0 ? 'BLACK' : 'WHITE';
     return null;
   }
-
-  private isInitialBlack(x: number, y: number): boolean {
-    return y === 4 || y === 3 || (y === 2 && x >= -2 && x <= 0);
-  }
-
-  private isInitialWhite(x: number, y: number): boolean {
-    return y === -4 || y === -3 || (y === -2 && x >= 0 && x <= 2);
-  }
 }
-
 
 export class Abalone extends Game {
   public override name = 'abalone';
   public override author = 'Ignacy Janus';
   public override state = new AbaloneState();
-
+  public isRotationEnabled = false;
+  public isHintsEnabled = false;
+  public isNumpadHints = false;
+  public isConfirmationRequired = true;
   public override outputSpec = `
     state:
       board: Map<string, 'BLACK' | 'WHITE'>; // keys in Abalone notation, e.g., "A1", "E5"
@@ -158,28 +156,28 @@ export class Abalone extends Game {
       0,
       true,
       'White',
-      { move: 0, action: 0 },
+      { move: 0, action: 0, info: 0 },
       Abalone.getKeyboardBindings(),
-      '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect, 2:Confirm move, 3:Cancel selection',
+      '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect or Execute move, 3:Cancel selection',
       {
         move: 'Q,W,E,D,S,A',
-        action: 'Space, Enter, Esc'
+        action: 'Space, Esc'
       }
     ),
     new Player(
       1,
       true,
       'Black',
-      { move: 0, action: 0 },
+      { move: 0, action: 0, info: 0 },
       Abalone.getKeyboardBindings(),
-      '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect, 2:Confirm move, 3:Cancel selection',
+      '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect or Execute move, 3:Cancel selection',
       {
         move: 'Q,W,E,D,S,A',
-        action: 'Space, Enter, Esc'
+        action: 'Space, Esc'
       }
     ),
   ];
-
+  
   private static getKeyboardBindings(): Record<string, IPlayerControlsBinding> {
     return {
       'q': { variableName: 'move', pressedValue: 1, releasedValue: 0 },
@@ -194,9 +192,18 @@ export class Abalone extends Game {
       'D': { variableName: 'move', pressedValue: 4, releasedValue: 0 },
       'S': { variableName: 'move', pressedValue: 5, releasedValue: 0 },
       'A': { variableName: 'move', pressedValue: 6, releasedValue: 0 },
+      '8': { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+      '9': { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+      '6': { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+      '3': { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+      '2': { variableName: 'move', pressedValue: 5, releasedValue: 0 },
+      '5': { variableName: 'move', pressedValue: 6, releasedValue: 0 },
       ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       'Enter': { variableName: 'action', pressedValue: 2, releasedValue: 0 },
-      'Escape': { variableName: 'action', pressedValue: 3, releasedValue: 0 }
+      'Escape': { variableName: 'action', pressedValue: 3, releasedValue: 0 },
+      'Backspace': { variableName: 'action', pressedValue: 3, releasedValue: 0 },
+      'i': { variableName: 'info', pressedValue: 1, releasedValue: 0 },
+      'I': { variableName: 'info', pressedValue: 1, releasedValue: 0 }
     };
   }
 }

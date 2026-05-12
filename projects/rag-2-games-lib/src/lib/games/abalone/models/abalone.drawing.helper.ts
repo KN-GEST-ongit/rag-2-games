@@ -69,10 +69,181 @@ export function drawMarbles(
 export function drawCursor(ctx: CanvasRenderingContext2D, state: AbaloneState, hexSize: number): void {
   const pos = cubeToPixel(hexSize, state.cursor.x, state.cursor.y);
   ctx.beginPath();
-  ctx.arc(pos.x, pos.y, hexSize * 0.85, 0, Math.PI * 2);
-  ctx.strokeStyle = '#ff0000';
-  ctx.lineWidth = 2;
+  ctx.arc(pos.x, pos.y, hexSize * 0.25, 0, Math.PI * 2);
+  ctx.fillStyle = '#3b82f6';
+  ctx.fill();
+}
+
+function drawArrowLine(
+  ctx: CanvasRenderingContext2D,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  hexSize: number
+): void {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const angle = Math.atan2(dy, dx);
+  const r = hexSize * 0.8;
+  const headLen = hexSize * 0.5;
+  const headAngle = Math.PI / 6;
+  const sx = from.x + Math.cos(angle) * r;
+  const sy = from.y + Math.sin(angle) * r;
+  const tipX = to.x - Math.cos(angle) * (r * 0.3);
+  const tipY = to.y - Math.sin(angle) * (r * 0.3);
+  const shaftEndX = tipX - Math.cos(angle) * headLen;
+  const shaftEndY = tipY - Math.sin(angle) * headLen;
+
+  const lx1 = tipX - headLen * Math.cos(angle - headAngle);
+  const ly1 = tipY - headLen * Math.sin(angle - headAngle);
+  const lx2 = tipX - headLen * Math.cos(angle + headAngle);
+  const ly2 = tipY - headLen * Math.sin(angle + headAngle);
+
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(sx, sy);
+  ctx.lineTo(shaftEndX, shaftEndY);
   ctx.stroke();
+
+  ctx.fillStyle = '#000000';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(lx1, ly1);
+  ctx.lineTo(lx2, ly2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = '#4ade80';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(sx, sy);
+  ctx.lineTo(shaftEndX, shaftEndY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#4ade80';
+  ctx.strokeStyle = '#4ade80';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(lx1, ly1);
+  ctx.lineTo(lx2, ly2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawMarbleGhost(
+  ctx: CanvasRenderingContext2D,
+  fromPos: { x: number; y: number },
+  toPos: { x: number; y: number },
+  hexSize: number,
+  color: string,
+  isMovePhaseDest: boolean
+): void {
+  ctx.save();
+  ctx.globalAlpha = isMovePhaseDest ? 0.55 : 0.35;
+  ctx.beginPath();
+  ctx.arc(toPos.x, toPos.y, isMovePhaseDest ? hexSize * 0.8 : hexSize * 0.35, 0, Math.PI * 2);
+  ctx.fillStyle = isMovePhaseDest ? color : 'rgba(34, 197, 94, 1.0)';
+  ctx.fill();
+  if (isMovePhaseDest) {
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (isMovePhaseDest) {
+    drawArrowLine(ctx, fromPos, toPos, hexSize);
+  }
+}
+
+
+function sortAlongDir(marbles: ICubeCoords[], dir: ICubeCoords): ICubeCoords[] {
+  return [...marbles].sort((a, b) =>
+    (a.x * dir.x + a.y * dir.y + a.z * dir.z) - (b.x * dir.x + b.y * dir.y + b.z * dir.z)
+  );
+}
+
+function isInlineMove(selected: ICubeCoords[], dir: ICubeCoords): boolean {
+  if (selected.length <= 1) return true;
+  const ax = selected[1].x - selected[0].x;
+  const ay = selected[1].y - selected[0].y;
+  const az = selected[1].z - selected[0].z;
+  return (dir.x === ax && dir.y === ay && dir.z === az) ||
+         (dir.x === -ax && dir.y === -ay && dir.z === -az);
+}
+
+function drawEliminationMark(ctx: CanvasRenderingContext2D, pos: { x: number; y: number }, hexSize: number): void {
+  const r = hexSize * 0.45;
+  ctx.save();
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = hexSize * 0.22;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pos.x - r, pos.y - r);
+  ctx.lineTo(pos.x + r, pos.y + r);
+  ctx.moveTo(pos.x + r, pos.y - r);
+  ctx.lineTo(pos.x - r, pos.y + r);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawInlineGhosts(
+  ctx: CanvasRenderingContext2D,
+  state: AbaloneState,
+  dir: ICubeCoords,
+  hexSize: number,
+  isOnBoard: (pos: ICubeCoords) => boolean,
+  ownColor: string,
+  oppColor: string
+): void {
+  const sorted = sortAlongDir(state.selectedMarbles.map(k => notationToCube(k)), dir);
+  const front = sorted[sorted.length - 1];
+
+  for (const marble of sorted) {
+    const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
+    if (!isOnBoard(dest)) continue;
+    drawMarbleGhost(ctx, cubeToPixel(hexSize, marble.x, marble.y), cubeToPixel(hexSize, dest.x, dest.y), hexSize, ownColor, true);
+  }
+
+  let pushPos: ICubeCoords = { x: front.x + dir.x, y: front.y + dir.y, z: front.z + dir.z };
+  while (isOnBoard(pushPos)) {
+    const color = state.board[cubeToNotation(pushPos)];
+    if (!color || color === state.currentPlayer) break;
+    const newPos: ICubeCoords = { x: pushPos.x + dir.x, y: pushPos.y + dir.y, z: pushPos.z + dir.z };
+    drawMarbleGhost(ctx, cubeToPixel(hexSize, pushPos.x, pushPos.y), cubeToPixel(hexSize, newPos.x, newPos.y), hexSize, oppColor, true);
+    if (!isOnBoard(newPos)) drawEliminationMark(ctx, cubeToPixel(hexSize, newPos.x, newPos.y), hexSize);
+    pushPos = newPos;
+  }
+}
+
+function drawBroadsideGhosts(
+  ctx: CanvasRenderingContext2D,
+  state: AbaloneState,
+  selected: ICubeCoords[],
+  dir: ICubeCoords,
+  hexSize: number,
+  isOnBoard: (pos: ICubeCoords) => boolean,
+  ownColor: string
+): void {
+  const selectedKeySet = new Set(state.selectedMarbles);
+  for (const marble of selected) {
+    const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
+    const destKey = cubeToNotation(dest);
+    if (!isOnBoard(dest) || selectedKeySet.has(destKey) || state.board[destKey]) continue;
+    drawMarbleGhost(ctx, cubeToPixel(hexSize, marble.x, marble.y), cubeToPixel(hexSize, dest.x, dest.y), hexSize, ownColor, true);
+  }
 }
 
 export function drawMoveGhosts(
@@ -83,31 +254,24 @@ export function drawMoveGhosts(
   keyToCoords: (key: string) => ICubeCoords,
   isOnBoard: (pos: ICubeCoords) => boolean
 ): void {
-  if (state.phase !== 'MOVE' || state.possibleMoves.length === 0) return;
+  if (state.phase !== 'MOVE' || !state.selectedDirection) return;
 
+  const dir = directions[state.selectedDirection];
   const selected = state.selectedMarbles.map(k => keyToCoords(k));
-  const selectedKeySet = new Set(state.selectedMarbles);
+  const ownColor = state.currentPlayer === 'BLACK' ? '#000000' : '#ffffff';
+  const oppColor = state.currentPlayer === 'BLACK' ? '#ffffff' : '#000000';
 
-  for (const dirIdx of state.possibleMoves) {
-    const dir = directions[dirIdx];
-
-    for (const marble of selected) {
-      const dest: ICubeCoords = { x: marble.x + dir.x, y: marble.y + dir.y, z: marble.z + dir.z };
-      const destKey = cubeToNotation(dest);
-
-      if (selectedKeySet.has(destKey) || !isOnBoard(dest)) continue;
-
-      const pos = cubeToPixel(hexSize, dest.x, dest.y);
-
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, hexSize * 0.35, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(34, 197, 94, 0.4)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(34, 197, 94, 0.7)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
+  if (isInlineMove(selected, dir)) {
+    drawInlineGhosts(ctx, state, dir, hexSize, isOnBoard, ownColor, oppColor);
+  } else {
+    drawBroadsideGhosts(ctx, state, selected, dir, hexSize, isOnBoard, ownColor);
   }
+}
+
+function getArrowColors(isSelected: boolean, isValid: boolean): { bg: string; text: string } {
+  if (isSelected) return { bg: 'rgba(34, 197, 94, 1.0)', text: '#000000' };
+  if (isValid) return { bg: 'rgba(34, 197, 94, 0.75)', text: '#ffffff' };
+  return { bg: 'rgba(100, 100, 100, 0.25)', text: 'rgba(180, 180, 180, 0.4)' };
 }
 
 export function drawDirectionCompass(
@@ -116,39 +280,35 @@ export function drawDirectionCompass(
   hexSize: number,
   directions: Record<number, ICubeCoords>,
   dirKeyLabels: Record<number, string>,
-  keyToCoords: (key: string) => ICubeCoords
+  keyToCoords: (key: string) => ICubeCoords,
+  isRotated: boolean
 ): void {
-  if (state.phase !== 'MOVE' || state.selectedMarbles.length === 0) return;
-
-  const isRotated = state.currentPlayer === 'WHITE';
+  if (!['SELECT', 'MOVE'].includes(state.phase) || state.selectedMarbles.length === 0) return;
   const selected = state.selectedMarbles.map(k => keyToCoords(k));
   const cx = selected.reduce((s, c) => s + c.x, 0) / selected.length;
   const cy = selected.reduce((s, c) => s + c.y, 0) / selected.length;
 
   for (let dirIdx = 1; dirIdx <= 6; dirIdx++) {
-    const visualDir = isRotated ? ((dirIdx - 1 + 3) % 6) + 1 : dirIdx;
-    const dir = directions[visualDir];
-    const isValid = state.possibleMoves.includes(visualDir);
+    const dir = directions[dirIdx];
+    const isValid = state.possibleMoves.includes(dirIdx);
+    const isSelected = state.selectedDirection === dirIdx;
+    const colors = getArrowColors(isSelected, isValid);
 
     const targetPx = cubeToPixel(hexSize, cx + dir.x, cy + dir.y);
-    const arrowX = targetPx.x;
-    const arrowY = targetPx.y;
 
     ctx.beginPath();
-    ctx.arc(arrowX, arrowY, hexSize * 0.4, 0, Math.PI * 2);
-    ctx.fillStyle = isValid ? 'rgba(34, 197, 94, 0.75)' : 'rgba(100, 100, 100, 0.25)';
+    ctx.arc(targetPx.x, targetPx.y, hexSize * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = colors.bg;
     ctx.fill();
 
     ctx.save();
-    ctx.translate(arrowX, arrowY);
-    if (isRotated) {
-      ctx.rotate(Math.PI);
-    }
-    ctx.fillStyle = isValid ? '#ffffff' : 'rgba(180, 180, 180, 0.4)';
+    ctx.translate(targetPx.x, targetPx.y);
+    if (isRotated) ctx.rotate(Math.PI);
+    ctx.fillStyle = colors.text;
     ctx.font = `bold ${hexSize * 0.5}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(dirKeyLabels[dirIdx], 0, 0);
+    ctx.fillText(dirKeyLabels[dirIdx] ?? '', 0, 0);
     ctx.restore();
   }
 }
@@ -349,7 +509,4 @@ export function drawGameOver(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
   ctx.strokeText(winnerText, centerX, centerY);
   ctx.restore();
 
-  ctx.font = '18px monospace';
-  ctx.fillStyle = '#94a3b8'; // slate-400
-  ctx.fillText('Press Space or Enter to play again.', centerX, centerY + 90);
 }

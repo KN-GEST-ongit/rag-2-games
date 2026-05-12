@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { AfterViewInit, Component, OnInit, HostListener } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -21,17 +21,82 @@ import { PlayerSourceType } from '../../models/player-source-type.enum';
       Points - Black: <b>{{ game.state.deadMarbles.WHITE }}</b>, 
       White: <b>{{ game.state.deadMarbles.BLACK }}</b>
       <ng-container *ngIf="shouldDisplayCursor()">
-        | Phase: <b>{{ game.state.phase === 'SELECT' ? 'Selection' : 'Move' }}</b> |
-        Cursor: <b>{{ cursorNotation }}</b>
+        | Phase: <b>{{ game.state.phase === 'MOVE' ? 'Move' : 'Selection' }}</b>
+        | Cursor: <b>{{ cursorNotation }}</b>
       </ng-container>
     </div>
     <div class="game-hint" *ngIf="!game.state.isGameOver && shouldDisplayCursor()">
-      {{ game.state.phase === 'SELECT'
-        ? 'Space: select/deselect | Enter: confirm selection | Esc: cancel'
-        : 'Q/W/E/D/S/A: execute move | Esc: return' }}
+      {{ getHintText() }}
     </div>
     <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
-    <b>FPS: {{ fps }}</b>
+    <div *ngIf="game.state.isGameOver" class="flex justify-center gap-4 mt-2">
+      <button
+        class="px-6 py-2 rounded font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="restart()">
+        Play Again
+      </button>
+      <button *ngIf="!isGameOverDismissed"
+        class="px-6 py-2 rounded font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="isGameOverDismissed = true">
+        View Board
+      </button>
+    </div>
+<b>FPS: {{ fps }}</b>
+    <div *ngIf="getSocketPlayerCount() !== 2" class="flex gap-2 flex-wrap mt-1">
+      <button
+        class="px-3 py-1 rounded text-sm font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="toggleInfo()">
+        [I] How to play
+      </button>
+      <button
+        class="px-3 py-1 rounded text-sm font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="game.isRotationEnabled = !game.isRotationEnabled">
+        Rotation: {{ game.isRotationEnabled ? 'ON' : 'OFF' }}
+      </button>
+      <button
+        class="px-3 py-1 rounded text-sm font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="cycleHints()">
+        Hints: {{ !game.isHintsEnabled ? 'OFF' : game.isNumpadHints ? 'Numpad' : 'QWEASD' }}
+      </button>
+      <button
+        class="px-3 py-1 rounded text-sm font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="toggleConfirmation()">
+        Confirmation: {{ game.isConfirmationRequired ? 'ON' : 'OFF' }}
+      </button>
+    </div>
+
+    <div *ngIf="isInfoVisible" class="absolute inset-0 w-full h-full flex justify-center items-center bg-darkGray bg-opacity-90 z-50">
+      <div class="bg-mainGray text-gray-200 p-5 md:p-10 rounded-lg border-2 border-mainOrange max-w-3xl max-h-[80vh] overflow-y-auto relative">
+        <button (click)="toggleInfo()" class="absolute top-2 right-3 w-10 h-10 text-mainOrange text-xl font-bold">X</button>
+
+        <h2 class="text-center text-2xl text-mainOrange mb-4">How to play — Abalone</h2>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Objective</h3>
+        <p class="mb-4 text-mainCreme">Push 6 opponent marbles off the board to win. You can move 1, 2 or 3 of your own marbles in a line per turn.</p>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Phase 1 — Selection (SELECT)</h3>
+        <p class="mb-1 text-mainCreme">Move the cursor and select up to 3 marbles in a line.</p>
+        <ul class="list-disc list-inside mb-4 text-mainCreme">
+          <li><b>Q W E D S A</b> or <b>Numpad 8 9 6 3 2 5</b> — move cursor</li>
+          <li><b>Space</b> — select / deselect marble under cursor</li>
+          <li><b>Enter</b> — confirm selection, go to Move phase</li>
+          <li><b>Esc / Backspace</b> — clear selection</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Phase 2 — Move (MOVE)</h3>
+        <p class="mb-1 text-mainCreme">Choose a direction for your marbles. Ghost marbles with arrows show where they will land.</p>
+        <ul class="list-disc list-inside mb-4 text-mainCreme">
+          <li><b>Q W E D S A</b> or <b>Numpad 8 9 6 3 2 5</b> — highlight a direction</li>
+          <li><b>Enter</b> — execute the move</li>
+          <li><b>Esc / Backspace</b> — go back to selection</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Other</h3>
+        <ul class="list-disc list-inside mb-2 text-mainCreme">
+          <li><b>I</b> — toggle this panel</li>
+        </ul>
+      </div>
+    </div>
   `,
 })
 export class AbaloneGameWindowComponent
@@ -40,6 +105,43 @@ export class AbaloneGameWindowComponent
 {
   public override game!: Abalone;
   private readonly _hexSize = 30;
+  public isInfoVisible = false;
+  public isGameOverDismissed = false;
+
+  public toggleInfo(): void {
+    this.isInfoVisible = !this.isInfoVisible;
+  }
+
+  public cycleHints(): void {
+    if (!this.game.isHintsEnabled) {
+      this.game.isHintsEnabled = true;
+      this.game.isNumpadHints = false;
+    } else if (!this.game.isNumpadHints) {
+      this.game.isNumpadHints = true;
+    } else {
+      this.game.isHintsEnabled = false;
+      this.game.isNumpadHints = false;
+    }
+  }
+
+  public toggleConfirmation(): void {
+    this.game.isConfirmationRequired = !this.game.isConfirmationRequired;
+    if (!this.game.isConfirmationRequired && this.game.state.phase === 'MOVE') {
+      this.game.state.phase = 'SELECT';
+      this.game.state.selectedDirection = 0;
+    }
+  }
+
+  private getDisplayLabels(): Record<number, string> {
+    if (!this.game.isHintsEnabled) return {};
+    const base = this.game.isNumpadHints ? this._numpadLabels : this._dirKeyLabels;
+    if (!this.getShouldRotate()) return base;
+    const rotated: Record<number, string> = {};
+    for (let i = 1; i <= 6; i++) {
+      rotated[i] = base[((i - 1 + 3) % 6) + 1];
+    }
+    return rotated;
+  }
 
   public get cursorNotation(): string {
     return cubeToNotation(this.game.state.cursor);
@@ -63,6 +165,10 @@ export class AbaloneGameWindowComponent
     1: 'Q', 2: 'W', 3: 'E', 4: 'D', 5: 'S', 6: 'A'
   };
 
+  private readonly _numpadLabels: Record<number, string> = {
+    1: '8', 2: '9', 3: '6', 4: '3', 5: '2', 6: '5'
+  };
+
   public getSocketPlayerCount(): number {
     return this.game.players.filter(p => p && p.playerType === PlayerSourceType.SOCKET).length;
   }
@@ -73,11 +179,21 @@ export class AbaloneGameWindowComponent
     return humanPlayer.id === 0 ? 'WHITE' : 'BLACK';
   }
 
+  public getHintText(): string {
+    if (this.game.state.phase === 'MOVE') {
+      return this.game.isConfirmationRequired
+        ? 'Q/W/E/D/S/A: select direction | Enter: execute | Esc/Backspace: go back'
+        : 'Q/W/E/D/S/A: select direction to execute | Esc/Backspace: go back';
+    }
+    return 'Space: select/deselect | Enter: go to Move phase | Esc/Backspace: cancel';
+  }
+
   public shouldDisplayCursor(): boolean {
     return this.getSocketPlayerCount() !== 2;
   }
 
   private getShouldRotate(): boolean {
+    if (!this.game.isRotationEnabled) return false;
     const socketCount = this.getSocketPlayerCount();
 
     if (socketCount === 0) {
@@ -103,65 +219,66 @@ export class AbaloneGameWindowComponent
   }
 
   public override restart(): void {
+    if (this._canvas) {
+      const w = this._canvas.width;
+      this._canvas.width = w;
+    }
     this.game.state = new AbaloneState();
     this._animation = [];
     this._animationProgress = 0;
     this._animationFrame = 0;
+    this.isGameOverDismissed = false;
   }
 
-  @HostListener('window:keydown', ['$event'])
-  public overrideGameOverRestart(event: KeyboardEvent): void {
-    if (
-      this.game.state.isGameOver &&
-      (event.key === ' ' || event.key === 'Enter') &&
-      document.activeElement?.id !== 'inGameMenuInputFocusAction'
-    ) {
-      event.preventDefault();
-      this.restart();
+  private consumeGlobalInputs(): boolean {
+    let shouldRestart = false;
+    let shouldToggleInfo = false;
+    for (const player of this.game.players) {
+      if (!player?.inputData) continue;
+      if (player.inputData['restart'] === 1) {
+        shouldRestart = true;
+        player.inputData['restart'] = 0;
+      }
+      if (player.inputData['info'] === 1) {
+        shouldToggleInfo = true;
+        player.inputData['info'] = 0;
+      }
     }
+    if (shouldToggleInfo) this.toggleInfo();
+    return shouldRestart;
   }
 
   protected override update(): void {
+    this.consumeGlobalInputs();
     super.update();
 
-    if (this.game.state.isGameOver) {
-      if (this.consumeGameOverRestartRequest()) {
-        this.restart();
-      }
-      this.render();
-      return;
-    }
-
     if (!this.isPaused) {
-      this.updateActiveState();
+      this.updateAnimation();
+      this.handleInput();
     }
     this.render();
   }
 
-  private updateActiveState(): void {
-    this.updateAnimation();
-    this.handleInput();
-  }
-
-  private consumeGameOverRestartRequest(): boolean {
-    let hasRestartRequest = false;
-
-    for (const player of this.game.players) {
-      if (player && player.inputData) {
-        const action = player.inputData['action'];
-        if (action === 1 || action === 2) {
-          hasRestartRequest = true;
-          player.inputData['action'] = 0;
-        }
-      }
+  private clearAllPlayersAction(): void {
+    for (const p of this.game.players) {
+      if (p?.inputData) p.inputData['action'] = 0;
     }
-
-    return hasRestartRequest;
   }
 
   private handleInput(): void {
     const state = this.game.state;
-    if (state.isGameOver) return;
+
+    if (state.isGameOver) {
+      const isTriggered = this.game.players.some(p => {
+        const action = p?.inputData?.['action'] as number;
+        return action === 1 || action === 2 || action === 3;
+      });
+      if (isTriggered) {
+        this.restart();
+        this.clearAllPlayersAction();
+      }
+      return;
+    }
 
     const input = this.getCurrentTurnInput();
 
@@ -239,22 +356,8 @@ export class AbaloneGameWindowComponent
   }
 
   private handleSelectPhaseInput(move: number, action: number): void {
-    if (move !== 0) {
-      this.moveCursor(move);
-    }
-    if (action !== 0) {
-      this.handleAction(action);
-    }
-  }
-
-  private handleMovePhaseInput(move: number, action: number): void {
-    if (move !== 0 && this.game.state.possibleMoves.includes(move)) {
-      this.executeMove(move);
-    }
-    if (action === 3) {
-      this.game.state.phase = 'SELECT';
-      this.game.state.possibleMoves = [];
-    }
+    if (move !== 0) this.moveCursor(move);
+    if (action !== 0) this.handleAction(action);
   }
 
   private moveCursor(dirIdx: number): void {
@@ -274,14 +377,127 @@ export class AbaloneGameWindowComponent
     const currentKey = cubeToNotation(state.cursor);
 
     if (action === 1) {
-      this.toggleSelection(currentKey);
+      if (state.board[currentKey] === state.currentPlayer) {
+        this.toggleSelection(currentKey);
+      }
     } else if (action === 2) {
-      if (state.selectedMarbles.length > 0) {
-        this.enterMovePhase();
+      const possible = this.computePossibleMoves();
+      if (possible.length > 0) {
+        state.possibleMoves = possible;
+        state.selectedDirection = 0;
+        state.phase = 'MOVE';
+        return;
       }
     } else if (action === 3) {
       state.selectedMarbles = [];
     }
+
+    state.possibleMoves = this.computePossibleMoves();
+  }
+
+  private handleMovePhaseInput(move: number, action: number): void {
+    const state = this.game.state;
+
+    if (move !== 0 && state.possibleMoves.includes(move)) {
+      if (!this.game.isConfirmationRequired) {
+        this.executeMove(move);
+        return;
+      }
+      state.selectedDirection = move;
+    }
+
+    if (action === 2 && state.selectedDirection !== 0) {
+      this.executeMove(state.selectedDirection);
+    } else if (action === 3) {
+      state.phase = 'SELECT';
+      state.selectedDirection = 0;
+    }
+  }
+
+  private computePossibleMoves(): number[] {
+    const valid: number[] = [];
+    if (this.game.state.selectedMarbles.length > 0) {
+      for (let dirIdx = 1; dirIdx <= 6; dirIdx++) {
+        if (this.isMoveValid(dirIdx)) {
+          valid.push(dirIdx);
+        }
+      }
+    }
+    return valid;
+  }
+
+  private getIntentDirection(cursor: ICubeCoords): number | null {
+    const validMoves = this.game.state.possibleMoves;
+    if (validMoves.length === 0) return null;
+
+    const exactMatches: number[] = [];
+    for (const dirIdx of validMoves) {
+      const d = this._directions[dirIdx];
+      const selected = this.game.state.selectedMarbles.map(k => notationToCube(k));
+      let covers = false;
+      for (const cube of selected) {
+        if (cube.x + d.x === cursor.x && cube.y + d.y === cursor.y && cube.z + d.z === cursor.z) {
+          covers = true;
+          break;
+        }
+      }
+      
+      if (!covers && selected.length > 1) {
+        let isInline = false;
+        const axis = this.getLineAxis(selected);
+        if (this.isInlineDirection(axis, d)) {
+          isInline = true;
+        }
+
+        if (isInline) {
+          const sorted = this.sortMarblesAlongDir(selected, d);
+          const front = sorted[sorted.length - 1];
+          let pushPos = { x: front.x + d.x, y: front.y + d.y, z: front.z + d.z };
+          while (this.isOnBoard(pushPos) && this.game.state.board[cubeToNotation(pushPos)] && this.game.state.board[cubeToNotation(pushPos)] !== this.game.state.currentPlayer) {
+            if (pushPos.x === cursor.x && pushPos.y === cursor.y && pushPos.z === cursor.z) {
+              covers = true;
+              break;
+            }
+            pushPos = { x: pushPos.x + d.x, y: pushPos.y + d.y, z: pushPos.z + d.z };
+          }
+          if (pushPos.x === cursor.x && pushPos.y === cursor.y && pushPos.z === cursor.z) {
+            covers = true;
+          }
+        }
+      }
+
+      if (covers) {
+        exactMatches.push(dirIdx);
+      }
+    }
+
+    if (exactMatches.length === 1) return exactMatches[0];
+
+    if (exactMatches.length > 1) {
+      const selectedCubes = this.game.state.selectedMarbles.map(k => notationToCube(k));
+      const cx = selectedCubes.reduce((a, b) => a + b.x, 0) / selectedCubes.length;
+      const cy = selectedCubes.reduce((a, b) => a + b.y, 0) / selectedCubes.length;
+      const cz = selectedCubes.reduce((a, b) => a + b.z, 0) / selectedCubes.length;
+
+      const tx = cursor.x - cx;
+      const ty = cursor.y - cy;
+      const tz = cursor.z - cz;
+
+      let maxDot = -Infinity;
+      let bestDir: number | null = null;
+
+      for (const dirIdx of exactMatches) {
+        const d = this._directions[dirIdx];
+        const dot = tx * d.x + ty * d.y + tz * d.z;
+        if (dot > maxDot) {
+          maxDot = dot;
+          bestDir = dirIdx;
+        }
+      }
+      return bestDir;
+    }
+
+    return null;
   }
 
   private toggleSelection(key: string): void {
@@ -295,6 +511,11 @@ export class AbaloneGameWindowComponent
     // Deselect if already selected
     if (idx > -1) {
       state.selectedMarbles.splice(idx, 1);
+      if (state.selectedMarbles.length === 2) {
+        const c0 = notationToCube(state.selectedMarbles[0]);
+        const c1 = notationToCube(state.selectedMarbles[1]);
+        if (!areNeighbors(c0, c1)) state.selectedMarbles = [];
+      }
       return;
     }
 
@@ -359,25 +580,7 @@ export class AbaloneGameWindowComponent
     this._animationProgress = 0;
     this._animationFrame = 0;
     state.phase = 'ANIMATING';
-  }
-
-
-  private enterMovePhase(): void {
-    const possibleMoves = this.computePossibleMoves();
-    if (possibleMoves.length > 0) {
-      this.game.state.possibleMoves = possibleMoves;
-      this.game.state.phase = 'MOVE';
-    }
-  }
-
-  private computePossibleMoves(): number[] {
-    const valid: number[] = [];
-    for (let dirIdx = 1; dirIdx <= 6; dirIdx++) {
-      if (this.isMoveValid(dirIdx)) {
-        valid.push(dirIdx);
-      }
-    }
-    return valid;
+    state.possibleMoves = [];
   }
 
 public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
@@ -501,6 +704,10 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
     if (state.deadMarbles.BLACK >= ABALONE_WIN_SCORE || state.deadMarbles.WHITE >= ABALONE_WIN_SCORE) {
       state.isGameOver = true;
       state.winner = state.deadMarbles.BLACK >= ABALONE_WIN_SCORE ? 'WHITE' : 'BLACK';
+      state.selectedMarbles = [];
+      state.possibleMoves = [];
+      state.selectedDirection = 0;
+      state.phase = 'SELECT';
       return;
     }
 
@@ -508,6 +715,7 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
     this.resetInactivePlayerInput();
     state.selectedMarbles = [];
     state.possibleMoves = [];
+    state.selectedDirection = 0;
     state.phase = 'SELECT';
   }
 
@@ -534,8 +742,8 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
     } else {
       drawMarbles(ctx, this.game.state, this._hexSize);
       drawMoveGhosts(ctx, this.game.state, this._hexSize, this._directions, k => notationToCube(k), p => this.isOnBoard(p));
-      drawDirectionCompass(ctx, this.game.state, this._hexSize, this._directions, this._dirKeyLabels, k => notationToCube(k));
-      if (this.shouldDisplayCursor()) {
+      drawDirectionCompass(ctx, this.game.state, this._hexSize, this._directions, this.getDisplayLabels(), k => notationToCube(k), this.getShouldRotate());
+      if (this.shouldDisplayCursor() && this.game.state.phase === 'SELECT') {
         drawHexCursor(ctx, this.game.state, this._hexSize);
       }
     }
@@ -544,7 +752,7 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
 
     drawCemetery(ctx, this.game.state, this._canvas.width, this._canvas.height, this._hexSize);
 
-    if (this.game.state.isGameOver) {
+    if (this.game.state.isGameOver && !this.isGameOverDismissed) {
       drawGameOver(ctx, this._canvas, this.game.state);
     }
   }
