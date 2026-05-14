@@ -41,9 +41,9 @@ export class SoccerGameWindowComponent
 
   private PLAYER_RADIUS = 15;
   private BALL_RADIUS = 10;
-  private PLAYER_SPEED = 2.35;
-  private KICK_POWER = 2.3;
-  private FRICTION = 0.98;
+  private PLAYER_SPEED = 2.45;
+  private KICK_POWER = 2.45;
+  private FRICTION = 0.985;
   private WALL_BOUNCIES = 0.5;
 
   private TEAM_RED_COLOR = '#FF0000';
