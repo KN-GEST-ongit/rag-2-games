@@ -12,7 +12,7 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  Type
+  Type,
 } from '@angular/core';
 import { TExchangeData } from './models/exchange-data.type';
 import { Game } from './models/game.class';
@@ -60,7 +60,10 @@ export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
         this._currentComponentRef.setInput('setAbstractGame', this.game);
       }
       if (changes['socketInputData']) {
-        this._currentComponentRef.setInput('setSocketInputDataReceive', this.socketInputData);
+        this._currentComponentRef.setInput(
+          'setSocketInputDataReceive',
+          this.socketInputData
+        );
       }
     }
   }
@@ -78,37 +81,57 @@ export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
 
       switch (gameName) {
         case 'pong':
-          ComponentClass = (await import('./games/pong/pong.component')).PongGameWindowComponent;
+          ComponentClass = (await import('./games/pong/pong.component'))
+            .PongGameWindowComponent;
           break;
         case 'skijump':
-          ComponentClass = (await import('./games/skijump/skijump.component')).SkiJumpGameWindowComponent;
+          ComponentClass = (await import('./games/skijump/skijump.component'))
+            .SkiJumpGameWindowComponent;
           break;
         case 'flappybird':
-          ComponentClass = (await import('./games/flappybird/flappybird.component')).FlappyBirdGameWindowComponent;
+          ComponentClass = (
+            await import('./games/flappybird/flappybird.component')
+          ).FlappyBirdGameWindowComponent;
           break;
         case 'happyjump':
-          ComponentClass = (await import('./games/happyjump/happyjump.component')).HappyJumpGameWindowComponent;
+          ComponentClass = (
+            await import('./games/happyjump/happyjump.component')
+          ).HappyJumpGameWindowComponent;
           break;
         case 'spaceinvaders':
-          ComponentClass = (await import('./games/spaceinvaders/spaceinvaders.component')).SpaceinvadersGameWindowComponent;
+          ComponentClass = (
+            await import('./games/spaceinvaders/spaceinvaders.component')
+          ).SpaceinvadersGameWindowComponent;
           break;
         case 'snake':
-          ComponentClass = (await import('./games/snake/snake.component')).SnakeGameWindowComponent;
+          ComponentClass = (await import('./games/snake/snake.component'))
+            .SnakeGameWindowComponent;
           break;
         case 'pacman':
-          ComponentClass = (await import('./games/pacman/pacman.component')).PacmanGameWindowComponent;
+          ComponentClass = (await import('./games/pacman/pacman.component'))
+            .PacmanGameWindowComponent;
           break;
         case 'towerdefense':
-          ComponentClass = (await import('./games/towerdefense/towerdefense.component')).TowerDefenseGameWindowComponent;
+          ComponentClass = (
+            await import('./games/towerdefense/towerdefense.component')
+          ).TowerDefenseGameWindowComponent;
           break;
         case 'tetris':
-          ComponentClass = (await import('./games/tetris/tetris.component')).TetrisGameWindowComponent;
+          ComponentClass = (await import('./games/tetris/tetris.component'))
+            .TetrisGameWindowComponent;
           break;
         case 'crossyroad':
-          ComponentClass = (await import('./games/crossyroad/crossyroad.component')).CrossyRoadGameWindowComponent;
+          ComponentClass = (
+            await import('./games/crossyroad/crossyroad.component')
+          ).CrossyRoadGameWindowComponent;
+          break;
+        case 'abalone':
+          ComponentClass = (await import('./games/abalone/abalone.component'))
+            .AbaloneGameWindowComponent;
           break;
         case 'soccer':
-          ComponentClass = (await import('./games/soccer/soccer.component')).SoccerGameWindowComponent;
+          ComponentClass = (await import('./games/soccer/soccer.component'))
+            .SoccerGameWindowComponent;
           break;
         default:
           console.error(`Unknown game: ${gameName}`);
@@ -116,22 +139,27 @@ export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
           return;
       }
 
-      this._currentComponentRef = this.gameContainer.createComponent(ComponentClass);
+      this._currentComponentRef =
+        this.gameContainer.createComponent(ComponentClass);
 
       this._currentComponentRef.setInput('gameRestart', this.gameRestart);
       this._currentComponentRef.setInput('gamePause', this.gamePause);
       this._currentComponentRef.setInput('setAbstractGame', this.game);
-      this._currentComponentRef.setInput('setSocketInputDataReceive', this.socketInputData);
+      this._currentComponentRef.setInput(
+        'setSocketInputDataReceive',
+        this.socketInputData
+      );
 
       if (this._currentComponentRef.instance.gameStateDataEmitter) {
-        this._currentComponentRef.instance.gameStateDataEmitter.subscribe((data: Game) => {
-          this.handleGameStateData(data);
-        });
+        this._currentComponentRef.instance.gameStateDataEmitter.subscribe(
+          (data: Game) => {
+            this.handleGameStateData(data);
+          }
+        );
       }
 
       const element = this._currentComponentRef.location.nativeElement;
       element.classList.add('flex', 'flex-col', 'items-center');
-
     } catch (error) {
       console.error(`Failed to load game: ${gameName}`, error);
     } finally {

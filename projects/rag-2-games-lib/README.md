@@ -1,5 +1,15 @@
 # RAG-2-GAMES library
 
+## Usage
+
+To run project, use:
+
+`npm i`
+
+then:
+
+`ng serve` or `npm run start`
+
 ## License
 
 This project is available under the AGPL License. See [LICENSE](../../LICENSE) for more information.
