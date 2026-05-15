@@ -209,16 +209,20 @@ export abstract class BaseGameWindowComponent
     }
 
     const inactivityTimeout = setTimeout(() => {
+      const playerBindings = this._activeKeyBindings.get(player.id.toString());
+
       for (const key in player.controlsBinding) {
         const variableName = player.controlsBinding[key].variableName;
+        if (playerBindings?.[variableName]?.size) continue;
         const releasedValue = player.controlsBinding[key].releasedValue;
         player.inputData[variableName] = releasedValue;
       }
 
-      const playerBindings = this._activeKeyBindings.get(player.id.toString());
       if (playerBindings) {
         for (const variableName in playerBindings) {
-          playerBindings[variableName]?.clear();
+          if (!playerBindings[variableName]?.size) {
+            delete playerBindings[variableName];
+          }
         }
       }
     }, 1000);
