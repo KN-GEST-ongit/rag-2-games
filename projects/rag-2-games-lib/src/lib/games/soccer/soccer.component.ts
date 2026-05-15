@@ -41,8 +41,8 @@ export class SoccerGameWindowComponent
 
   private PLAYER_RADIUS = 15;
   private BALL_RADIUS = 10;
-  private PLAYER_SPEED = 2.45;
-  private KICK_POWER = 2.45;
+  private PLAYER_SPEED = 2.8;
+  private KICK_POWER = 2.65;
   private FRICTION = 0.985;
   private WALL_BOUNCIES = 0.5;
 
