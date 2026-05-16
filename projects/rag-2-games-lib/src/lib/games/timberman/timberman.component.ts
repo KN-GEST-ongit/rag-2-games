@@ -38,6 +38,8 @@ export class TimbermanGameWindowComponent
 
   private _previousGameMode = '';
   private _wasChopPressed: [boolean, boolean] = [false, false];
+  private _chopAnimTimer: [number, number] = [0, 0];
+  private _chopAnimSide: ['left' | 'right', 'left' | 'right'] = ['left', 'left'];
 
   private readonly _timeDrain = 0.33;
   private readonly _timeBonus = 8;
@@ -70,6 +72,8 @@ export class TimbermanGameWindowComponent
   public override restart(): void {
     this.game.state = new TimbermanState();
     this._wasChopPressed = [false, false];
+    this._chopAnimTimer = [0, 0];
+    this._chopAnimSide = ['left', 'left'];
     this.resizeCanvas();
     this.render();
   }
@@ -112,6 +116,8 @@ export class TimbermanGameWindowComponent
       if (st.timeLeft1 <= 0) { st.isGameOver1 = true; return; }
     }
 
+    if (this._chopAnimTimer[playerIndex] > 0) this._chopAnimTimer[playerIndex]--;
+
     const chop = (this.game.players[playerIndex]?.inputData['chop'] as number) ?? 0;
     const isChopPressed = chop !== 0;
 
@@ -129,6 +135,9 @@ export class TimbermanGameWindowComponent
     if (playerIndex === 0) st.position0 = side;
     else st.position1 = side;
 
+    this._chopAnimTimer[playerIndex] = 8;
+    this._chopAnimSide[playerIndex] = side;
+
     segments.shift();
     segments.push(generateSegment(segments[segments.length - 1]?.branch ?? null));
 
@@ -144,6 +153,28 @@ export class TimbermanGameWindowComponent
     } else {
       st.score1++;
       st.timeLeft1 = Math.min(INITIAL_TIME, st.timeLeft1 + this._timeBonus);
+    }
+  }
+
+  private renderAxe(ctx: CanvasRenderingContext2D, playerIndex: number, playerX: number): void {
+    const side = this._chopAnimSide[playerIndex];
+    const handleW = this._branchLen / 2;
+    const handleH = 12;
+    const bladeSize = 18;
+    const axeY = this._groundY - Math.round(this._playerH * 0.7);
+
+    if (side === 'left') {
+      const handleX = playerX + this._playerW;
+      ctx.fillStyle = '#A0522D';
+      ctx.fillRect(handleX, axeY - handleH / 2, handleW, handleH);
+      ctx.fillStyle = '#C0C0C0';
+      ctx.fillRect(handleX + handleW - bladeSize / 2, axeY - bladeSize / 2, bladeSize, bladeSize);
+    } else {
+      const handleX = playerX - handleW;
+      ctx.fillStyle = '#A0522D';
+      ctx.fillRect(handleX, axeY - handleH / 2, handleW, handleH);
+      ctx.fillStyle = '#C0C0C0';
+      ctx.fillRect(handleX - bladeSize / 2, axeY - bladeSize / 2, bladeSize, bladeSize);
     }
   }
 
@@ -194,10 +225,14 @@ export class TimbermanGameWindowComponent
     }
 
     const playerX = position === 'left'
-      ? trunkCX - this._trunkW / 2 - this._playerW
-      : trunkCX + this._trunkW / 2;
+      ? trunkCX - this._trunkW / 2 - this._branchLen / 2 - this._playerW / 2
+      : trunkCX + this._trunkW / 2 + this._branchLen / 2 - this._playerW / 2;
     ctx.fillStyle = playerIndex === 0 ? '#CC2200' : '#0022CC';
     ctx.fillRect(playerX, this._groundY - this._playerH, this._playerW, this._playerH);
+
+    if (this._chopAnimTimer[playerIndex] > 0) {
+      this.renderAxe(ctx, playerIndex, playerX);
+    }
 
     const barX = offsetX + 20;
     const barW = this._sectionW - 40;
