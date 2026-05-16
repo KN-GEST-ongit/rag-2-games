@@ -10,14 +10,16 @@ export const VEHICLE_RANGE = 7; // max ±offset along wall
 export const BASE_BALL_SPEED = 6;
 export const MAX_BALL_SPEED = 12;
 export const SPEED_INCREMENT = 0.3;  // added to base speed every 30s
-export const SPAWN_INTERVAL_START = 4;  // seconds between ball spawns initially
-export const SPAWN_INTERVAL_MIN = 1.5;
+export const SPAWN_INTERVAL_START = 2.5; // seconds between ball spawns initially
+export const SPAWN_INTERVAL_MIN = 0.6;
 
 export const SUPER_CHARGE_TIME = 5;  // seconds to fully charge
 export const SUPER_RADIUS = 2.5;     // radius of super skill effect
 export const SUPER_SPEED_MULT = 2;   // speed multiplier applied to hit balls
-export const DASH_SPEED_MULT = 1.5;  // speed multiplier on dash hit
-export const SPIN_FACTOR = 0.3;      // how much vehicle velocity affects ball
+export const DASH_SPEED_MULT = 1.5;   // speed multiplier on dash hit
+export const BARRIER_SPEED_MULT = 1.35; // speed multiplier on eliminated-barrier bounce
+export const CORNER_SPEED_VARY = 0.22;  // ±variance on corner bounce (0 = none)
+export const SPIN_FACTOR = 0.3;       // how much vehicle velocity affects ball
 
 export type TPlayerSide = 'top' | 'bottom' | 'left' | 'right';
 export const SIDES: TPlayerSide[] = ['top', 'bottom', 'left', 'right'];
@@ -29,6 +31,7 @@ export interface IBall {
   vx: number;
   vz: number;
   radius: number;
+  speed: number;  // per-ball speed, can diverge from state.ballSpeed after boosts
 }
 
 export interface ICrashPlayer {

@@ -8,7 +8,9 @@ import { Crashball, CrashballState } from './models/crashball.class';
 import { CrashballRenderer } from './models/crashball.renderer';
 import {
   BALL_RADIUS,
+  BARRIER_SPEED_MULT,
   BASE_BALL_SPEED,
+  CORNER_SPEED_VARY,
   MAX_BALL_SPEED,
   SIDES,
   SPAWN_INTERVAL_MIN,
@@ -148,12 +150,13 @@ export class CrashballGameWindowComponent
     if (state.spawnTimer <= 0) {
       const corner = Math.floor(Math.random() * 4);
       const spawn = spawnBallAtCorner(corner, state.ballSpeed);
-      state.balls.push({ id: state.nextBallId++, ...spawn, radius: BALL_RADIUS });
-      const interval = Math.max(
+      state.balls.push({ id: state.nextBallId++, ...spawn, radius: BALL_RADIUS, speed: state.ballSpeed });
+      const baseInterval = Math.max(
         SPAWN_INTERVAL_MIN,
         SPAWN_INTERVAL_START - (state.ballSpeed - BASE_BALL_SPEED) * 0.5
       );
-      state.spawnTimer = interval;
+      const countBonus = Math.max(0, state.balls.length - 3);
+      state.spawnTimer = Math.max(SPAWN_INTERVAL_MIN, baseInterval * Math.pow(0.82, countBonus));
     }
   }
 
@@ -167,7 +170,10 @@ export class CrashballGameWindowComponent
 
     for (const ball of state.balls) {
       for (let ci = 0; ci < 4; ci++) {
-        resolveCornerCollision(ball, getCornerCenter(ci), state.ballSpeed);
+        if (resolveCornerCollision(ball, getCornerCenter(ci), ball.speed)) {
+          const vary = 1 + (Math.random() - 0.5) * CORNER_SPEED_VARY;
+          ball.speed = Math.min(MAX_BALL_SPEED * 1.5, ball.speed * vary);
+        }
       }
     }
 
@@ -176,11 +182,13 @@ export class CrashballGameWindowComponent
       for (let si = 0; si < SIDES.length; si++) {
         const side = SIDES[si];
         const cp = state.players[si];
-        const result = resolveWallCollision(ball, side, cp.eliminated, state.ballSpeed);
+        const result = resolveWallCollision(ball, side, cp.eliminated, ball.speed);
         if (result === 'goal') {
           cp.hp = Math.max(0, cp.hp - HP_PER_GOAL);
           if (cp.hp === 0) cp.eliminated = true;
           toRemove.add(ball.id);
+        } else if (result === 'bounce') {
+          ball.speed = Math.min(MAX_BALL_SPEED * 1.5, ball.speed * BARRIER_SPEED_MULT);
         }
       }
     }
@@ -188,7 +196,9 @@ export class CrashballGameWindowComponent
 
     for (let i = 0; i < state.balls.length; i++) {
       for (let j = i + 1; j < state.balls.length; j++) {
-        resolveBallCollision(state.balls[i], state.balls[j], state.ballSpeed);
+        const a = state.balls[i];
+        const b = state.balls[j];
+        resolveBallCollision(a, b, Math.max(a.speed, b.speed));
       }
     }
 
@@ -199,7 +209,7 @@ export class CrashballGameWindowComponent
         resolveVehicleCollision(
           ball,
           { ...vp, side: cp.side, velocity: cp.velocity },
-          state.ballSpeed,
+          ball.speed,
           cp.dashTimer > 0
         );
       }
@@ -215,8 +225,8 @@ export class CrashballGameWindowComponent
         const dz = ball.z - origin.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
         if (dist > 0 && dist <= cp.superWaveRadius) {
-          ball.vx = (dx / dist) * state.ballSpeed * SUPER_SPEED_MULT;
-          ball.vz = (dz / dist) * state.ballSpeed * SUPER_SPEED_MULT;
+          ball.vx = (dx / dist) * ball.speed * SUPER_SPEED_MULT;
+          ball.vz = (dz / dist) * ball.speed * SUPER_SPEED_MULT;
         }
       }
     }
