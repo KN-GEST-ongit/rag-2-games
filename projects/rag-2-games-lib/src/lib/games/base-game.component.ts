@@ -94,7 +94,8 @@ export abstract class BaseGameWindowComponent
   public ngAfterViewInit(): void {
     this._canvas = this.gameCanvas.canvasElement.nativeElement;
 
-    this._keyDownHandler = (event: KeyboardEvent): void => this.onKeyDown(event);
+    this._keyDownHandler = (event: KeyboardEvent): void =>
+      this.onKeyDown(event);
     this._keyUpHandler = (event: KeyboardEvent): void => this.onKeyUp(event);
     this._mouseDownHandler = (event: MouseEvent): void =>
       this.onMouseDownOutsideCanvas(event);
@@ -104,10 +105,12 @@ export abstract class BaseGameWindowComponent
     window.addEventListener('keydown', this._keyDownHandler);
     window.addEventListener('keyup', this._keyUpHandler);
     window.addEventListener('mousedown', this._mouseDownHandler);
-    document.addEventListener('visibilitychange', this._visibilityChangeHandler);
+    document.addEventListener(
+      'visibilitychange',
+      this._visibilityChangeHandler
+    );
     window.addEventListener('blur', this._blurHandler);
 
-    console.error('🎮 Event listeners ADDED successfully');
     this.update();
     setTimeout(() => this.restart());
   }
@@ -127,7 +130,10 @@ export abstract class BaseGameWindowComponent
       window.removeEventListener('mousedown', this._mouseDownHandler);
     }
     if (this._visibilityChangeHandler) {
-      document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
+      document.removeEventListener(
+        'visibilitychange',
+        this._visibilityChangeHandler
+      );
     }
     if (this._blurHandler) {
       window.removeEventListener('blur', this._blurHandler);
@@ -202,16 +208,20 @@ export abstract class BaseGameWindowComponent
     }
 
     const inactivityTimeout = setTimeout(() => {
+      const playerBindings = this._activeKeyBindings.get(player.id.toString());
+
       for (const key in player.controlsBinding) {
         const variableName = player.controlsBinding[key].variableName;
+        if (playerBindings?.[variableName]?.size) continue;
         const releasedValue = player.controlsBinding[key].releasedValue;
         player.inputData[variableName] = releasedValue;
       }
 
-      const playerBindings = this._activeKeyBindings.get(player.id.toString());
       if (playerBindings) {
         for (const variableName in playerBindings) {
-          playerBindings[variableName]?.clear();
+          if (!playerBindings[variableName]?.size) {
+            delete playerBindings[variableName];
+          }
         }
       }
     }, 1000);
