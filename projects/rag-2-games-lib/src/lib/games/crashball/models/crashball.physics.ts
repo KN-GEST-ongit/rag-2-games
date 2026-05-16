@@ -1,7 +1,7 @@
+/* eslint-disable complexity */
 import {
-  ARENA_HALF,
   CORNER_R,
-  GOAL_HALF,
+  CORNER_POS,
   VEHICLE_HALF_W,
   VEHICLE_DEPTH,
   DASH_SPEED_MULT,
@@ -41,65 +41,24 @@ export function resolveCornerCollision(
 }
 
 export function resolveWallCollision(
-  ball: { x: number; z: number; vx: number; vz: number; radius: number },
-  side: TPlayerSide,
-  playerEliminated: boolean,
-  speed: number
-): 'goal' | 'bounce' | null {
-  const limit = ARENA_HALF;
-  const inner = ARENA_HALF - CORNER_R;
-
-  const isGoal = (offset: number): boolean =>
-    Math.abs(offset) < GOAL_HALF && !playerEliminated;
-
+  ball: { x: number; z: number; radius: number },
+  side: TPlayerSide
+): boolean {
+  const limit = CORNER_POS;
   switch (side) {
-    case 'top':
-      if (ball.z - ball.radius <= -limit && Math.abs(ball.x) <= inner) {
-        if (isGoal(ball.x)) return 'goal';
-        ball.z = -limit + ball.radius;
-        ball.vz = Math.abs(ball.vz);
-        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
-        return 'bounce';
-      }
-      break;
-    case 'bottom':
-      if (ball.z + ball.radius >= limit && Math.abs(ball.x) <= inner) {
-        if (isGoal(ball.x)) return 'goal';
-        ball.z = limit - ball.radius;
-        ball.vz = -Math.abs(ball.vz);
-        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
-        return 'bounce';
-      }
-      break;
-    case 'left':
-      if (ball.x - ball.radius <= -limit && Math.abs(ball.z) <= inner) {
-        if (isGoal(ball.z)) return 'goal';
-        ball.x = -limit + ball.radius;
-        ball.vx = Math.abs(ball.vx);
-        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
-        return 'bounce';
-      }
-      break;
-    case 'right':
-      if (ball.x + ball.radius >= limit && Math.abs(ball.z) <= inner) {
-        if (isGoal(ball.z)) return 'goal';
-        ball.x = limit - ball.radius;
-        ball.vx = -Math.abs(ball.vx);
-        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
-        return 'bounce';
-      }
-      break;
+    case 'top':    return ball.z - ball.radius <= -limit;
+    case 'bottom': return ball.z + ball.radius >= limit;
+    case 'left':   return ball.x - ball.radius <= -limit;
+    case 'right':  return ball.x + ball.radius >= limit;
   }
-  return null;
 }
 
 export function getCornerCenter(index: number): { cx: number; cz: number } {
-  const inner = ARENA_HALF - CORNER_R;
   return [
-    { cx: -inner, cz: -inner },
-    { cx: inner, cz: -inner },
-    { cx: -inner, cz: inner },
-    { cx: inner, cz: inner },
+    { cx: -CORNER_POS, cz: -CORNER_POS },
+    { cx:  CORNER_POS, cz: -CORNER_POS },
+    { cx: -CORNER_POS, cz:  CORNER_POS },
+    { cx:  CORNER_POS, cz:  CORNER_POS },
   ][index];
 }
 
@@ -107,12 +66,11 @@ export function spawnBallAtCorner(
   cornerIndex: number,
   speed: number
 ): { x: number; z: number; vx: number; vz: number } {
-  const inner = ARENA_HALF - CORNER_R;
-  const ranges: Array<{ cx: number; cz: number; amin: number; amax: number }> = [
-    { cx: -inner, cz: -inner, amin: 0, amax: Math.PI / 2 },
-    { cx: inner, cz: -inner, amin: Math.PI / 2, amax: Math.PI },
-    { cx: -inner, cz: inner, amin: -Math.PI / 2, amax: 0 },
-    { cx: inner, cz: inner, amin: Math.PI, amax: 3 * Math.PI / 2 },
+  const ranges: { cx: number; cz: number; amin: number; amax: number }[] = [
+    { cx: -CORNER_POS, cz: -CORNER_POS, amin: 0, amax: Math.PI / 2 },
+    { cx:  CORNER_POS, cz: -CORNER_POS, amin: Math.PI / 2, amax: Math.PI },
+    { cx: -CORNER_POS, cz:  CORNER_POS, amin: -Math.PI / 2, amax: 0 },
+    { cx:  CORNER_POS, cz:  CORNER_POS, amin: Math.PI, amax: 3 * Math.PI / 2 },
   ];
   const c = ranges[cornerIndex];
   const angle = c.amin + Math.random() * (c.amax - c.amin);
@@ -197,7 +155,7 @@ export function resolveVehicleCollision(
 
 export function getVehicleWorldPos(side: TPlayerSide, position: number): { x: number; z: number } {
   const offset = position * VEHICLE_RANGE;
-  const wallEdge = ARENA_HALF - VEHICLE_DEPTH / 2;
+  const wallEdge = CORNER_POS - VEHICLE_DEPTH / 2;
   switch (side) {
     case 'top':    return { x: offset,    z: -wallEdge };
     case 'bottom': return { x: offset,    z: wallEdge };

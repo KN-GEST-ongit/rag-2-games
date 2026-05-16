@@ -3,7 +3,7 @@ import {
   resolveCornerCollision,
   resolveWallCollision,
 } from './crashball.physics';
-import { ARENA_HALF, BALL_RADIUS, CORNER_R } from './crashball.interfaces';
+import { BALL_RADIUS, CORNER_POS } from './crashball.interfaces';
 
 describe('normalizeToSpeed', () => {
   it('scales vector to given speed', () => {
@@ -20,10 +20,10 @@ describe('normalizeToSpeed', () => {
 
 describe('resolveCornerCollision', () => {
   it('reflects ball moving into top-left corner', () => {
-    const ball = { x: -7.5, z: -7.5, vx: -1, vz: -1, radius: BALL_RADIUS };
-    const corner = { cx: -(ARENA_HALF - CORNER_R), cz: -(ARENA_HALF - CORNER_R) };
-    const hit = resolveCornerCollision(ball, corner, 6);
-    expect(hit).toBeTrue();
+    const ball = { x: -8.5, z: -8.5, vx: -1, vz: -1, radius: BALL_RADIUS };
+    const corner = { cx: -CORNER_POS, cz: -CORNER_POS };
+    const didHit = resolveCornerCollision(ball, corner, 6);
+    expect(didHit).toBeTrue();
     const nx = ball.x - corner.cx;
     const nz = ball.z - corner.cz;
     expect(ball.vx * nx + ball.vz * nz).toBeGreaterThan(0);
@@ -31,29 +31,25 @@ describe('resolveCornerCollision', () => {
 
   it('does not affect ball far from corner', () => {
     const ball = { x: 0, z: 0, vx: 1, vz: 0, radius: BALL_RADIUS };
-    const corner = { cx: -(ARENA_HALF - CORNER_R), cz: -(ARENA_HALF - CORNER_R) };
-    const hit = resolveCornerCollision(ball, corner, 6);
-    expect(hit).toBeFalse();
+    const corner = { cx: -CORNER_POS, cz: -CORNER_POS };
+    const didHit = resolveCornerCollision(ball, corner, 6);
+    expect(didHit).toBeFalse();
   });
 });
 
 describe('resolveWallCollision', () => {
-  it('bounces ball off top wall outside goal', () => {
-    const ball = { x: 5, z: -(ARENA_HALF - BALL_RADIUS + 0.01), vx: 0, vz: -1, radius: BALL_RADIUS };
-    const result = resolveWallCollision(ball, 'top', false, 6);
-    expect(result).toBe('bounce');
-    expect(ball.vz).toBeGreaterThan(0);
+  it('detects ball crossing top wall', () => {
+    const ball = { x: 5, z: -(CORNER_POS - BALL_RADIUS + 0.01), radius: BALL_RADIUS };
+    expect(resolveWallCollision(ball, 'top')).toBeTrue();
   });
 
-  it('detects goal when ball passes through opening with live player', () => {
-    const ball = { x: 0, z: -(ARENA_HALF - BALL_RADIUS + 0.01), vx: 0, vz: -1, radius: BALL_RADIUS };
-    const result = resolveWallCollision(ball, 'top', false, 6);
-    expect(result).toBe('goal');
+  it('does not trigger when ball is inside arena', () => {
+    const ball = { x: 0, z: 0, radius: BALL_RADIUS };
+    expect(resolveWallCollision(ball, 'top')).toBeFalse();
   });
 
-  it('bounces off eliminated player wall even in goal area', () => {
-    const ball = { x: 0, z: -(ARENA_HALF - BALL_RADIUS + 0.01), vx: 0, vz: -1, radius: BALL_RADIUS };
-    const result = resolveWallCollision(ball, 'top', true, 6);
-    expect(result).toBe('bounce');
+  it('detects ball crossing bottom wall', () => {
+    const ball = { x: 0, z: CORNER_POS - BALL_RADIUS + 0.01, radius: BALL_RADIUS };
+    expect(resolveWallCollision(ball, 'bottom')).toBeTrue();
   });
 });
