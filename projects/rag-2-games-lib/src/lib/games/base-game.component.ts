@@ -111,7 +111,6 @@ export abstract class BaseGameWindowComponent
     );
     window.addEventListener('blur', this._blurHandler);
 
-    console.error('🎮 Event listeners ADDED successfully');
     this.update();
     setTimeout(() => this.restart());
   }
