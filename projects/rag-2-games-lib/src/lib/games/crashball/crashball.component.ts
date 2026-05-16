@@ -176,11 +176,10 @@ export class CrashballGameWindowComponent
       for (let si = 0; si < SIDES.length; si++) {
         const side = SIDES[si];
         const cp = state.players[si];
-        if (resolveWallCollision(ball, side)) {
-          if (!cp.eliminated) {
-            cp.hp = Math.max(0, cp.hp - HP_PER_GOAL);
-            if (cp.hp === 0) cp.eliminated = true;
-          }
+        const result = resolveWallCollision(ball, side, cp.eliminated, state.ballSpeed);
+        if (result === 'goal') {
+          cp.hp = Math.max(0, cp.hp - HP_PER_GOAL);
+          if (cp.hp === 0) cp.eliminated = true;
           toRemove.add(ball.id);
         }
       }

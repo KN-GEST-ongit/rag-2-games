@@ -56,6 +56,9 @@ export class CrashballRenderer extends Base3DRenderer {
   private _vehicleMeshes: Mesh[] = [];
   private _ballMeshes = new Map<number, Mesh>();
   private _superWaveMeshes: Mesh[] = [];
+  private _barrierRibbons: Mesh[] = [];
+  private _barrierMats: StandardMaterial[] = [];
+  private _barrierTime = 0;
   private _ballMat!: StandardMaterial;
   private _guiTexture!: AdvancedDynamicTexture;
   private _hpTexts: TextBlock[] = [];
@@ -109,6 +112,7 @@ export class CrashballRenderer extends Base3DRenderer {
     this.buildCorners();
     this.buildVehicles();
     this.buildSuperWaves();
+    this.buildBarriers();
     this.setupGUI();
   }
 
@@ -255,6 +259,56 @@ export class CrashballRenderer extends Base3DRenderer {
     }
   }
 
+  private buildBarriers(): void {
+    const w = (CORNER_POS - CORNER_VISUAL_R) * 2;
+    const h = 2.2;
+    const defs = [
+      { x: 0,           z: -CORNER_POS, rotY: 0 },
+      { x: 0,           z:  CORNER_POS, rotY: 0 },
+      { x: -CORNER_POS, z: 0,           rotY: Math.PI / 2 },
+      { x:  CORNER_POS, z: 0,           rotY: Math.PI / 2 },
+    ];
+    for (let i = 0; i < 4; i++) {
+      const side = SIDES[i];
+      const mat = new StandardMaterial(`barrierMat_${side}`, this.scene);
+      mat.emissiveColor = PLAYER_COLORS[side].scale(3);
+      mat.disableLighting = true;
+      mat.alpha = 0;
+      mat.backFaceCulling = false;
+      this._barrierMats.push(mat);
+
+      const ribbon = MeshBuilder.CreateRibbon(`barrier_${side}`, {
+        pathArray: this.buildWavePaths(w, h, 0),
+        updatable: true,
+        sideOrientation: Mesh.DOUBLESIDE,
+      }, this.scene);
+      ribbon.position.set(defs[i].x, 0, defs[i].z);
+      ribbon.rotation.y = defs[i].rotY;
+      ribbon.material = mat;
+      ribbon.isVisible = false;
+      this._barrierRibbons.push(ribbon);
+    }
+  }
+
+  private buildWavePaths(w: number, h: number, time: number): Vector3[][] {
+    const cols = 48;
+    const rows = 10;
+    const amp = 0.28;
+    const paths: Vector3[][] = [];
+    for (let r = 0; r <= rows; r++) {
+      const y = (r / rows) * h;
+      const rowAmp = amp * Math.sin((r / rows) * Math.PI);
+      const path: Vector3[] = [];
+      for (let c = 0; c <= cols; c++) {
+        const x = (c / cols - 0.5) * w;
+        const z = rowAmp * Math.sin((c / cols) * Math.PI * 5 + time);
+        path.push(new Vector3(x, y, z));
+      }
+      paths.push(path);
+    }
+    return paths;
+  }
+
   private setupGUI(): void {
     this._guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
@@ -315,6 +369,7 @@ export class CrashballRenderer extends Base3DRenderer {
     this.updateVehicles(state);
     this.updateBalls(state);
     this.updateSupers(state);
+    this.updateBarriers(state);
     this.updateGUI(state);
   }
 
@@ -360,6 +415,24 @@ export class CrashballRenderer extends Base3DRenderer {
       } else {
         disc.isVisible = false;
       }
+    }
+  }
+
+  private updateBarriers(state: CrashballState): void {
+    this._barrierTime += 0.06;
+    const w = (CORNER_POS - CORNER_VISUAL_R) * 2;
+    const h = 2.2;
+    for (let i = 0; i < SIDES.length; i++) {
+      const eliminated = state.players[i].eliminated;
+      const ribbon = this._barrierRibbons[i];
+      const mat = this._barrierMats[i];
+      ribbon.isVisible = eliminated;
+      if (!eliminated) continue;
+      mat.alpha = 0.4 + Math.sin(this._barrierTime * 4 + i) * 0.2;
+      MeshBuilder.CreateRibbon(`barrier_${SIDES[i]}`, {
+        pathArray: this.buildWavePaths(w, h, this._barrierTime + i * Math.PI / 2),
+        instance: ribbon,
+      });
     }
   }
 

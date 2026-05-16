@@ -41,16 +41,51 @@ export function resolveCornerCollision(
 }
 
 export function resolveWallCollision(
-  ball: { x: number; z: number; radius: number },
-  side: TPlayerSide
-): boolean {
+  ball: { x: number; z: number; vx: number; vz: number; radius: number },
+  side: TPlayerSide,
+  playerEliminated: boolean,
+  speed: number
+): 'goal' | 'bounce' | null {
   const limit = CORNER_POS;
   switch (side) {
-    case 'top':    return ball.z - ball.radius <= -limit;
-    case 'bottom': return ball.z + ball.radius >= limit;
-    case 'left':   return ball.x - ball.radius <= -limit;
-    case 'right':  return ball.x + ball.radius >= limit;
+    case 'top':
+      if (ball.z - ball.radius <= -limit) {
+        if (!playerEliminated) return 'goal';
+        ball.z = -limit + ball.radius;
+        ball.vz = Math.abs(ball.vz);
+        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
+        return 'bounce';
+      }
+      break;
+    case 'bottom':
+      if (ball.z + ball.radius >= limit) {
+        if (!playerEliminated) return 'goal';
+        ball.z = limit - ball.radius;
+        ball.vz = -Math.abs(ball.vz);
+        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
+        return 'bounce';
+      }
+      break;
+    case 'left':
+      if (ball.x - ball.radius <= -limit) {
+        if (!playerEliminated) return 'goal';
+        ball.x = -limit + ball.radius;
+        ball.vx = Math.abs(ball.vx);
+        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
+        return 'bounce';
+      }
+      break;
+    case 'right':
+      if (ball.x + ball.radius >= limit) {
+        if (!playerEliminated) return 'goal';
+        ball.x = limit - ball.radius;
+        ball.vx = -Math.abs(ball.vx);
+        [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
+        return 'bounce';
+      }
+      break;
   }
+  return null;
 }
 
 export function getCornerCenter(index: number): { cx: number; cz: number } {

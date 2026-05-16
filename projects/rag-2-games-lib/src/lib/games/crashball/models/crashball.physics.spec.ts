@@ -38,18 +38,19 @@ describe('resolveCornerCollision', () => {
 });
 
 describe('resolveWallCollision', () => {
-  it('detects ball crossing top wall', () => {
-    const ball = { x: 5, z: -(CORNER_POS - BALL_RADIUS + 0.01), radius: BALL_RADIUS };
-    expect(resolveWallCollision(ball, 'top')).toBeTrue();
+  it('returns goal when alive player wall is crossed', () => {
+    const ball = { x: 5, z: -(CORNER_POS - BALL_RADIUS + 0.01), vx: 0, vz: -1, radius: BALL_RADIUS };
+    expect(resolveWallCollision(ball, 'top', false, 6)).toBe('goal');
   });
 
-  it('does not trigger when ball is inside arena', () => {
-    const ball = { x: 0, z: 0, radius: BALL_RADIUS };
-    expect(resolveWallCollision(ball, 'top')).toBeFalse();
+  it('returns null when ball is inside arena', () => {
+    const ball = { x: 0, z: 0, vx: 0, vz: -1, radius: BALL_RADIUS };
+    expect(resolveWallCollision(ball, 'top', false, 6)).toBeNull();
   });
 
-  it('detects ball crossing bottom wall', () => {
-    const ball = { x: 0, z: CORNER_POS - BALL_RADIUS + 0.01, radius: BALL_RADIUS };
-    expect(resolveWallCollision(ball, 'bottom')).toBeTrue();
+  it('bounces off eliminated player wall', () => {
+    const ball = { x: 0, z: -(CORNER_POS - BALL_RADIUS + 0.01), vx: 0, vz: -1, radius: BALL_RADIUS };
+    expect(resolveWallCollision(ball, 'top', true, 6)).toBe('bounce');
+    expect(ball.vz).toBeGreaterThan(0);
   });
 });
