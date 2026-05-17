@@ -10,6 +10,8 @@ import {
   BALL_RADIUS,
   BARRIER_SPEED_MULT,
   BASE_BALL_SPEED,
+  CORNER_R,
+  CORNER_POS,
   CORNER_SPEED_VARY,
   MAX_BALL_SPEED,
   SIDES,
@@ -19,6 +21,8 @@ import {
   SUPER_CHARGE_TIME,
   SUPER_RADIUS,
   SUPER_SPEED_MULT,
+  VEHICLE_HALF_W,
+  VEHICLE_RANGE,
 } from './models/crashball.interfaces';
 import {
   getCornerCenter,
@@ -118,7 +122,8 @@ export class CrashballGameWindowComponent
   private updatePlayers(state: CrashballState, dt: number): void {
     for (const cp of state.players) {
       if (cp.eliminated) continue;
-      cp.position = Math.max(-1, Math.min(1, cp.position + cp.velocity * dt));
+      const maxPos = (CORNER_POS - CORNER_R - VEHICLE_HALF_W) / VEHICLE_RANGE;
+      cp.position = Math.max(-maxPos, Math.min(maxPos, cp.position + cp.velocity * dt));
       if (cp.superCharge < 1.0) {
         cp.superCharge = Math.min(1.0, cp.superCharge + dt / SUPER_CHARGE_TIME);
       }
@@ -170,6 +175,27 @@ export class CrashballGameWindowComponent
       }
     }
 
+    // Vehicle collision before wall — prevents ball tunnelling through paddle to wall
+    for (const ball of state.balls) {
+      for (const cp of state.players) {
+        if (cp.eliminated) continue;
+        const vp = getVehicleWorldPos(cp.side, cp.position);
+        resolveVehicleCollision(
+          ball,
+          { ...vp, side: cp.side, velocity: cp.velocity },
+          ball.speed
+        );
+      }
+    }
+
+    for (let i = 0; i < state.balls.length; i++) {
+      for (let j = i + 1; j < state.balls.length; j++) {
+        const a = state.balls[i];
+        const b = state.balls[j];
+        resolveBallCollision(a, b, Math.max(a.speed, b.speed));
+      }
+    }
+
     const toRemove = new Set<number>();
     for (const ball of state.balls) {
       for (let si = 0; si < SIDES.length; si++) {
@@ -186,26 +212,6 @@ export class CrashballGameWindowComponent
       }
     }
     state.balls = state.balls.filter(b => !toRemove.has(b.id));
-
-    for (let i = 0; i < state.balls.length; i++) {
-      for (let j = i + 1; j < state.balls.length; j++) {
-        const a = state.balls[i];
-        const b = state.balls[j];
-        resolveBallCollision(a, b, Math.max(a.speed, b.speed));
-      }
-    }
-
-    for (const ball of state.balls) {
-      for (const cp of state.players) {
-        if (cp.eliminated) continue;
-        const vp = getVehicleWorldPos(cp.side, cp.position);
-        resolveVehicleCollision(
-          ball,
-          { ...vp, side: cp.side, velocity: cp.velocity },
-          ball.speed
-        );
-      }
-    }
   }
 
   private applySupers(state: CrashballState): void {
