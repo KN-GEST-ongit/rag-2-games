@@ -22,7 +22,6 @@ export class CrashballState implements TGameState {
       superActive: false,
       superWaveRadius: 0,
       eliminated: false,
-      dashTimer: 0,
     })
   );
   public ballSpeed = BASE_BALL_SPEED;
@@ -48,59 +47,55 @@ export class Crashball extends Game {
   public override players: Player[] = [
     new Player(
       0,
-      true,
+      true, // isActive
       'Player 1 (top)',
-      { move: 0, super: 0, dash: 0 },
+      { move: 0, super: 0 },
       {
-        a: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        d: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        q: { variableName: 'super', pressedValue: 1, releasedValue: 0 },
-        Shift: { variableName: 'dash', pressedValue: 1, releasedValue: 0 },
+        f:   { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        h:   { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        ' ': { variableName: 'super', pressedValue: 1, releasedValue: 0 },
       },
-      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate; <dash>: 1=dash',
-      { left: '[A]', right: '[D]', super: '[Q]', dash: '[SHIFT]' }
+      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
+      { left: '[F]', right: '[H]', super: '[SPACE]' }
     ),
     new Player(
       1,
-      false,
+      true,
       'Player 2 (bottom)',
-      { move: 0, super: 0, dash: 0 },
+      { move: 0, super: 0 },
       {
-        ArrowLeft: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        ArrowRight: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        Enter: { variableName: 'super', pressedValue: 1, releasedValue: 0 },
-        ' ': { variableName: 'dash', pressedValue: 1, releasedValue: 0 },
+        k:   { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        ';': { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        o:   { variableName: 'super', pressedValue: 1, releasedValue: 0 },
       },
-      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate; <dash>: 1=dash',
-      { left: '[ARROW_LEFT]', right: '[ARROW_RIGHT]', super: '[ENTER]', dash: '[SPACE]' }
+      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
+      { left: '[K]', right: '[;]', super: '[O]' }
     ),
     new Player(
       2,
-      false,
+      true,
       'Player 3 (left)',
-      { move: 0, super: 0, dash: 0 },
+      { move: 0, super: 0 },
       {
-        f: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        h: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        r: { variableName: 'super', pressedValue: 1, releasedValue: 0 },
-        CapsLock: { variableName: 'dash', pressedValue: 1, releasedValue: 0 },
+        a: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        d: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        w: { variableName: 'super', pressedValue: 1, releasedValue: 0 },
       },
-      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate; <dash>: 1=dash',
-      { left: '[F]', right: '[H]', super: '[R]', dash: '[CAPS]' }
+      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
+      { left: '[A]', right: '[D]', super: '[W]' }
     ),
     new Player(
       3,
-      false,
+      true,
       'Player 4 (right)',
-      { move: 0, super: 0, dash: 0 },
+      { move: 0, super: 0 },
       {
-        j: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        l: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        u: { variableName: 'super', pressedValue: 1, releasedValue: 0 },
-        p: { variableName: 'dash', pressedValue: 1, releasedValue: 0 },
+        ArrowLeft:  { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        ArrowRight: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        ArrowUp:    { variableName: 'super', pressedValue: 1, releasedValue: 0 },
       },
-      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate; <dash>: 1=dash',
-      { left: '[J]', right: '[L]', super: '[U]', dash: '[P]' }
+      '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
+      { left: '[←]', right: '[→]', super: '[↑]' }
     ),
   ];
 }

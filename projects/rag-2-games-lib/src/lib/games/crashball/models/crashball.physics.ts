@@ -4,7 +4,6 @@ import {
   CORNER_POS,
   VEHICLE_HALF_W,
   VEHICLE_DEPTH,
-  DASH_SPEED_MULT,
   SPIN_FACTOR,
   VEHICLE_RANGE,
   TPlayerSide,
@@ -154,7 +153,6 @@ export function resolveVehicleCollision(
   ball: { x: number; z: number; vx: number; vz: number; radius: number },
   vehicle: { x: number; z: number; side: TPlayerSide; velocity: number },
   speed: number,
-  isDashing: boolean
 ): boolean {
   const hw = VEHICLE_HALF_W;
   const hd = VEHICLE_DEPTH / 2;
@@ -183,7 +181,7 @@ export function resolveVehicleCollision(
     ball.vz += vehicle.velocity * SPIN_FACTOR;
   }
 
-  const newSpeed = isDashing ? speed * DASH_SPEED_MULT : speed;
+  const newSpeed = speed;
   [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, newSpeed);
   return true;
 }

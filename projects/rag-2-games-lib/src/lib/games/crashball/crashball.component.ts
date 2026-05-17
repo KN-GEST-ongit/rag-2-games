@@ -31,7 +31,6 @@ import {
 } from './models/crashball.physics';
 
 const PLAYER_SPEED = 2.5;
-const DASH_DURATION = 30;
 const SPEED_INTERVAL = 30;
 const HP_PER_GOAL = 1;
 
@@ -92,11 +91,6 @@ export class CrashballGameWindowComponent
       const move = player.inputData['move'] as number;
       cp.velocity = move === 1 ? -PLAYER_SPEED : move === 2 ? PLAYER_SPEED : 0;
 
-      if ((player.inputData['dash'] as number) === 1 && cp.dashTimer === 0) {
-        cp.dashTimer = DASH_DURATION;
-        player.inputData['dash'] = 0;
-      }
-
       if (
         (player.inputData['super'] as number) === 1 &&
         cp.superCharge >= 1.0 &&
@@ -125,7 +119,6 @@ export class CrashballGameWindowComponent
     for (const cp of state.players) {
       if (cp.eliminated) continue;
       cp.position = Math.max(-1, Math.min(1, cp.position + cp.velocity * dt));
-      if (cp.dashTimer > 0) cp.dashTimer--;
       if (cp.superCharge < 1.0) {
         cp.superCharge = Math.min(1.0, cp.superCharge + dt / SUPER_CHARGE_TIME);
       }
@@ -209,8 +202,7 @@ export class CrashballGameWindowComponent
         resolveVehicleCollision(
           ball,
           { ...vp, side: cp.side, velocity: cp.velocity },
-          ball.speed,
-          cp.dashTimer > 0
+          ball.speed
         );
       }
     }

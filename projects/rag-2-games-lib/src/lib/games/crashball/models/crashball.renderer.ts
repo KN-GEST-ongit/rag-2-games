@@ -1,5 +1,4 @@
 /* eslint-disable max-lines */
-/* eslint-disable complexity */
 import {
   ArcRotateCamera,
   Color3,
@@ -10,8 +9,8 @@ import {
   MeshBuilder,
   PBRMaterial,
   PointLight,
+  SolidParticleSystem,
   StandardMaterial,
-  TransformNode,
   Vector3,
 } from '@babylonjs/core';
 import {
@@ -26,16 +25,14 @@ import { CrashballState } from './crashball.class';
 import {
   ARENA_HALF,
   CORNER_POS,
-  CORNER_R,
   SIDES,
   TPlayerSide,
 } from './crashball.interfaces';
 import { getVehicleWorldPos } from './crashball.physics';
 
-const WALL_H = 1.0;
 const VEHICLE_R = 1.2;
 const VEHICLE_H = 0.38;
-const ARENA_SCALE = 0.92;  // visual floor slightly smaller than physics boundary
+const ARENA_SCALE = 1.2;   // visual floor extends beyond physics boundary (field behind players)
 const CORNER_VISUAL_R = 2.0; // visual-only corner radius, independent of physics CORNER_R
 
 const PLAYER_COLORS: Record<TPlayerSide, Color3> = {
@@ -59,6 +56,10 @@ export class CrashballRenderer extends Base3DRenderer {
   private _barrierRibbons: Mesh[] = [];
   private _barrierMats: StandardMaterial[] = [];
   private _barrierTime = 0;
+  private _columnRibbons: Mesh[] = [];
+  private _columnTime = 0;
+  private _cornerRings: Mesh[] = [];
+  private _cornerTime = 0;
   private _ballMat!: StandardMaterial;
   private _guiTexture!: AdvancedDynamicTexture;
   private _hpTexts: TextBlock[] = [];
@@ -72,34 +73,27 @@ export class CrashballRenderer extends Base3DRenderer {
 
   private initScene(): void {
     // === CAMERA — locked isometric top-down, cannot be rotated by player ===
-    const cam = new ArcRotateCamera('cam', -Math.PI / 2, 0.45, 38, Vector3.Zero(), this.scene);
+    const cam = new ArcRotateCamera('cam', -Math.PI / 2, 0.45, 30, Vector3.Zero(), this.scene);
     cam.inputs.clear();
 
     // === LIGHTING ===
     // Ambient hemisphere: cool blue sky light, dark ground bounce
     const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), this.scene);
-    hemi.intensity = 0.4;
-    hemi.diffuse = new Color3(0.7, 0.82, 1.0);
-    hemi.groundColor = new Color3(0.05, 0.08, 0.2);
-    hemi.specular = new Color3(0.3, 0.45, 1.0);
+    hemi.intensity = 0.7;
+    hemi.diffuse = new Color3(0.75, 0.88, 1.0);
+    hemi.groundColor = new Color3(0.08, 0.12, 0.3);
+    hemi.specular = new Color3(0.4, 0.55, 1.0);
 
     // Global glow layer — picks up all emissiveColor meshes automatically
     const glow = new GlowLayer('glow', this.scene);
     glow.intensity = 0.25;
 
-    // Blue neon point lights above each corner bumper
-    const inner = ARENA_HALF * ARENA_SCALE;
-    const cornerPos = [
-      new Vector3(-inner, 4, -inner), new Vector3(inner, 4, -inner),
-      new Vector3(-inner, 4,  inner), new Vector3(inner, 4,  inner),
-    ];
-    for (let i = 0; i < cornerPos.length; i++) {
-      const pl = new PointLight(`pl${i}`, cornerPos[i], this.scene);
-      pl.diffuse = new Color3(0.15, 0.5, 1.0);
-      pl.specular = new Color3(0.2, 0.6, 1.0);
-      pl.intensity = 14;
-      pl.range = 10;
-    }
+    // Central point light above the arena
+    const centerLight = new PointLight('centerLight', new Vector3(0, 5, 0), this.scene);
+    centerLight.diffuse = new Color3(1.0, 0.85, 0.6);
+    centerLight.specular = new Color3(1.0, 0.9, 0.7);
+    centerLight.intensity = 3;
+    centerLight.range = 40;
 
     // Ball glow material — bright emissive white/blue
     this._ballMat = new StandardMaterial('ballMat', this.scene);
@@ -108,12 +102,181 @@ export class CrashballRenderer extends Base3DRenderer {
     this._ballMat.specularColor = new Color3(1, 1, 1);
     this._ballMat.specularPower = 12;
 
+    this.buildStars();
+    this.buildEnvironment();
     this.buildFloor();
+    this.buildLowerGround();
+    this.buildPlatformEdge();
+    this.buildFloorArrows();
     this.buildCorners();
     this.buildVehicles();
     this.buildSuperWaves();
     this.buildBarriers();
     this.setupGUI();
+  }
+
+  private buildEnvironment(): void {
+    this.scene.fogMode = 2; // FOGMODE_EXP
+    this.scene.fogColor = new Color3(0.01, 0.01, 0.06);
+    this.scene.fogDensity = 0.007;
+
+    // Glowing edge strips along arena perimeter
+    const stripMat = new StandardMaterial('stripMat', this.scene);
+    stripMat.emissiveColor = new Color3(0.05, 0.3, 0.9);
+    stripMat.disableLighting = true;
+    const sl = (CORNER_POS - CORNER_VISUAL_R) * 2;
+    const sd = 0.07;
+    const sh = 0.06;
+    const edgeDefs = [
+      { w: sl, d: sd, x: 0,           z: -CORNER_POS },
+      { w: sl, d: sd, x: 0,           z:  CORNER_POS },
+      { w: sd, d: sl, x: -CORNER_POS, z: 0 },
+      { w: sd, d: sl, x:  CORNER_POS, z: 0 },
+    ];
+    for (let i = 0; i < edgeDefs.length; i++) {
+      const e = edgeDefs[i];
+      const strip = MeshBuilder.CreateBox(`strip${i}`, { width: e.w, height: sh, depth: e.d }, this.scene);
+      strip.position.set(e.x, sh / 2, e.z);
+      strip.material = stripMat;
+    }
+
+    this.buildColumns();
+  }
+
+  private buildColumns(): void {
+    const off = CORNER_POS + 2;
+    const colPositions = [
+      { x: -off, z: -off }, { x: off, z: -off },
+      { x: -off, z:  off }, { x: off, z:  off },
+    ];
+    const colColors = [
+      new Color3(0.2, 0.5, 1.0), new Color3(1.0, 0.8, 0.1),
+      new Color3(0.1, 0.9, 0.3), new Color3(1.0, 0.3, 0.2),
+    ];
+
+    for (let i = 0; i < colPositions.length; i++) {
+      const { x, z } = colPositions[i];
+      const color = colColors[i];
+      const colH = 16;
+
+      // Flat platform at base
+      const platMat = new StandardMaterial(`colPlatMat${i}`, this.scene);
+      platMat.emissiveColor = color.scale(0.4);
+      platMat.disableLighting = true;
+      const plat = MeshBuilder.CreateCylinder(`colPlat${i}`, { diameter: 3.2, height: 0.25, tessellation: 16 }, this.scene);
+      plat.position.set(x, 0.12, z);
+      plat.material = platMat;
+
+      // Body — slightly emissive so it reads against dark bg
+      const bodyMat = new StandardMaterial(`colBodyMat${i}`, this.scene);
+      bodyMat.diffuseColor = new Color3(0.12, 0.15, 0.22);
+      bodyMat.emissiveColor = color.scale(0.08);
+      bodyMat.specularColor = new Color3(0.5, 0.6, 0.8);
+      bodyMat.specularPower = 24;
+      const body = MeshBuilder.CreateCylinder(`colBody${i}`, { diameter: 1.4, height: colH, tessellation: 14 }, this.scene);
+      body.position.set(x, colH / 2, z);
+      body.material = bodyMat;
+
+      // Bright glowing core
+      const coreMat = new StandardMaterial(`colCoreMat${i}`, this.scene);
+      coreMat.emissiveColor = color;
+      coreMat.disableLighting = true;
+      const core = MeshBuilder.CreateCylinder(`colCore${i}`, { diameter: 0.45, height: colH + 0.2, tessellation: 8 }, this.scene);
+      core.position.set(x, colH / 2, z);
+      core.material = coreMat;
+
+      // Base orb sitting on platform
+      const orbMat = new StandardMaterial(`colOrbMat${i}`, this.scene);
+      orbMat.emissiveColor = color;
+      orbMat.disableLighting = true;
+      const baseOrb = MeshBuilder.CreateSphere(`colBase${i}`, { diameter: 1.8, segments: 10 }, this.scene);
+      baseOrb.position.set(x, 1.2, z);
+      baseOrb.material = orbMat;
+
+      // Top orb
+      const topOrb = MeshBuilder.CreateSphere(`colTop${i}`, { diameter: 2.4, segments: 10 }, this.scene);
+      topOrb.position.set(x, colH + 0.8, z);
+      topOrb.material = orbMat;
+
+      // Double helix — two ribbons offset by PI
+      for (let r = 0; r < 2; r++) {
+        const ribbon = MeshBuilder.CreateRibbon(`colRibbon${i}_${r}`, {
+          pathArray: this.buildColumnPaths(x, z, colH, r * Math.PI),
+          updatable: true,
+          sideOrientation: Mesh.DOUBLESIDE,
+        }, this.scene);
+        const ribMat = new StandardMaterial(`colRibMat${i}_${r}`, this.scene);
+        ribMat.emissiveColor = color;
+        ribMat.disableLighting = true;
+        ribMat.alpha = 0.9;
+        ribMat.backFaceCulling = false;
+        ribbon.material = ribMat;
+        this._columnRibbons.push(ribbon);
+      }
+    }
+  }
+
+  private buildColumnPaths(x: number, z: number, h: number, time: number): Vector3[][] {
+    const segments = 40;
+    const helixR = 0.65;  // inside the column body (body radius = 0.8)
+    const halfW = 0.32;
+    const yStart = 1.8;   // start above the base orb
+    const yEnd = h - 0.8; // stop below the top orb
+    const path0: Vector3[] = [];
+    const path1: Vector3[] = [];
+    for (let s = 0; s <= segments; s++) {
+      const t = s / segments;
+      const y = yStart + t * (yEnd - yStart);
+      const angle = t * Math.PI * 8 + time;
+      const cx = x + Math.cos(angle) * helixR;
+      const cz = z + Math.sin(angle) * helixR;
+      const tx = -Math.sin(angle);
+      const tz =  Math.cos(angle);
+      path0.push(new Vector3(cx + tx * halfW, y, cz + tz * halfW));
+      path1.push(new Vector3(cx - tx * halfW, y, cz - tz * halfW));
+    }
+    return [path0, path1];
+  }
+
+  private buildStars(): void {
+    const sps = new SolidParticleSystem('starSPS', this.scene, { isPickable: false });
+    const tmp = MeshBuilder.CreateSphere('tmpStar', { diameter: 1, segments: 2 }, this.scene);
+    sps.addShape(tmp, 500);
+    tmp.dispose();
+
+    const mesh = sps.buildMesh();
+    mesh.applyFog = false; // stars must not be fogged out
+    const mat = new StandardMaterial('starMat', this.scene);
+    mat.emissiveColor = new Color3(1, 1, 1);
+    mat.disableLighting = true;
+    mesh.material = mat;
+
+    sps.initParticles = (): void => {
+      for (let i = 0; i < sps.nbParticles; i++) {
+        const p = sps.particles[i];
+        const phi = Math.random() * Math.PI * 2;
+        const cosT = Math.random() * 2 - 1;
+        const sinT = Math.sqrt(1 - cosT * cosT);
+        const r = 55 + Math.random() * 25;
+        p.position.x = r * sinT * Math.cos(phi);
+        p.position.y = r * cosT;
+        p.position.z = r * sinT * Math.sin(phi);
+        const s = 0.1 + Math.random() * 0.25;
+        p.scaling.x = s; p.scaling.y = s; p.scaling.z = s;
+        const b = 0.55 + Math.random() * 0.45;
+        const tint = Math.random();
+        if (tint < 0.15) {
+          p.color = new Color4(b * 0.7, b * 0.8, b, 1); // blue-ish
+        } else if (tint < 0.25) {
+          p.color = new Color4(b, b * 0.8, b, 1); // slight purple
+        } else {
+          p.color = new Color4(b, b * 0.95, b, 1); // white
+        }
+      }
+    };
+    sps.initParticles();
+    sps.setParticles();
+    sps.isAlwaysVisible = true;
   }
 
   private buildFloor(): void {
@@ -129,87 +292,211 @@ export class CrashballRenderer extends Base3DRenderer {
     floor.material = mat;
   }
 
-  private buildCorners(): void {
-    // Visual corners aligned with physics arc centres — both use CORNER_POS
-    const c = CORNER_POS;
+  private buildLowerGround(): void {
+    const lower = MeshBuilder.CreateGround('lowerGround', { width: 200, height: 200 }, this.scene);
+    lower.position.y = -3.5;
+    const mat = new PBRMaterial('lowerGroundMat', this.scene);
+    mat.albedoColor = new Color3(0.02, 0.03, 0.06);
+    mat.roughness = 0.9;
+    mat.metallic = 0.1;
+    mat.emissiveColor = new Color3(0.005, 0.008, 0.02);
+    lower.material = mat;
+  }
 
-    const cornerDefs = [
+  private buildPlatformEdge(): void {
+    const half = ARENA_HALF * ARENA_SCALE;
+    const wallH = 3.0;
+    const wallD = 0.2;
+    const rimH = 0.1;
+
+    const wallMat = new StandardMaterial('platWallMat', this.scene);
+    wallMat.diffuseColor = new Color3(0.05, 0.07, 0.14);
+    wallMat.emissiveColor = new Color3(0.02, 0.03, 0.07);
+    wallMat.specularColor = new Color3(0.3, 0.4, 0.6);
+    wallMat.specularPower = 28;
+
+    const rimMat = new StandardMaterial('platRimMat', this.scene);
+    rimMat.emissiveColor = new Color3(0.05, 0.3, 0.9);
+    rimMat.disableLighting = true;
+
+    const span = half * 2 + wallD * 2;
+    const defs = [
+      { w: span,   d: wallD, x: 0,     z: -half },
+      { w: span,   d: wallD, x: 0,     z:  half },
+      { w: wallD,  d: span,  x: -half, z: 0 },
+      { w: wallD,  d: span,  x:  half, z: 0 },
+    ];
+
+    for (let i = 0; i < defs.length; i++) {
+      const def = defs[i];
+      const wall = MeshBuilder.CreateBox(`platWall${i}`, {
+        width: def.w, height: wallH, depth: def.d,
+      }, this.scene);
+      wall.position.set(def.x, -wallH / 2, def.z);
+      wall.material = wallMat;
+
+      const rim = MeshBuilder.CreateBox(`platRim${i}`, {
+        width: def.w, height: rimH, depth: def.d + 0.02,
+      }, this.scene);
+      rim.position.set(def.x, rimH / 2, def.z);
+      rim.material = rimMat;
+    }
+  }
+
+  private buildFloorArrows(): void {
+    const c = CORNER_POS;
+    const mat = new StandardMaterial('arrowMat', this.scene);
+    mat.emissiveColor = new Color3(0.08, 0.4, 1.0);
+    mat.disableLighting = true;
+
+    // Each corner: direction toward center, two >> chevrons spaced along that diagonal
+    const corners = [
       { x: -c, z: -c, rotY:  Math.PI / 4 },
       { x:  c, z: -c, rotY: -Math.PI / 4 },
       { x: -c, z:  c, rotY:  3 * Math.PI / 4 },
       { x:  c, z:  c, rotY: -3 * Math.PI / 4 },
     ];
 
-    // Outer body — dark industrial metal (PBR, high roughness)
+    const th = 0.06;
+    const wingLen = 1.8;  // length of each wing arm
+    const wingW = 0.22;
+    // distances from corner center to the tip of each chevron (> and >)
+    // CORNER_VISUAL_R=2 means bumper extends ~2 units — start past that
+    const chevronDists = [5.5, 7.5];
+
+    for (let i = 0; i < corners.length; i++) {
+      const { x, z, rotY } = corners[i];
+      const dx = Math.sin(rotY);
+      const dz = Math.cos(rotY);
+
+      for (let ci = 0; ci < chevronDists.length; ci++) {
+        // tip of chevron (the pointy end, facing center)
+        const tipX = x + dx * chevronDists[ci];
+        const tipZ = z + dz * chevronDists[ci];
+
+        // each wing angled 135° from forward (i.e. 45° from backward)
+        for (const sign of [-1, 1]) {
+          const wingRotY = rotY + sign * (3 * Math.PI / 4);
+          // center of wing box = tip + half-length in wing direction
+          const wcx = tipX + Math.sin(wingRotY) * (wingLen / 2);
+          const wcz = tipZ + Math.cos(wingRotY) * (wingLen / 2);
+          const wing = MeshBuilder.CreateBox(`chev${i}_${ci}_${sign > 0 ? 1 : 0}`, {
+            width: wingW, height: th, depth: wingLen,
+          }, this.scene);
+          wing.position.set(wcx, th / 2, wcz);
+          wing.rotation.y = wingRotY;
+          wing.material = mat;
+        }
+      }
+    }
+  }
+
+  private buildCorners(): void {
+    const c = CORNER_POS;
+    const r = CORNER_VISUAL_R;
+
+    const positions = [
+      { x: -c, z: -c }, { x: c, z: -c },
+      { x: -c, z:  c }, { x: c, z:  c },
+    ];
+
     const bodyMat = new PBRMaterial('cBodyMat', this.scene);
-    bodyMat.albedoColor = new Color3(0.07, 0.18, 0.07);
-    bodyMat.roughness = 0.72;
-    bodyMat.metallic = 0.65;
+    bodyMat.albedoColor = new Color3(0.08, 0.1, 0.18);
+    bodyMat.roughness = 0.2;
+    bodyMat.metallic = 0.98;
 
-    // Inner barrel — dark matte, no speculars
-    const barrelMat = new StandardMaterial('cBarrelMat', this.scene);
-    barrelMat.diffuseColor = new Color3(0.04, 0.04, 0.06);
-    barrelMat.specularColor = Color3.Black();
+    const body2Mat = new PBRMaterial('cBody2Mat', this.scene);
+    body2Mat.albedoColor = new Color3(0.06, 0.08, 0.14);
+    body2Mat.roughness = 0.2;
+    body2Mat.metallic = 0.98;
 
-    // Plasma core — jaskrawy błękit; picked up by GlowLayer
+    const bandMat = new StandardMaterial('cBandMat', this.scene);
+    bandMat.emissiveColor = new Color3(0.05, 0.4, 1.0);
+    bandMat.disableLighting = true;
+
+    const band2Mat = new StandardMaterial('cBand2Mat', this.scene);
+    band2Mat.emissiveColor = new Color3(0.3, 0.8, 1.0);
+    band2Mat.disableLighting = true;
+
     const coreMat = new StandardMaterial('cCoreMat', this.scene);
-    coreMat.emissiveColor = new Color3(0, 0.6, 0.9);
+    coreMat.emissiveColor = new Color3(0.2, 0.8, 1.0);
     coreMat.disableLighting = true;
 
-    // Metallic accent rings
-    const ringMat = new PBRMaterial('cRingMat', this.scene);
-    ringMat.albedoColor = new Color3(0.28, 0.32, 0.28);
-    ringMat.roughness = 0.3;
-    ringMat.metallic = 0.92;
+    const spinMat = new PBRMaterial('cSpinMat', this.scene);
+    spinMat.albedoColor = new Color3(0.4, 0.5, 0.7);
+    spinMat.roughness = 0.1;
+    spinMat.metallic = 1.0;
+    spinMat.emissiveColor = new Color3(0.05, 0.15, 0.4);
 
-    for (let i = 0; i < cornerDefs.length; i++) {
-      const def = cornerDefs[i];
+    const baseMat = new StandardMaterial('cBaseMat', this.scene);
+    baseMat.emissiveColor = new Color3(0.02, 0.15, 0.5);
+    baseMat.disableLighting = true;
 
-      // Group all parts under a TransformNode for easy rotation
-      const node = new TransformNode(`corner${i}`, this.scene);
-      node.position.set(def.x, 0, def.z);
-      node.rotation.y = def.rotY;
+    for (let i = 0; i < positions.length; i++) {
+      const { x, z } = positions[i];
 
-      // Main body cylinder
-      const body = MeshBuilder.CreateCylinder(`cBody${i}`, {
-        diameter: CORNER_VISUAL_R * 2, height: WALL_H, tessellation: 20,
+      // Glowing base disc
+      const base = MeshBuilder.CreateCylinder(`cBase${i}`, {
+        diameter: r * 2 + 1.2, height: 0.12, tessellation: 24,
       }, this.scene);
-      body.parent = node;
-      body.position.y = WALL_H / 2;
-      body.material = bodyMat;
+      base.position.set(x, 0.06, z);
+      base.material = baseMat;
 
-      // Horizontal barrel — exit nozzle pointing toward arena center (+Z in local space)
-      const barrel = MeshBuilder.CreateCylinder(`cBarrel${i}`, {
-        diameter: 1.1, height: 2.0, tessellation: 12,
+      // Lower wide body section
+      const lower = MeshBuilder.CreateCylinder(`cLower${i}`, {
+        diameter: r * 2, diameterTop: r * 1.6, height: 1.0, tessellation: 24,
       }, this.scene);
-      barrel.parent = node;
-      barrel.rotation.x = Math.PI / 2;
-      barrel.position.y = WALL_H / 2;
-      barrel.position.z = CORNER_VISUAL_R * 0.55;
-      barrel.material = barrelMat;
+      lower.position.set(x, 0.5, z);
+      lower.material = bodyMat;
 
-      // Plasma core inside barrel — glows via GlowLayer
-      const core = MeshBuilder.CreateSphere(`cCore${i}`, { diameter: 0.8, segments: 8 }, this.scene);
-      core.parent = node;
-      core.position.y = WALL_H / 2;
-      core.position.z = CORNER_VISUAL_R * 0.65;
-      core.material = coreMat;
-
-      // Top metallic ring
-      const topRing = MeshBuilder.CreateTorus(`cTop${i}`, {
-        diameter: CORNER_VISUAL_R * 2 + 0.1, thickness: 0.2, tessellation: 20,
+      // Lower glowing band
+      const band1 = MeshBuilder.CreateCylinder(`cBand1_${i}`, {
+        diameter: r * 1.62, height: 0.16, tessellation: 24,
       }, this.scene);
-      topRing.parent = node;
-      topRing.position.y = WALL_H + 0.01;
-      topRing.material = ringMat;
+      band1.position.set(x, 1.0, z);
+      band1.material = bandMat;
 
-      // Bottom metallic ring
-      const botRing = MeshBuilder.CreateTorus(`cBot${i}`, {
-        diameter: CORNER_VISUAL_R * 2 + 0.1, thickness: 0.2, tessellation: 20,
+      // Upper narrow body section
+      const upper = MeshBuilder.CreateCylinder(`cUpper${i}`, {
+        diameter: r * 1.6, diameterTop: r * 0.9, height: 0.9, tessellation: 24,
       }, this.scene);
-      botRing.parent = node;
-      botRing.position.y = 0.18;
-      botRing.material = ringMat;
+      upper.position.set(x, 1.5, z);
+      upper.material = body2Mat;
+
+      // Upper glowing band
+      const band2 = MeshBuilder.CreateCylinder(`cBand2_${i}`, {
+        diameter: r * 0.92, height: 0.14, tessellation: 24,
+      }, this.scene);
+      band2.position.set(x, 1.95, z);
+      band2.material = band2Mat;
+
+      // Narrow top cap
+      const cap = MeshBuilder.CreateCylinder(`cCap${i}`, {
+        diameter: r * 0.9, height: 0.3, tessellation: 24,
+      }, this.scene);
+      cap.position.set(x, 2.25, z);
+      cap.material = bodyMat;
+
+      // Spinning torus ring — stored for animation
+      const spinRing = MeshBuilder.CreateTorus(`cSpin${i}`, {
+        diameter: r * 1.9, thickness: 0.14, tessellation: 32,
+      }, this.scene);
+      spinRing.position.set(x, 0.9, z);
+      spinRing.material = spinMat;
+      this._cornerRings.push(spinRing);
+
+      // Plasma orb on top
+      const orb = MeshBuilder.CreateSphere(`cOrb${i}`, { diameter: 1.0, segments: 12 }, this.scene);
+      orb.position.set(x, 2.6, z);
+      orb.material = coreMat;
+    }
+  }
+
+  private updateCorners(): void {
+    this._cornerTime += 0.025;
+    for (let i = 0; i < this._cornerRings.length; i++) {
+      this._cornerRings[i].rotation.y = this._cornerTime * (i % 2 === 0 ? 1 : -1);
+      this._cornerRings[i].rotation.x = Math.sin(this._cornerTime * 0.7 + i) * 0.3;
     }
   }
 
@@ -313,8 +600,8 @@ export class CrashballRenderer extends Base3DRenderer {
     this._guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     const alignments: { hAlign: number; vAlign: number; left: string; top: string }[] = [
-      { hAlign: Control.HORIZONTAL_ALIGNMENT_CENTER, vAlign: Control.VERTICAL_ALIGNMENT_TOP,    left: '0px',  top: '8px'  },
       { hAlign: Control.HORIZONTAL_ALIGNMENT_CENTER, vAlign: Control.VERTICAL_ALIGNMENT_BOTTOM, left: '0px',  top: '-8px' },
+      { hAlign: Control.HORIZONTAL_ALIGNMENT_CENTER, vAlign: Control.VERTICAL_ALIGNMENT_TOP,    left: '0px',  top: '8px'  },
       { hAlign: Control.HORIZONTAL_ALIGNMENT_LEFT,   vAlign: Control.VERTICAL_ALIGNMENT_CENTER, left: '8px',  top: '0px'  },
       { hAlign: Control.HORIZONTAL_ALIGNMENT_RIGHT,  vAlign: Control.VERTICAL_ALIGNMENT_CENTER, left: '-8px', top: '0px'  },
     ];
@@ -370,6 +657,8 @@ export class CrashballRenderer extends Base3DRenderer {
     this.updateBalls(state);
     this.updateSupers(state);
     this.updateBarriers(state);
+    this.updateColumns();
+    this.updateCorners();
     this.updateGUI(state);
   }
 
@@ -418,16 +707,35 @@ export class CrashballRenderer extends Base3DRenderer {
     }
   }
 
+  private updateColumns(): void {
+    this._columnTime += 0.04;
+    const off = CORNER_POS + 2;
+    const colPositions = [
+      { x: -off, z: -off }, { x: off, z: -off },
+      { x: -off, z:  off }, { x: off, z:  off },
+    ];
+    for (let i = 0; i < colPositions.length; i++) {
+      const { x, z } = colPositions[i];
+      const phaseOffset = i * Math.PI / 3;
+      for (let r = 0; r < 2; r++) {
+        MeshBuilder.CreateRibbon(`colRibbon${i}_${r}`, {
+          pathArray: this.buildColumnPaths(x, z, 16, this._columnTime + phaseOffset + r * Math.PI),
+          instance: this._columnRibbons[i * 2 + r],
+        });
+      }
+    }
+  }
+
   private updateBarriers(state: CrashballState): void {
     this._barrierTime += 0.06;
     const w = (CORNER_POS - CORNER_VISUAL_R) * 2;
     const h = 2.2;
     for (let i = 0; i < SIDES.length; i++) {
-      const eliminated = state.players[i].eliminated;
+      const isEliminated = state.players[i].eliminated;
       const ribbon = this._barrierRibbons[i];
       const mat = this._barrierMats[i];
-      ribbon.isVisible = eliminated;
-      if (!eliminated) continue;
+      ribbon.isVisible = isEliminated;
+      if (!isEliminated) continue;
       mat.alpha = 0.4 + Math.sin(this._barrierTime * 4 + i) * 0.2;
       MeshBuilder.CreateRibbon(`barrier_${SIDES[i]}`, {
         pathArray: this.buildWavePaths(w, h, this._barrierTime + i * Math.PI / 2),
