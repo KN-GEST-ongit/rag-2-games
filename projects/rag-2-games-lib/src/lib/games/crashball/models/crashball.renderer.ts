@@ -3,13 +3,14 @@ import {
   ArcRotateCamera,
   Color3,
   Color4,
+  DynamicTexture,
   GlowLayer,
   HemisphericLight,
+  Layer,
   Mesh,
   MeshBuilder,
   PBRMaterial,
   PointLight,
-  SolidParticleSystem,
   StandardMaterial,
   Vector3,
 } from '@babylonjs/core';
@@ -105,7 +106,6 @@ export class CrashballRenderer extends Base3DRenderer {
     this.buildStars();
     this.buildEnvironment();
     this.buildFloor();
-    this.buildLowerGround();
     this.buildPlatformEdge();
     this.buildFloorArrows();
     this.buildCorners();
@@ -239,44 +239,96 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private buildStars(): void {
-    const sps = new SolidParticleSystem('starSPS', this.scene, { isPickable: false });
-    const tmp = MeshBuilder.CreateSphere('tmpStar', { diameter: 1, segments: 2 }, this.scene);
-    sps.addShape(tmp, 500);
-    tmp.dispose();
+    const size = 1024;
+    const tex = new DynamicTexture('starTex', { width: size, height: size }, this.scene, false);
+    const ctx = tex.getContext() as CanvasRenderingContext2D;
+    ctx.fillStyle = '#01010a';
+    ctx.fillRect(0, 0, size, size);
+    this.drawNebulae(ctx, size);
+    this.drawDimStars(ctx, size);
+    this.drawGlowStars(ctx, size);
+    this.drawBrightStars(ctx, size);
+    tex.update();
+    const layer = new Layer('starLayer', null, this.scene, true);
+    layer.texture = tex;
+  }
 
-    const mesh = sps.buildMesh();
-    mesh.applyFog = false; // stars must not be fogged out
-    const mat = new StandardMaterial('starMat', this.scene);
-    mat.emissiveColor = new Color3(1, 1, 1);
-    mat.disableLighting = true;
-    mesh.material = mat;
+  private drawNebulae(ctx: CanvasRenderingContext2D, size: number): void {
+    for (let n = 0; n < 4; n++) {
+      const nx = Math.random() * size;
+      const ny = Math.random() * size;
+      const nr = 120 + Math.random() * 140;
+      const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
+      const nb = Math.floor(15 + Math.random() * 25);
+      grad.addColorStop(0, `rgba(${Math.floor(nb*0.4)},${Math.floor(nb*0.5)},${nb},0.35)`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, size, size);
+    }
+  }
 
-    sps.initParticles = (): void => {
-      for (let i = 0; i < sps.nbParticles; i++) {
-        const p = sps.particles[i];
-        const phi = Math.random() * Math.PI * 2;
-        const cosT = Math.random() * 2 - 1;
-        const sinT = Math.sqrt(1 - cosT * cosT);
-        const r = 55 + Math.random() * 25;
-        p.position.x = r * sinT * Math.cos(phi);
-        p.position.y = r * cosT;
-        p.position.z = r * sinT * Math.sin(phi);
-        const s = 0.1 + Math.random() * 0.25;
-        p.scaling.x = s; p.scaling.y = s; p.scaling.z = s;
-        const b = 0.55 + Math.random() * 0.45;
-        const tint = Math.random();
-        if (tint < 0.15) {
-          p.color = new Color4(b * 0.7, b * 0.8, b, 1); // blue-ish
-        } else if (tint < 0.25) {
-          p.color = new Color4(b, b * 0.8, b, 1); // slight purple
-        } else {
-          p.color = new Color4(b, b * 0.95, b, 1); // white
-        }
+  private drawDimStars(ctx: CanvasRenderingContext2D, size: number): void {
+    for (let i = 0; i < 600; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const b = Math.floor((0.2 + Math.random() * 0.35) * 255);
+      ctx.fillStyle = `rgb(${b},${b},${b})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 0.4 + Math.random() * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawGlowStars(ctx: CanvasRenderingContext2D, size: number): void {
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const bv = 0.55 + Math.random() * 0.45;
+      const tint = Math.random();
+      const cr = tint < 0.2 ? bv * 0.65 : bv;
+      const cb = tint < 0.35 ? bv * 0.8 : bv;
+      const r = Math.floor(cr * 255), g = Math.floor(bv * 0.95 * 255), b = Math.floor(cb * 255);
+      const glowR = 4 + Math.random() * 4;
+      const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+      glowGrad.addColorStop(0, `rgba(${r},${g},${b},0.7)`);
+      glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(x - glowR, y - glowR, glowR * 2, glowR * 2);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 0.9 + Math.random() * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawBrightStars(ctx: CanvasRenderingContext2D, size: number): void {
+    for (let i = 0; i < 10; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const bv = 210 + Math.floor(Math.random() * 45);
+      const flareLen = 18 + Math.random() * 22;
+      for (let d = 0; d < 4; d++) {
+        const angle = d * Math.PI / 2;
+        const lineGrad = ctx.createLinearGradient(x, y, x + Math.cos(angle) * flareLen, y + Math.sin(angle) * flareLen);
+        lineGrad.addColorStop(0, `rgba(${bv},${bv},${bv},0.9)`);
+        lineGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.strokeStyle = lineGrad;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * flareLen, y + Math.sin(angle) * flareLen);
+        ctx.stroke();
       }
-    };
-    sps.initParticles();
-    sps.setParticles();
-    sps.isAlwaysVisible = true;
+      const coreGrad = ctx.createRadialGradient(x, y, 0, x, y, 9);
+      coreGrad.addColorStop(0, `rgba(${bv},${bv},${bv},1)`);
+      coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = coreGrad;
+      ctx.fillRect(x - 9, y - 9, 18, 18);
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   private buildFloor(): void {
@@ -290,17 +342,6 @@ export class CrashballRenderer extends Base3DRenderer {
     mat.metallic = 0.9;
     mat.emissiveColor = new Color3(0.01, 0.03, 0.1);
     floor.material = mat;
-  }
-
-  private buildLowerGround(): void {
-    const lower = MeshBuilder.CreateGround('lowerGround', { width: 200, height: 200 }, this.scene);
-    lower.position.y = -3.5;
-    const mat = new PBRMaterial('lowerGroundMat', this.scene);
-    mat.albedoColor = new Color3(0.02, 0.03, 0.06);
-    mat.roughness = 0.9;
-    mat.metallic = 0.1;
-    mat.emissiveColor = new Color3(0.005, 0.008, 0.02);
-    lower.material = mat;
   }
 
   private buildPlatformEdge(): void {
