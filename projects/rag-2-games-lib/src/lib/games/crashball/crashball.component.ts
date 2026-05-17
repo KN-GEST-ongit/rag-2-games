@@ -60,8 +60,8 @@ export class CrashballGameWindowComponent
   private readonly _dt = 1 / 60;
 
   public override ngOnInit(): void {
-    this.game = new Crashball();
     super.ngOnInit();
+    this.game = this.game as Crashball;
   }
 
   protected override createRenderer(canvas: HTMLCanvasElement): Base3DRenderer {
@@ -72,7 +72,10 @@ export class CrashballGameWindowComponent
 
   public override restart(): void {
     this.renderer3D?.clear();
-    this.game = new Crashball();
+    this.game.state = new CrashballState();
+    for (const player of this.game.players) {
+      player.inputData = { move: 0, super: 0, restart: 0 };
+    }
   }
 
   protected override update(): void {
@@ -85,7 +88,11 @@ export class CrashballGameWindowComponent
 
   private handleInput(): void {
     const state = this.game.state;
-    if (state.isGameOver) return;
+    if (state.isGameOver) {
+      const enterPressed = this.game.players.some(p => p.isActive && (p.inputData['restart'] as number) === 1);
+      if (enterPressed) this.restart();
+      return;
+    }
 
     this.game.players.forEach((player, i) => {
       if (!player.isActive) return;
@@ -204,7 +211,10 @@ export class CrashballGameWindowComponent
         const result = resolveWallCollision(ball, side, cp.eliminated, ball.speed);
         if (result === 'goal') {
           cp.hp = Math.max(0, cp.hp - HP_PER_GOAL);
-          if (cp.hp === 0) cp.eliminated = true;
+          if (cp.hp === 0 && !cp.eliminated) {
+            cp.eliminated = true;
+            state.rankings.push(cp.side);
+          }
           toRemove.add(ball.id);
         } else if (result === 'bounce') {
           ball.speed = Math.min(MAX_BALL_SPEED * 1.5, ball.speed * BARRIER_SPEED_MULT);
@@ -232,9 +242,13 @@ export class CrashballGameWindowComponent
 
   private checkGameOver(state: CrashballState): void {
     const alive = state.players.filter(p => !p.eliminated);
-    if (alive.length <= 1) {
+    if (alive.length <= 1 && !state.isGameOver) {
       state.isGameOver = true;
       state.winner = alive.length === 1 ? alive[0].side : null;
+      // push remaining unranked players (tie or last survivor)
+      for (const p of state.players) {
+        if (!state.rankings.includes(p.side)) state.rankings.push(p.side);
+      }
     }
   }
 }

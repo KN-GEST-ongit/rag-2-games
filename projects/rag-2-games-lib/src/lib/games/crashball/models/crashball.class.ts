@@ -30,6 +30,7 @@ export class CrashballState implements TGameState {
   public speedTimer = 0;
   public isGameOver = false;
   public winner: TPlayerSide | null = null;
+  public rankings: TPlayerSide[] = []; // order of elimination: index 0 = eliminated first (4th place)
 }
 
 export class Crashball extends Game {
@@ -48,12 +49,13 @@ export class Crashball extends Game {
     new Player(
       0,
       true, // isActive
-      'Player 1 (top)',
-      { move: 0, super: 0 },
+      'Player 1 (red)',
+      { move: 0, super: 0, restart: 0 },
       {
-        f:   { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        h:   { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        ' ': { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        f:     { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        h:     { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        ' ':   { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'restart', pressedValue: 1, releasedValue: 0 },
       },
       '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
       { left: '[F]', right: '[H]', super: '[SPACE]' }
@@ -61,12 +63,13 @@ export class Crashball extends Game {
     new Player(
       1,
       true,
-      'Player 2 (bottom)',
-      { move: 0, super: 0 },
+      'Player 2 (blue)',
+      { move: 0, super: 0, restart: 0 },
       {
-        k:   { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        ';': { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        o:   { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        k:     { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        ';':   { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        o:     { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'restart', pressedValue: 1, releasedValue: 0 },
       },
       '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
       { left: '[K]', right: '[;]', super: '[O]' }
@@ -74,12 +77,13 @@ export class Crashball extends Game {
     new Player(
       2,
       true,
-      'Player 3 (left)',
-      { move: 0, super: 0 },
+      'Player 3 (green)',
+      { move: 0, super: 0, restart: 0 },
       {
-        a: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
-        d: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
-        w: { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        a:     { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        d:     { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+        w:     { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'restart', pressedValue: 1, releasedValue: 0 },
       },
       '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
       { left: '[A]', right: '[D]', super: '[W]' }
@@ -87,12 +91,13 @@ export class Crashball extends Game {
     new Player(
       3,
       true,
-      'Player 4 (right)',
-      { move: 0, super: 0 },
+      'Player 4 (yellow)',
+      { move: 0, super: 0, restart: 0 },
       {
         ArrowLeft:  { variableName: 'move', pressedValue: 1, releasedValue: 0 },
         ArrowRight: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
         ArrowUp:    { variableName: 'super', pressedValue: 1, releasedValue: 0 },
+        Enter:      { variableName: 'restart', pressedValue: 1, releasedValue: 0 },
       },
       '<move>: 1=left, 2=right, 0=stop; <super>: 1=activate',
       { left: '[←]', right: '[→]', super: '[↑]' }

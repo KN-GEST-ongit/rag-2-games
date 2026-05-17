@@ -37,17 +37,24 @@ const ARENA_SCALE = 1.2;   // visual floor extends beyond physics boundary (fiel
 const CORNER_VISUAL_R = 2.0; // visual-only corner radius, independent of physics CORNER_R
 
 const PLAYER_COLORS: Record<TPlayerSide, Color3> = {
-  top:    new Color3(0.15, 0.45, 1.0),
-  bottom: new Color3(1.0,  0.2,  0.15),
+  top:    new Color3(1.0,  0.2,  0.15),
+  bottom: new Color3(0.15, 0.45, 1.0),
   left:   new Color3(0.1,  0.75, 0.25),
   right:  new Color3(1.0,  0.75, 0.05),
 };
 
 const COLOR_CSS: Record<TPlayerSide, string> = {
-  top:    '#2277ff',
-  bottom: '#ff3322',
+  top:    '#ff3322',
+  bottom: '#2277ff',
   left:   '#11cc44',
   right:  '#ffcc00',
+};
+
+const PLAYER_NAMES: Record<TPlayerSide, string> = {
+  top:    'Red',
+  bottom: 'Blue',
+  left:   'Green',
+  right:  'Yellow',
 };
 
 export class CrashballRenderer extends Base3DRenderer {
@@ -66,6 +73,7 @@ export class CrashballRenderer extends Base3DRenderer {
   private _hpTexts: TextBlock[] = [];
   private _superFills: Rectangle[] = [];
   private _playerPanels: StackPanel[] = [];
+  private _gameOverPanel: Rectangle | null = null;
 
   public constructor(canvas: HTMLCanvasElement) {
     super(canvas, new Color4(0.02, 0.02, 0.05, 1));
@@ -150,8 +158,8 @@ export class CrashballRenderer extends Base3DRenderer {
       { x: -off, z:  off }, { x: off, z:  off },
     ];
     const colColors = [
-      new Color3(0.2, 0.5, 1.0), new Color3(1.0, 0.8, 0.1),
-      new Color3(0.1, 0.9, 0.3), new Color3(1.0, 0.3, 0.2),
+      new Color3(1.0, 0.3, 0.2), new Color3(1.0, 0.8, 0.1),
+      new Color3(0.1, 0.9, 0.3), new Color3(0.2, 0.5, 1.0),
     ];
 
     for (let i = 0; i < colPositions.length; i++) {
@@ -791,10 +799,60 @@ export class CrashballRenderer extends Base3DRenderer {
       this._hpTexts[i].text = cp.eliminated ? 'OUT' : `HP: ${cp.hp}`;
       this._superFills[i].width = `${Math.round(cp.superCharge * 78)}px`;
     }
+    if (state.isGameOver && !this._gameOverPanel) {
+      this.showGameOver(state);
+    }
+  }
+
+  private showGameOver(state: CrashballState): void {
+    const panel = new Rectangle('gameOverPanel');
+    panel.width = '360px';
+    panel.height = '320px';
+    panel.background = '#05051499';
+    panel.color = '#2244aa';
+    panel.thickness = 2;
+    panel.cornerRadius = 16;
+    this._guiTexture.addControl(panel);
+    this._gameOverPanel = panel;
+
+    const stack = new StackPanel('gameOverStack');
+    stack.isVertical = true;
+    stack.width = '100%';
+    panel.addControl(stack);
+
+    const title = new TextBlock('goTitle', 'GAME OVER');
+    title.color = '#fbbf24';
+    title.fontSize = 26;
+    title.fontWeight = 'bold';
+    title.height = '46px';
+    stack.addControl(title);
+
+    const medals = ['🥇', '🥈', '🥉', '4TH'];
+    const reversed = [...state.rankings].reverse();
+    for (let i = 0; i < 4; i++) {
+      const side = reversed[i] as TPlayerSide | undefined;
+      const name = side ? PLAYER_NAMES[side] : '—';
+      const row = new TextBlock(`rank_${i}`, `${medals[i]}  ${name}`);
+      row.color = side ? COLOR_CSS[side] : '#555';
+      row.fontSize = i === 0 ? 21 : 17;
+      row.fontWeight = i === 0 ? 'bold' : 'normal';
+      row.height = '38px';
+      stack.addControl(row);
+    }
+
+    const hint = new TextBlock('goHint', 'Press Enter to play again');
+    hint.color = '#aaa';
+    hint.fontSize = 13;
+    hint.height = '32px';
+    stack.addControl(hint);
   }
 
   public clear(): void {
     for (const [, mesh] of this._ballMeshes) { mesh.dispose(); }
     this._ballMeshes.clear();
+    if (this._gameOverPanel) {
+      this._gameOverPanel.dispose();
+      this._gameOverPanel = null;
+    }
   }
 }
