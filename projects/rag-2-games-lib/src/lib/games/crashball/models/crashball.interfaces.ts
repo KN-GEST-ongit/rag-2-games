@@ -23,6 +23,12 @@ export const SPIN_FACTOR = 0.3;       // how much vehicle velocity affects ball
 export type TPlayerSide = 'top' | 'bottom' | 'left' | 'right';
 export const SIDES: TPlayerSide[] = ['top', 'bottom', 'left', 'right'];
 
+export type TGameMode = 'ffa' | '2v2';
+export const TEAMS_2V2: [TPlayerSide, TPlayerSide][] = [
+  ['bottom', 'right'],  // Blue + Yellow
+  ['top', 'left'],      // Red + Green
+];
+
 export interface IBall {
   id: number;
   x: number;

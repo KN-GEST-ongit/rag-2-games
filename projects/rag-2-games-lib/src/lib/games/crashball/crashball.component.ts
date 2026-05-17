@@ -21,6 +21,7 @@ import {
   SUPER_CHARGE_TIME,
   SUPER_RADIUS,
   SUPER_SPEED_MULT,
+  TEAMS_2V2,
   VEHICLE_HALF_W,
   VEHICLE_RANGE,
 } from './models/crashball.interfaces';
@@ -72,9 +73,11 @@ export class CrashballGameWindowComponent
 
   public override restart(): void {
     this.renderer3D?.clear();
+    const prevMode = this.game.state.gameMode;
     this.game.state = new CrashballState();
+    this.game.state.gameMode = prevMode;
     for (const player of this.game.players) {
-      player.inputData = { move: 0, super: 0, restart: 0 };
+      player.inputData = { move: 0, super: 0, restart: 0, mode: 0 };
     }
   }
 
@@ -88,6 +91,19 @@ export class CrashballGameWindowComponent
 
   private handleInput(): void {
     const state = this.game.state;
+
+    if (state.isLobbyActive) {
+      for (const player of this.game.players) {
+        if (!player.isActive) continue;
+        const m = player.inputData['mode'] as number;
+        if (m === 1) state.gameMode = 'ffa';
+        else if (m === 2) state.gameMode = '2v2';
+      }
+      const enterPressed = this.game.players.some(p => p.isActive && (p.inputData['restart'] as number) === 1);
+      if (enterPressed) state.isLobbyActive = false;
+      return;
+    }
+
     if (state.isGameOver) {
       const enterPressed = this.game.players.some(p => p.isActive && (p.inputData['restart'] as number) === 1);
       if (enterPressed) this.restart();
@@ -117,7 +133,7 @@ export class CrashballGameWindowComponent
 
   private updateGameLogic(): void {
     const state = this.game.state;
-    if (state.isGameOver) return;
+    if (state.isGameOver || state.isLobbyActive) return;
 
     const dt = this._dt;
     this.updatePlayers(state, dt);
@@ -241,14 +257,28 @@ export class CrashballGameWindowComponent
   }
 
   private checkGameOver(state: CrashballState): void {
-    const alive = state.players.filter(p => !p.eliminated);
-    if (alive.length <= 1 && !state.isGameOver) {
-      state.isGameOver = true;
-      state.winner = alive.length === 1 ? alive[0].side : null;
-      // push remaining unranked players (tie or last survivor)
-      for (const p of state.players) {
-        if (!state.rankings.includes(p.side)) state.rankings.push(p.side);
+    if (state.isGameOver) return;
+
+    if (state.gameMode === '2v2') {
+      for (const team of TEAMS_2V2) {
+        const teamPlayers = team.map(s => state.players.find(p => p.side === s)!);
+        if (teamPlayers.every(p => p.eliminated)) {
+          this.finalizeGame(state);
+          return;
+        }
       }
+    } else {
+      const alive = state.players.filter(p => !p.eliminated);
+      if (alive.length <= 1) this.finalizeGame(state);
+    }
+  }
+
+  private finalizeGame(state: CrashballState): void {
+    state.isGameOver = true;
+    const alive = state.players.filter(p => !p.eliminated);
+    state.winner = alive.length === 1 ? alive[0].side : null;
+    for (const p of state.players) {
+      if (!state.rankings.includes(p.side)) state.rankings.push(p.side);
     }
   }
 }

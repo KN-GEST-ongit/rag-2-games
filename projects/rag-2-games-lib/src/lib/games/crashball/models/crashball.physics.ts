@@ -48,19 +48,19 @@ export function resolveWallCollision(
   const limit = CORNER_POS;
   switch (side) {
     case 'top':
-      if (ball.z - ball.radius <= -limit) {
+      if (ball.z + ball.radius >= limit) {
         if (!playerEliminated) return 'goal';
-        ball.z = -limit + ball.radius;
-        ball.vz = Math.abs(ball.vz);
+        ball.z = limit - ball.radius;
+        ball.vz = -Math.abs(ball.vz);
         [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
         return 'bounce';
       }
       break;
     case 'bottom':
-      if (ball.z + ball.radius >= limit) {
+      if (ball.z - ball.radius <= -limit) {
         if (!playerEliminated) return 'goal';
-        ball.z = limit - ball.radius;
-        ball.vz = -Math.abs(ball.vz);
+        ball.z = -limit + ball.radius;
+        ball.vz = Math.abs(ball.vz);
         [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
         return 'bounce';
       }
@@ -190,8 +190,8 @@ export function getVehicleWorldPos(side: TPlayerSide, position: number): { x: nu
   const offset = position * VEHICLE_RANGE;
   const wallEdge = CORNER_POS - VEHICLE_DEPTH / 2;
   switch (side) {
-    case 'top':    return { x: offset,    z: -wallEdge };
-    case 'bottom': return { x: offset,    z: wallEdge };
+    case 'top':    return { x: offset,    z:  wallEdge };
+    case 'bottom': return { x: offset,    z: -wallEdge };
     case 'left':   return { x: -wallEdge, z: offset };
     case 'right':  return { x: wallEdge,  z: offset };
   }

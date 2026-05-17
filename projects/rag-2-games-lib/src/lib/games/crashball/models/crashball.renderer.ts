@@ -27,6 +27,7 @@ import {
   ARENA_HALF,
   CORNER_POS,
   SIDES,
+  TEAMS_2V2,
   TPlayerSide,
 } from './crashball.interfaces';
 import { getVehicleWorldPos } from './crashball.physics';
@@ -74,6 +75,9 @@ export class CrashballRenderer extends Base3DRenderer {
   private _superFills: Rectangle[] = [];
   private _playerPanels: StackPanel[] = [];
   private _gameOverPanel: Rectangle | null = null;
+  private _lobbyPanel: Rectangle | null = null;
+  private _lobbyFfaText: TextBlock | null = null;
+  private _lobby2v2Text: TextBlock | null = null;
 
   public constructor(canvas: HTMLCanvasElement) {
     super(canvas, new Color4(0.02, 0.02, 0.05, 1));
@@ -154,8 +158,8 @@ export class CrashballRenderer extends Base3DRenderer {
   private buildColumns(): void {
     const off = CORNER_POS + 2;
     const colPositions = [
-      { x: -off, z: -off }, { x: off, z: -off },
-      { x: -off, z:  off }, { x: off, z:  off },
+      { x: off, z: off }, { x: off, z: -off },
+      { x: -off, z:  off }, { x: -off, z:  -off },
     ];
     const colColors = [
       new Color3(1.0, 0.3, 0.2), new Color3(1.0, 0.8, 0.1),
@@ -599,8 +603,8 @@ export class CrashballRenderer extends Base3DRenderer {
     const w = (CORNER_POS - CORNER_VISUAL_R) * 2;
     const h = 2.2;
     const defs = [
-      { x: 0,           z: -CORNER_POS, rotY: 0 },
       { x: 0,           z:  CORNER_POS, rotY: 0 },
+      { x: 0,           z: -CORNER_POS, rotY: 0 },
       { x: -CORNER_POS, z: 0,           rotY: Math.PI / 2 },
       { x:  CORNER_POS, z: 0,           rotY: Math.PI / 2 },
     ];
@@ -649,8 +653,8 @@ export class CrashballRenderer extends Base3DRenderer {
     this._guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     const alignments: { hAlign: number; vAlign: number; left: string; top: string }[] = [
-      { hAlign: Control.HORIZONTAL_ALIGNMENT_CENTER, vAlign: Control.VERTICAL_ALIGNMENT_BOTTOM, left: '0px',  top: '-8px' },
       { hAlign: Control.HORIZONTAL_ALIGNMENT_CENTER, vAlign: Control.VERTICAL_ALIGNMENT_TOP,    left: '0px',  top: '8px'  },
+      { hAlign: Control.HORIZONTAL_ALIGNMENT_CENTER, vAlign: Control.VERTICAL_ALIGNMENT_BOTTOM, left: '0px',  top: '-8px' },
       { hAlign: Control.HORIZONTAL_ALIGNMENT_LEFT,   vAlign: Control.VERTICAL_ALIGNMENT_CENTER, left: '8px',  top: '0px'  },
       { hAlign: Control.HORIZONTAL_ALIGNMENT_RIGHT,  vAlign: Control.VERTICAL_ALIGNMENT_CENTER, left: '-8px', top: '0px'  },
     ];
@@ -760,8 +764,8 @@ export class CrashballRenderer extends Base3DRenderer {
     this._columnTime += 0.04;
     const off = CORNER_POS + 2;
     const colPositions = [
-      { x: -off, z: -off }, { x: off, z: -off },
-      { x: -off, z:  off }, { x: off, z:  off },
+      { x: off, z: off }, { x: off, z: -off },
+      { x: -off, z:  off }, { x: -off, z:  -off },
     ];
     for (let i = 0; i < colPositions.length; i++) {
       const { x, z } = colPositions[i];
@@ -794,6 +798,13 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private updateGUI(state: CrashballState): void {
+    if (state.isLobbyActive) {
+      if (!this._lobbyPanel) this.showLobby(state);
+      else this.updateLobby(state);
+      return;
+    }
+    if (this._lobbyPanel) this.hideLobby();
+
     for (let i = 0; i < SIDES.length; i++) {
       const cp = state.players[i];
       this._hpTexts[i].text = cp.eliminated ? 'OUT' : `HP: ${cp.hp}`;
@@ -804,10 +815,79 @@ export class CrashballRenderer extends Base3DRenderer {
     }
   }
 
+  private showLobby(state: CrashballState): void {
+    const panel = new Rectangle('lobbyPanel');
+    panel.width = '400px';
+    panel.height = '260px';
+    panel.background = '#05051499';
+    panel.color = '#2244aa';
+    panel.thickness = 2;
+    panel.cornerRadius = 16;
+    this._guiTexture.addControl(panel);
+    this._lobbyPanel = panel;
+
+    const stack = new StackPanel('lobbyStack');
+    stack.isVertical = true;
+    stack.width = '100%';
+    panel.addControl(stack);
+
+    const title = new TextBlock('lobbyTitle', 'CRASHBALL');
+    title.color = '#fbbf24';
+    title.fontSize = 28;
+    title.fontWeight = 'bold';
+    title.height = '48px';
+    stack.addControl(title);
+
+    const sub = new TextBlock('lobbySub', 'Select game mode:');
+    sub.color = '#aaa';
+    sub.fontSize = 13;
+    sub.height = '22px';
+    stack.addControl(sub);
+
+    const ffaText = new TextBlock('lobbyFfa', '[1]  Free For All  —  1v1v1v1');
+    ffaText.fontSize = 16;
+    ffaText.height = '34px';
+    stack.addControl(ffaText);
+    this._lobbyFfaText = ffaText;
+
+    const v2Text = new TextBlock('lobby2v2', '[2]  Team Mode  —  2v2');
+    v2Text.fontSize = 16;
+    v2Text.height = '34px';
+    stack.addControl(v2Text);
+    this._lobby2v2Text = v2Text;
+
+    const teamHint = new TextBlock('lobbyTeamHint', 'Teams: Blue+Yellow  vs  Red+Green');
+    teamHint.color = '#666';
+    teamHint.fontSize = 12;
+    teamHint.height = '22px';
+    stack.addControl(teamHint);
+
+    const hint = new TextBlock('lobbyHint', 'Press ENTER to start');
+    hint.color = '#aaa';
+    hint.fontSize = 13;
+    hint.height = '28px';
+    stack.addControl(hint);
+
+    this.updateLobby(state);
+  }
+
+  private updateLobby(state: CrashballState): void {
+    if (!this._lobbyFfaText || !this._lobby2v2Text) return;
+    this._lobbyFfaText.color = state.gameMode === 'ffa' ? '#fbbf24' : '#555';
+    this._lobby2v2Text.color = state.gameMode === '2v2' ? '#fbbf24' : '#555';
+  }
+
+  private hideLobby(): void {
+    this._lobbyPanel?.dispose();
+    this._lobbyPanel = null;
+    this._lobbyFfaText = null;
+    this._lobby2v2Text = null;
+  }
+
   private showGameOver(state: CrashballState): void {
     const panel = new Rectangle('gameOverPanel');
     panel.width = '360px';
-    panel.height = '320px';
+    panel.height = state.gameMode === '2v2' ? '200px' : '320px';
     panel.background = '#05051499';
     panel.color = '#2244aa';
     panel.thickness = 2;
@@ -827,6 +907,20 @@ export class CrashballRenderer extends Base3DRenderer {
     title.height = '46px';
     stack.addControl(title);
 
+    if (state.gameMode === '2v2') {
+      this.addGameOver2v2Rows(stack, state);
+    } else {
+      this.addGameOverFfaRows(stack, state);
+    }
+
+    const hint = new TextBlock('goHint', 'Press Enter to play again');
+    hint.color = '#aaa';
+    hint.fontSize = 13;
+    hint.height = '32px';
+    stack.addControl(hint);
+  }
+
+  private addGameOverFfaRows(stack: StackPanel, state: CrashballState): void {
     const medals = ['🥇', '🥈', '🥉', '4TH'];
     const reversed = [...state.rankings].reverse();
     for (let i = 0; i < 4; i++) {
@@ -839,12 +933,26 @@ export class CrashballRenderer extends Base3DRenderer {
       row.height = '38px';
       stack.addControl(row);
     }
+  }
 
-    const hint = new TextBlock('goHint', 'Press Enter to play again');
-    hint.color = '#aaa';
-    hint.fontSize = 13;
-    hint.height = '32px';
-    stack.addControl(hint);
+  private addGameOver2v2Rows(stack: StackPanel, state: CrashballState): void {
+    const alive = state.players.filter(p => !p.eliminated).map(p => p.side);
+    const winTeam = TEAMS_2V2.find(t => t.every(s => alive.includes(s))) ?? alive as unknown as TPlayerSide[];
+    const winNames = winTeam.map(s => PLAYER_NAMES[s as TPlayerSide]).join(' + ');
+    const winColors = winTeam.map(s => COLOR_CSS[s as TPlayerSide]);
+
+    const winRow = new TextBlock('goWin', `🏆  ${winNames} Win!`);
+    winRow.color = winColors[0];
+    winRow.fontSize = 20;
+    winRow.fontWeight = 'bold';
+    winRow.height = '42px';
+    stack.addControl(winRow);
+
+    const modeLabel = new TextBlock('goMode', 'Mode: 2v2  —  Blue+Yellow  vs  Red+Green');
+    modeLabel.color = '#666';
+    modeLabel.fontSize = 11;
+    modeLabel.height = '24px';
+    stack.addControl(modeLabel);
   }
 
   public clear(): void {
@@ -854,5 +962,6 @@ export class CrashballRenderer extends Base3DRenderer {
       this._gameOverPanel.dispose();
       this._gameOverPanel = null;
     }
+    this.hideLobby();
   }
 }
