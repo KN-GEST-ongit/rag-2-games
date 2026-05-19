@@ -1,5 +1,5 @@
 export const ARENA_HALF = 10;
-export const CORNER_R = 1.5;         // corner bumper collision radius (matches visual)
+export const CORNER_R = 2.0;         // corner bumper radius (physics + visual + vehicle boundary)
 export const CORNER_POS = 9.2;      // corner bumper centre offset (visual + physics)
 export const GOAL_HALF = 3;          // half-width of goal opening
 export const BALL_RADIUS = 0.4;

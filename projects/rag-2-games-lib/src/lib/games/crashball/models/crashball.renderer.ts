@@ -26,6 +26,7 @@ import { CrashballState } from './crashball.class';
 import {
   ARENA_HALF,
   CORNER_POS,
+  CORNER_R,
   SIDES,
   TEAMS_2V2,
   TPlayerSide,
@@ -35,7 +36,6 @@ import { getVehicleWorldPos } from './crashball.physics';
 const VEHICLE_R = 1.2;
 const VEHICLE_H = 0.38;
 const ARENA_SCALE = 1.2;   // visual floor extends beyond physics boundary (field behind players)
-const CORNER_VISUAL_R = 2.0; // visual-only corner radius, independent of physics CORNER_R
 
 const PLAYER_COLORS: Record<TPlayerSide, Color3> = {
   top:    new Color3(1.0,  0.2,  0.15),
@@ -132,24 +132,24 @@ export class CrashballRenderer extends Base3DRenderer {
     this.scene.fogColor = new Color3(0.01, 0.01, 0.06);
     this.scene.fogDensity = 0.007;
 
-    // Glowing edge strips along arena perimeter
-    const stripMat = new StandardMaterial('stripMat', this.scene);
-    stripMat.emissiveColor = new Color3(0.05, 0.3, 0.9);
-    stripMat.disableLighting = true;
-    const sl = (CORNER_POS - CORNER_VISUAL_R) * 2;
-    const sd = 0.07;
-    const sh = 0.06;
+    // Glowing edge strips along arena perimeter — colored per player
+    const sl = (CORNER_POS - CORNER_R) * 2;
+    const sd = 0.18;
+    const sh = 0.14;
     const edgeDefs = [
-      { w: sl, d: sd, x: 0,           z: -CORNER_POS },
-      { w: sl, d: sd, x: 0,           z:  CORNER_POS },
-      { w: sd, d: sl, x: -CORNER_POS, z: 0 },
-      { w: sd, d: sl, x:  CORNER_POS, z: 0 },
+      { w: sl, d: sd, x: 0,           z: -CORNER_POS, side: 'bottom' as TPlayerSide },
+      { w: sl, d: sd, x: 0,           z:  CORNER_POS, side: 'top'    as TPlayerSide },
+      { w: sd, d: sl, x: -CORNER_POS, z: 0,           side: 'left'   as TPlayerSide },
+      { w: sd, d: sl, x:  CORNER_POS, z: 0,           side: 'right'  as TPlayerSide },
     ];
     for (let i = 0; i < edgeDefs.length; i++) {
       const e = edgeDefs[i];
+      const mat = new StandardMaterial(`stripMat_${e.side}`, this.scene);
+      mat.emissiveColor = PLAYER_COLORS[e.side];
+      mat.disableLighting = true;
       const strip = MeshBuilder.CreateBox(`strip${i}`, { width: e.w, height: sh, depth: e.d }, this.scene);
       strip.position.set(e.x, sh / 2, e.z);
-      strip.material = stripMat;
+      strip.material = mat;
     }
 
     this.buildColumns();
@@ -170,14 +170,6 @@ export class CrashballRenderer extends Base3DRenderer {
       const { x, z } = colPositions[i];
       const color = colColors[i];
       const colH = 16;
-
-      // Flat platform at base
-      const platMat = new StandardMaterial(`colPlatMat${i}`, this.scene);
-      platMat.emissiveColor = color.scale(0.4);
-      platMat.disableLighting = true;
-      const plat = MeshBuilder.CreateCylinder(`colPlat${i}`, { diameter: 3.2, height: 0.25, tessellation: 16 }, this.scene);
-      plat.position.set(x, 0.12, z);
-      plat.material = platMat;
 
       // Body — slightly emissive so it reads against dark bg
       const bodyMat = new StandardMaterial(`colBodyMat${i}`, this.scene);
@@ -414,7 +406,7 @@ export class CrashballRenderer extends Base3DRenderer {
     const wingLen = 1.8;  // length of each wing arm
     const wingW = 0.22;
     // distances from corner center to the tip of each chevron (> and >)
-    // CORNER_VISUAL_R=2 means bumper extends ~2 units — start past that
+    // CORNER_R=2 means bumper extends ~2 units — start past that
     const chevronDists = [5.5, 7.5];
 
     for (let i = 0; i < corners.length; i++) {
@@ -446,7 +438,7 @@ export class CrashballRenderer extends Base3DRenderer {
 
   private buildCorners(): void {
     const c = CORNER_POS;
-    const r = CORNER_VISUAL_R;
+    const r = CORNER_R;
 
     const positions = [
       { x: -c, z: -c }, { x: c, z: -c },
@@ -487,13 +479,6 @@ export class CrashballRenderer extends Base3DRenderer {
 
     for (let i = 0; i < positions.length; i++) {
       const { x, z } = positions[i];
-
-      // Glowing base disc
-      const base = MeshBuilder.CreateCylinder(`cBase${i}`, {
-        diameter: r * 2 + 1.2, height: 0.12, tessellation: 24,
-      }, this.scene);
-      base.position.set(x, 0.06, z);
-      base.material = baseMat;
 
       // Lower wide body section
       const lower = MeshBuilder.CreateCylinder(`cLower${i}`, {
@@ -600,7 +585,7 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private buildBarriers(): void {
-    const w = (CORNER_POS - CORNER_VISUAL_R) * 2;
+    const w = (CORNER_POS - CORNER_R) * 2;
     const h = 2.2;
     const defs = [
       { x: 0,           z:  CORNER_POS, rotY: 0 },
@@ -781,7 +766,7 @@ export class CrashballRenderer extends Base3DRenderer {
 
   private updateBarriers(state: CrashballState): void {
     this._barrierTime += 0.06;
-    const w = (CORNER_POS - CORNER_VISUAL_R) * 2;
+    const w = (CORNER_POS - CORNER_R) * 2;
     const h = 2.2;
     for (let i = 0; i < SIDES.length; i++) {
       const isEliminated = state.players[i].eliminated;
