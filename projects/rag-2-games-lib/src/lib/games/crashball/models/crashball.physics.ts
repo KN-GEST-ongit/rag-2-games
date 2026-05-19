@@ -1,13 +1,9 @@
 /* eslint-disable complexity */
-import {
-  CORNER_R,
-  CORNER_POS,
-  VEHICLE_HALF_W,
-  VEHICLE_DEPTH,
-  SPIN_FACTOR,
-  VEHICLE_RANGE,
-  TPlayerSide,
-} from './crashball.interfaces';
+import { CORNER_R, CORNER_POS, VEHICLE_HALF_W, VEHICLE_RANGE } from './crashball.constants';
+import { TPlayerSide } from './crashball.interfaces';
+
+const VEHICLE_DEPTH = 0.8;
+const SPIN_FACTOR = 0.3;
 
 export function normalizeToSpeed(vx: number, vz: number, speed: number): [number, number] {
   const len = Math.sqrt(vx * vx + vz * vz);

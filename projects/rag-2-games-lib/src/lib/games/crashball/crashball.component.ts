@@ -6,38 +6,25 @@ import { Base3DGameWindowComponent } from '../../engine-3d/base-3d-game.componen
 import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
 import { Crashball, CrashballState } from './models/crashball.class';
 import { CrashballRenderer } from './models/crashball.renderer';
+import { BALL_RADIUS, BASE_BALL_SPEED, CORNER_POS, CORNER_R, SPAWN_INTERVAL_START, VEHICLE_HALF_W, VEHICLE_RANGE } from './models/crashball.constants';
+import { SIDES, TEAMS_2V2 } from './models/crashball.interfaces';
 import {
-  BALL_RADIUS,
-  BARRIER_SPEED_MULT,
-  BASE_BALL_SPEED,
-  CORNER_POS,
-  CORNER_R,
-  CORNER_SPEED_VARY,
-  MAX_BALL_SPEED,
-  SIDES,
-  SPAWN_INTERVAL_MIN,
-  SPAWN_INTERVAL_START,
-  SPEED_INCREMENT,
-  SUPER_CHARGE_TIME,
-  SUPER_RADIUS,
-  SUPER_SPEED_MULT,
-  TEAMS_2V2,
-  VEHICLE_HALF_W,
-  VEHICLE_RANGE,
-} from './models/crashball.interfaces';
-import {
-  getCornerCenter,
-  getVehicleWorldPos,
-  resolveBallCollision,
-  resolveCornerCollision,
-  resolveVehicleCollision,
-  resolveWallCollision,
-  spawnBallAtCorner,
+  getCornerCenter, getVehicleWorldPos,
+  resolveBallCollision, resolveCornerCollision,
+  resolveVehicleCollision, resolveWallCollision, spawnBallAtCorner,
 } from './models/crashball.physics';
 
 const PLAYER_SPEED = 2.5;
 const SPEED_INTERVAL = 30;
 const HP_PER_GOAL = 1;
+const MAX_BALL_SPEED = 12;
+const SPEED_INCREMENT = 0.3;
+const SPAWN_INTERVAL_MIN = 0.6;
+const SUPER_CHARGE_TIME = 5;
+const SUPER_RADIUS = 2.5;
+const SUPER_SPEED_MULT = 2;
+const BARRIER_SPEED_MULT = 1.35;
+const CORNER_SPEED_VARY = 0.22;
 
 @Component({
   selector: 'app-crashball',
@@ -200,7 +187,7 @@ export class CrashballGameWindowComponent
       }
     }
 
-    // Vehicle collision before wall — prevents ball tunnelling through paddle to wall
+    // Vehicle collision before wall 
     for (const ball of state.balls) {
       for (const cp of state.players) {
         if (cp.eliminated) continue;

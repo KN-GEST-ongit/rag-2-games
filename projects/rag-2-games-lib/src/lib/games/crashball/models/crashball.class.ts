@@ -1,15 +1,8 @@
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
-import {
-  BASE_BALL_SPEED,
-  IBall,
-  ICrashPlayer,
-  SIDES,
-  SPAWN_INTERVAL_START,
-  TGameMode,
-  TPlayerSide,
-} from './crashball.interfaces';
+import { BASE_BALL_SPEED, SPAWN_INTERVAL_START } from './crashball.constants';
+import { IBall, ICrashPlayer, SIDES, TGameMode, TPlayerSide } from './crashball.interfaces';
 
 export class CrashballState implements TGameState {
   public balls: IBall[] = [];
@@ -51,7 +44,7 @@ export class Crashball extends Game {
   public override players: Player[] = [
     new Player(
       0,
-      true, // isActive
+      true,
       'Player 1 (red)',
       { move: 0, super: 0, restart: 0, mode: 0 },
       {

@@ -1,41 +1,21 @@
 /* eslint-disable max-lines */
 import {
-  ArcRotateCamera,
-  Color3,
-  Color4,
-  DynamicTexture,
-  GlowLayer,
-  HemisphericLight,
-  Layer,
-  Mesh,
-  MeshBuilder,
-  PBRMaterial,
-  PointLight,
-  StandardMaterial,
-  Vector3,
+  ArcRotateCamera, Color3, Color4, DynamicTexture,
+  GlowLayer, HemisphericLight, Layer, Mesh, MeshBuilder,
+  PBRMaterial, PointLight, StandardMaterial, Vector3,
 } from '@babylonjs/core';
-import {
-  AdvancedDynamicTexture,
-  Control,
-  Rectangle,
-  StackPanel,
-  TextBlock,
-} from '@babylonjs/gui';
+import { AdvancedDynamicTexture, Control, Rectangle, StackPanel, TextBlock } from '@babylonjs/gui';
 import { Base3DRenderer } from '../../../engine-3d/base-3d.renderer';
 import { CrashballState } from './crashball.class';
-import {
-  ARENA_HALF,
-  CORNER_POS,
-  CORNER_R,
-  SIDES,
-  TEAMS_2V2,
-  TPlayerSide,
-} from './crashball.interfaces';
+import { CORNER_POS, CORNER_R } from './crashball.constants';
+import { SIDES, TEAMS_2V2, TPlayerSide } from './crashball.interfaces';
+
+const ARENA_HALF = 10;
 import { getVehicleWorldPos } from './crashball.physics';
 
 const VEHICLE_R = 1.2;
 const VEHICLE_H = 0.38;
-const ARENA_SCALE = 1.2;   // visual floor extends beyond physics boundary (field behind players)
+const ARENA_SCALE = 1.2; 
 
 const PLAYER_COLORS: Record<TPlayerSide, Color3> = {
   top:    new Color3(1.0,  0.2,  0.15),
@@ -85,30 +65,24 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private initScene(): void {
-    // === CAMERA — locked isometric top-down, cannot be rotated by player ===
     const cam = new ArcRotateCamera('cam', -Math.PI / 2, 0.45, 30, Vector3.Zero(), this.scene);
     cam.inputs.clear();
 
-    // === LIGHTING ===
-    // Ambient hemisphere: cool blue sky light, dark ground bounce
     const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), this.scene);
     hemi.intensity = 0.7;
     hemi.diffuse = new Color3(0.75, 0.88, 1.0);
     hemi.groundColor = new Color3(0.08, 0.12, 0.3);
     hemi.specular = new Color3(0.4, 0.55, 1.0);
 
-    // Global glow layer — picks up all emissiveColor meshes automatically
     const glow = new GlowLayer('glow', this.scene);
     glow.intensity = 0.25;
 
-    // Central point light above the arena
     const centerLight = new PointLight('centerLight', new Vector3(0, 5, 0), this.scene);
     centerLight.diffuse = new Color3(1.0, 0.85, 0.6);
     centerLight.specular = new Color3(1.0, 0.9, 0.7);
     centerLight.intensity = 3;
     centerLight.range = 40;
 
-    // Ball glow material — bright emissive white/blue
     this._ballMat = new StandardMaterial('ballMat', this.scene);
     this._ballMat.diffuseColor = new Color3(0.9, 0.95, 1.0);
     this._ballMat.emissiveColor = new Color3(0.85, 0.9, 1.0);
@@ -128,11 +102,10 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private buildEnvironment(): void {
-    this.scene.fogMode = 2; // FOGMODE_EXP
+    this.scene.fogMode = 2; 
     this.scene.fogColor = new Color3(0.01, 0.01, 0.06);
     this.scene.fogDensity = 0.007;
 
-    // Glowing edge strips along arena perimeter — colored per player
     const sl = (CORNER_POS - CORNER_R) * 2;
     const sd = 0.18;
     const sh = 0.14;
@@ -171,7 +144,6 @@ export class CrashballRenderer extends Base3DRenderer {
       const color = colColors[i];
       const colH = 16;
 
-      // Body — slightly emissive so it reads against dark bg
       const bodyMat = new StandardMaterial(`colBodyMat${i}`, this.scene);
       bodyMat.diffuseColor = new Color3(0.12, 0.15, 0.22);
       bodyMat.emissiveColor = color.scale(0.08);
@@ -181,7 +153,6 @@ export class CrashballRenderer extends Base3DRenderer {
       body.position.set(x, colH / 2, z);
       body.material = bodyMat;
 
-      // Bright glowing core
       const coreMat = new StandardMaterial(`colCoreMat${i}`, this.scene);
       coreMat.emissiveColor = color;
       coreMat.disableLighting = true;
@@ -189,7 +160,6 @@ export class CrashballRenderer extends Base3DRenderer {
       core.position.set(x, colH / 2, z);
       core.material = coreMat;
 
-      // Base orb sitting on platform
       const orbMat = new StandardMaterial(`colOrbMat${i}`, this.scene);
       orbMat.emissiveColor = color;
       orbMat.disableLighting = true;
@@ -197,12 +167,10 @@ export class CrashballRenderer extends Base3DRenderer {
       baseOrb.position.set(x, 1.2, z);
       baseOrb.material = orbMat;
 
-      // Top orb
       const topOrb = MeshBuilder.CreateSphere(`colTop${i}`, { diameter: 2.4, segments: 10 }, this.scene);
       topOrb.position.set(x, colH + 0.8, z);
       topOrb.material = orbMat;
 
-      // Double helix — two ribbons offset by PI
       for (let r = 0; r < 2; r++) {
         const ribbon = MeshBuilder.CreateRibbon(`colRibbon${i}_${r}`, {
           pathArray: this.buildColumnPaths(x, z, colH, r * Math.PI),
@@ -222,10 +190,10 @@ export class CrashballRenderer extends Base3DRenderer {
 
   private buildColumnPaths(x: number, z: number, h: number, time: number): Vector3[][] {
     const segments = 40;
-    const helixR = 0.65;  // inside the column body (body radius = 0.8)
+    const helixR = 0.65;  
     const halfW = 0.32;
-    const yStart = 1.8;   // start above the base orb
-    const yEnd = h - 0.8; // stop below the top orb
+    const yStart = 1.8; 
+    const yEnd = h - 0.8; 
     const path0: Vector3[] = [];
     const path1: Vector3[] = [];
     for (let s = 0; s <= segments; s++) {
@@ -339,7 +307,6 @@ export class CrashballRenderer extends Base3DRenderer {
     const size = ARENA_HALF * 2 * ARENA_SCALE;
     const floor = MeshBuilder.CreateGround('floor', { width: size, height: size }, this.scene);
 
-    // PBR material: metallic, low roughness — subtle reflective sci-fi surface
     const mat = new PBRMaterial('floorMat', this.scene);
     mat.albedoColor = new Color3(0.05, 0.1, 0.25);
     mat.roughness = 0.22;
@@ -394,7 +361,6 @@ export class CrashballRenderer extends Base3DRenderer {
     mat.emissiveColor = new Color3(0.08, 0.4, 1.0);
     mat.disableLighting = true;
 
-    // Each corner: direction toward center, two >> chevrons spaced along that diagonal
     const corners = [
       { x: -c, z: -c, rotY:  Math.PI / 4 },
       { x:  c, z: -c, rotY: -Math.PI / 4 },
@@ -403,10 +369,8 @@ export class CrashballRenderer extends Base3DRenderer {
     ];
 
     const th = 0.06;
-    const wingLen = 1.8;  // length of each wing arm
+    const wingLen = 1.8; 
     const wingW = 0.22;
-    // distances from corner center to the tip of each chevron (> and >)
-    // CORNER_R=2 means bumper extends ~2 units — start past that
     const chevronDists = [5.5, 7.5];
 
     for (let i = 0; i < corners.length; i++) {
@@ -415,14 +379,10 @@ export class CrashballRenderer extends Base3DRenderer {
       const dz = Math.cos(rotY);
 
       for (let ci = 0; ci < chevronDists.length; ci++) {
-        // tip of chevron (the pointy end, facing center)
         const tipX = x + dx * chevronDists[ci];
         const tipZ = z + dz * chevronDists[ci];
-
-        // each wing angled 135° from forward (i.e. 45° from backward)
         for (const sign of [-1, 1]) {
           const wingRotY = rotY + sign * (3 * Math.PI / 4);
-          // center of wing box = tip + half-length in wing direction
           const wcx = tipX + Math.sin(wingRotY) * (wingLen / 2);
           const wcz = tipZ + Math.cos(wingRotY) * (wingLen / 2);
           const wing = MeshBuilder.CreateBox(`chev${i}_${ci}_${sign > 0 ? 1 : 0}`, {
@@ -480,42 +440,36 @@ export class CrashballRenderer extends Base3DRenderer {
     for (let i = 0; i < positions.length; i++) {
       const { x, z } = positions[i];
 
-      // Lower wide body section
       const lower = MeshBuilder.CreateCylinder(`cLower${i}`, {
         diameter: r * 2, diameterTop: r * 1.6, height: 1.0, tessellation: 24,
       }, this.scene);
       lower.position.set(x, 0.5, z);
       lower.material = bodyMat;
 
-      // Lower glowing band
       const band1 = MeshBuilder.CreateCylinder(`cBand1_${i}`, {
         diameter: r * 1.62, height: 0.16, tessellation: 24,
       }, this.scene);
       band1.position.set(x, 1.0, z);
       band1.material = bandMat;
 
-      // Upper narrow body section
       const upper = MeshBuilder.CreateCylinder(`cUpper${i}`, {
         diameter: r * 1.6, diameterTop: r * 0.9, height: 0.9, tessellation: 24,
       }, this.scene);
       upper.position.set(x, 1.5, z);
       upper.material = body2Mat;
 
-      // Upper glowing band
       const band2 = MeshBuilder.CreateCylinder(`cBand2_${i}`, {
         diameter: r * 0.92, height: 0.14, tessellation: 24,
       }, this.scene);
       band2.position.set(x, 1.95, z);
       band2.material = band2Mat;
 
-      // Narrow top cap
       const cap = MeshBuilder.CreateCylinder(`cCap${i}`, {
         diameter: r * 0.9, height: 0.3, tessellation: 24,
       }, this.scene);
       cap.position.set(x, 2.25, z);
       cap.material = bodyMat;
 
-      // Spinning torus ring — stored for animation
       const spinRing = MeshBuilder.CreateTorus(`cSpin${i}`, {
         diameter: r * 1.9, thickness: 0.14, tessellation: 32,
       }, this.scene);
@@ -523,7 +477,6 @@ export class CrashballRenderer extends Base3DRenderer {
       spinRing.material = spinMat;
       this._cornerRings.push(spinRing);
 
-      // Plasma orb on top
       const orb = MeshBuilder.CreateSphere(`cOrb${i}`, { diameter: 1.0, segments: 12 }, this.scene);
       orb.position.set(x, 2.6, z);
       orb.material = coreMat;
@@ -539,9 +492,7 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private buildVehicles(): void {
-    // Hovercrafts: flat cylinder body + translucent glass dome on top
-    // === INSERT PLAYER MOVEMENT LOGIC HERE ===
-    // Update mesh.position.x / mesh.position.z each frame based on player input
+  
     for (const side of SIDES) {
       const bodyMat = new StandardMaterial(`vMat_${side}`, this.scene);
       bodyMat.diffuseColor = PLAYER_COLORS[side];
@@ -556,7 +507,6 @@ export class CrashballRenderer extends Base3DRenderer {
       body.position.y = VEHICLE_H / 2 + 0.05;
       this._vehicleMeshes.push(body);
 
-      // Translucent glass dome — aesthetic hovercraft canopy
       const domeMat = new StandardMaterial(`domeMat_${side}`, this.scene);
       domeMat.diffuseColor = new Color3(0.7, 0.88, 1.0);
       domeMat.emissiveColor = new Color3(0.1, 0.2, 0.35);
@@ -713,7 +663,6 @@ export class CrashballRenderer extends Base3DRenderer {
   }
 
   private updateBalls(state: CrashballState): void {
-    // === INSERT BALL PHYSICS / COLLISION LOGIC BEFORE THIS (in component) ===
     const activeIds = new Set(state.balls.map(b => b.id));
     for (const [id, mesh] of this._ballMeshes) {
       if (!activeIds.has(id)) { mesh.dispose(); this._ballMeshes.delete(id); }
