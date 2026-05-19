@@ -58,7 +58,7 @@ export class CrashballGameWindowComponent
   public override game!: Crashball;
   protected override renderer3D?: CrashballRenderer;
 
-  private readonly _dt = 1 / 60;
+  private _lastUpdateTime = performance.now();
 
   public override ngOnInit(): void {
     super.ngOnInit();
@@ -84,8 +84,11 @@ export class CrashballGameWindowComponent
   protected override update(): void {
     super.update();
     if (!this.renderer3D || this.isPaused) return;
+    const now = performance.now();
+    const dt = Math.min((now - this._lastUpdateTime) / 1000, 1 / 30);
+    this._lastUpdateTime = now;
     this.handleInput();
-    this.updateGameLogic();
+    this.updateGameLogic(dt);
     this.renderer3D.render(this.game.state);
   }
 
@@ -131,11 +134,10 @@ export class CrashballGameWindowComponent
     });
   }
 
-  private updateGameLogic(): void {
+  private updateGameLogic(dt: number): void {
     const state = this.game.state;
     if (state.isGameOver || state.isLobbyActive) return;
 
-    const dt = this._dt;
     this.updatePlayers(state, dt);
     this.updateSpawner(state, dt);
     this.updateBalls(state, dt);

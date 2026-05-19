@@ -154,20 +154,17 @@ export function resolveVehicleCollision(
   vehicle: { x: number; z: number; side: TPlayerSide; velocity: number },
   speed: number,
 ): boolean {
-  const hw = VEHICLE_HALF_W;
-  const hd = VEHICLE_DEPTH / 2;
-  const closestX = Math.max(vehicle.x - hw, Math.min(ball.x, vehicle.x + hw));
-  const closestZ = Math.max(vehicle.z - hd, Math.min(ball.z, vehicle.z + hd));
-  const dx = ball.x - closestX;
-  const dz = ball.z - closestZ;
+  const dx = ball.x - vehicle.x;
+  const dz = ball.z - vehicle.z;
   const dist = Math.sqrt(dx * dx + dz * dz);
+  const minDist = ball.radius + VEHICLE_HALF_W;
 
-  if (dist >= ball.radius || dist < 0.0001) return false;
+  if (dist >= minDist || dist < 0.0001) return false;
 
   const nx = dx / dist;
   const nz = dz / dist;
-  ball.x = closestX + nx * ball.radius;
-  ball.z = closestZ + nz * ball.radius;
+  ball.x = vehicle.x + nx * minDist;
+  ball.z = vehicle.z + nz * minDist;
 
   const dot = ball.vx * nx + ball.vz * nz;
   if (dot >= 0) return true;
@@ -181,8 +178,7 @@ export function resolveVehicleCollision(
     ball.vz += vehicle.velocity * SPIN_FACTOR;
   }
 
-  const newSpeed = speed;
-  [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, newSpeed);
+  [ball.vx, ball.vz] = normalizeToSpeed(ball.vx, ball.vz, speed);
   return true;
 }
 
