@@ -96,11 +96,12 @@ export function spawnBallAtCorner(
   cornerIndex: number,
   speed: number
 ): { x: number; z: number; vx: number; vz: number } {
+  const spread = Math.PI / 6;
   const ranges: { cx: number; cz: number; amin: number; amax: number }[] = [
-    { cx: -CORNER_POS, cz: -CORNER_POS, amin: 0, amax: Math.PI / 2 },
-    { cx:  CORNER_POS, cz: -CORNER_POS, amin: Math.PI / 2, amax: Math.PI },
-    { cx: -CORNER_POS, cz:  CORNER_POS, amin: -Math.PI / 2, amax: 0 },
-    { cx:  CORNER_POS, cz:  CORNER_POS, amin: Math.PI, amax: 3 * Math.PI / 2 },
+    { cx: -CORNER_POS, cz: -CORNER_POS, amin: Math.PI / 4 - spread, amax: Math.PI / 4 + spread },
+    { cx:  CORNER_POS, cz: -CORNER_POS, amin: 3 * Math.PI / 4 - spread, amax: 3 * Math.PI / 4 + spread },
+    { cx: -CORNER_POS, cz:  CORNER_POS, amin: -Math.PI / 4 - spread, amax: -Math.PI / 4 + spread },
+    { cx:  CORNER_POS, cz:  CORNER_POS, amin: 5 * Math.PI / 4 - spread, amax: 5 * Math.PI / 4 + spread },
   ];
   const c = ranges[cornerIndex];
   const angle = c.amin + Math.random() * (c.amax - c.amin);

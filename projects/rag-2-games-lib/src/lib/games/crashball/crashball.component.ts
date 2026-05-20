@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { Base3DGameWindowComponent } from '../../engine-3d/base-3d-game.component';
 import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
@@ -21,7 +22,7 @@ const MAX_BALL_SPEED = 12;
 const SPEED_INCREMENT = 0.3;
 const SPAWN_INTERVAL_MIN = 0.6;
 const SUPER_CHARGE_TIME = 5;
-const SUPER_RADIUS = 2.5;
+const SUPER_RADIUS = 3.3;
 const SUPER_SPEED_MULT = 2;
 const BARRIER_SPEED_MULT = 1.35;
 const CORNER_SPEED_VARY = 0.22;
@@ -29,13 +30,57 @@ const CORNER_SPEED_VARY = 0.22;
 @Component({
   selector: 'app-crashball',
   standalone: true,
-  imports: [CanvasComponent],
+  imports: [CanvasComponent, NgIf],
   template: `
     <app-canvas
       [displayMode]="'horizontal'"
       [is3DEnabled]="true"
       #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b>
+    <div class="flex gap-2 mt-1">
+      <button
+        class="px-3 py-1 rounded text-sm font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
+        (click)="isInfoVisible = !isInfoVisible">
+        [I] How to play
+      </button>
+    </div>
+
+    <div *ngIf="isInfoVisible" class="absolute inset-0 w-full h-full flex justify-center items-center bg-darkGray bg-opacity-90 z-50">
+      <div class="bg-mainGray text-gray-200 p-5 md:p-10 rounded-lg border-2 border-mainOrange max-w-3xl max-h-[80vh] overflow-y-auto relative">
+        <button (click)="isInfoVisible = false" class="absolute top-2 right-3 w-10 h-10 text-mainOrange text-xl font-bold">X</button>
+
+        <h2 class="text-center text-2xl text-mainOrange mb-4">How to play Crashball</h2>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Objective</h3>
+        <p class="mb-4 text-mainCreme">Be the last player standing. Balls spawn from the corners and bounce around the arena, if a ball hits your wall you lose 1 HP. Reach 0 HP and you're eliminated.</p>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Game Modes</h3>
+        <ul class="list-disc list-inside mb-4 text-mainCreme">
+          <li><b>[1] Free For All</b> — every player for themselves (1v1v1v1)</li>
+          <li><b>[2] Team Mode (2v2)</b> — Blue + Yellow vs Red + Green</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Controls</h3>
+        <ul class="list-disc list-inside mb-4 text-mainCreme">
+          <li><b>Red:</b> left [K], right [;], super [O]</li>
+          <li><b>Blue:</b> left [F], right [H], super [T]</li>
+          <li><b>Green:</b> left [A], right [D], super [W]</li>
+          <li><b>Yellow:</b> left [←], right [→], super [↑]</li>
+          <li><b>[Enter]</b> start game (lobby) / restart (game over)</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Super Power</h3>
+        <p class="mb-4 text-mainCreme">Charges over time (bar under HP). When full, activate to send a shockwave that pushes all nearby balls away from you at high speed.</p>
+
+        <h3 class="text-xl font-semibold text-mainOrange border-b border-lightGray pb-1 mb-2">Tips</h3>
+        <ul class="list-disc list-inside mb-2 text-mainCreme">
+          <li>Balls spawn more frequently as the game goes on </li>
+          <li>Balls bounce faster off eliminated players barrier walls</li>
+          <li>Corner bumpers deflect balls unpredictably</li>
+          <li>Green and Yellow players can be disabled in the Players menu</li>
+        </ul>
+      </div>
+    </div>
   `,
 })
 export class CrashballGameWindowComponent
@@ -44,6 +89,12 @@ export class CrashballGameWindowComponent
 {
   public override game!: Crashball;
   protected override renderer3D?: CrashballRenderer;
+  private isInfoPanelOpen = false;
+  public get isInfoVisible(): boolean { return this.isInfoPanelOpen; }
+  public set isInfoVisible(value: boolean) {
+    this.isInfoPanelOpen = value;
+    if (!value) this._lastUpdateTime = performance.now();
+  }
 
   private _lastUpdateTime = performance.now();
   private _lobbyKeyHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -62,6 +113,7 @@ export class CrashballGameWindowComponent
   }
 
   private onLobbyKey(e: KeyboardEvent): void {
+    if (e.key === 'i' || e.key === 'I') { this.isInfoVisible = !this.isInfoVisible; return; }
     const state = this.game?.state;
     if (!state?.isLobbyActive && !state?.isGameOver) return;
     if (e.key === '1') state.gameMode = 'ffa';
@@ -92,7 +144,7 @@ export class CrashballGameWindowComponent
 
   protected override update(): void {
     super.update();
-    if (!this.renderer3D || this.isPaused) return;
+    if (!this.renderer3D || this.isPaused || this.isInfoPanelOpen) return;
     const now = performance.now();
     const dt = Math.min((now - this._lastUpdateTime) / 1000, 1 / 30);
     this._lastUpdateTime = now;

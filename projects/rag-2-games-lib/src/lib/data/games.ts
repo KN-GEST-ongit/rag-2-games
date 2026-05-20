@@ -11,7 +11,6 @@ import { Abalone } from '../games/abalone/models/abalone.class';
 import { Tetris } from '../games/tetris/models/tetris.class';
 import { CrossyRoad } from '../games/crossyroad/models/crossyroad.class';
 import { Soccer } from '../games/soccer/models/soccer.class';
-
 import { Crashball } from '../games/crashball/models/crashball.class';
 export const games: Record<string, Game> = {
   pong: new Pong(),
