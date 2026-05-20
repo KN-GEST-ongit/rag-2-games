@@ -28,7 +28,7 @@ export class BallfallRenderer extends Base3DRenderer {
   private pillarMat!: StandardMaterial;
 
   constructor(canvas: HTMLCanvasElement) {
-    super(canvas, new Color4(0.9, 0.9, 0.95, 1));
+    super(canvas, new Color4(0.88, 0.95, 0.92, 1));
 
     this.camera = new UniversalCamera(
       'camera',
@@ -57,6 +57,9 @@ export class BallfallRenderer extends Base3DRenderer {
   }
 
   private createEnvironment(): void {
+    this.pillarMat = new StandardMaterial('pillarMat', this.scene);
+    this.pillarMat.diffuseColor = new Color3(1, 1, 1);
+
     this.mainPillar = MeshBuilder.CreateCylinder(
       'pillar',
       { height: 40, diameter: 3 },
