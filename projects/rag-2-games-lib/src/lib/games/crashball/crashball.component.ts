@@ -89,7 +89,12 @@ export class CrashballGameWindowComponent
 {
   public override game!: Crashball;
   protected override renderer3D?: CrashballRenderer;
-  public isInfoVisible = false;
+  private isInfoPanelOpen = false;
+  public get isInfoVisible(): boolean { return this.isInfoPanelOpen; }
+  public set isInfoVisible(value: boolean) {
+    this.isInfoPanelOpen = value;
+    if (!value) this._lastUpdateTime = performance.now();
+  }
 
   private _lastUpdateTime = performance.now();
   private _lobbyKeyHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -139,7 +144,7 @@ export class CrashballGameWindowComponent
 
   protected override update(): void {
     super.update();
-    if (!this.renderer3D || this.isPaused) return;
+    if (!this.renderer3D || this.isPaused || this.isInfoPanelOpen) return;
     const now = performance.now();
     const dt = Math.min((now - this._lastUpdateTime) / 1000, 1 / 30);
     this._lastUpdateTime = now;
