@@ -283,6 +283,9 @@ export abstract class BaseGameWindowComponent
 
           if (playerBindings[variableName].size === 0) {
             player.inputData[variableName] = releasedValue;
+          } else {
+            const remainingKey = Array.from(playerBindings[variableName])[0];
+            player.inputData[variableName] = player.controlsBinding[remainingKey].pressedValue;
           }
         }
 
