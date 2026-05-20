@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { Base3DGameWindowComponent } from '../../engine-3d/base-3d-game.component';
 import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
@@ -40,16 +40,38 @@ const CORNER_SPEED_VARY = 0.22;
 })
 export class CrashballGameWindowComponent
   extends Base3DGameWindowComponent
-  implements OnInit
+  implements OnInit, OnDestroy
 {
   public override game!: Crashball;
   protected override renderer3D?: CrashballRenderer;
 
   private _lastUpdateTime = performance.now();
+  private _lobbyKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Crashball;
+    for (const player of this.game.players) player.isActive = true;
+    this._lobbyKeyHandler = (e: KeyboardEvent): void => this.onLobbyKey(e);
+    window.addEventListener('keydown', this._lobbyKeyHandler);
+  }
+
+  public override ngOnDestroy(): void {
+    super.ngOnDestroy();
+    if (this._lobbyKeyHandler) window.removeEventListener('keydown', this._lobbyKeyHandler);
+  }
+
+  private onLobbyKey(e: KeyboardEvent): void {
+    const state = this.game?.state;
+    if (!state?.isLobbyActive && !state?.isGameOver) return;
+    if (e.key === '1') state.gameMode = 'ffa';
+    else if (e.key === '2') state.gameMode = '2v2';
+    else if (e.key === 'Enter') {
+      if (state.isLobbyActive) {
+        state.isLobbyActive = false;
+        this.eliminateInactivePlayers(state);
+      } else if (state.isGameOver) this.restart();
+    }
   }
 
   protected override createRenderer(canvas: HTMLCanvasElement): Base3DRenderer {
@@ -90,7 +112,10 @@ export class CrashballGameWindowComponent
         else if (m === 2) state.gameMode = '2v2';
       }
       const enterPressed = this.game.players.some(p => p.isActive && (p.inputData['restart'] as number) === 1);
-      if (enterPressed) state.isLobbyActive = false;
+      if (enterPressed) {
+        state.isLobbyActive = false;
+        this.eliminateInactivePlayers(state);
+      }
       return;
     }
 
@@ -259,6 +284,15 @@ export class CrashballGameWindowComponent
     } else {
       const alive = state.players.filter(p => !p.eliminated);
       if (alive.length <= 1) this.finalizeGame(state);
+    }
+  }
+
+  private eliminateInactivePlayers(state: CrashballState): void {
+    for (let i = 0; i < this.game.players.length; i++) {
+      if (!this.game.players[i].isActive && !state.players[i].eliminated) {
+        state.players[i].eliminated = true;
+        state.rankings.push(state.players[i].side);
+      }
     }
   }
 

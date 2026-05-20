@@ -34,12 +34,21 @@ export class Crashball extends Game {
   public override author = 'Ignacy Janus';
   public override state = new CrashballState();
 
-  public override outputSpec = `output:
-  balls: IBall[];
-  players: ICrashPlayer[];
+  public override outputSpec = `input:
+  move: 0=stop, 1=left, 2=right
+  super: 1=activate super power (requires superCharge >= 1.0)
+  restart: 1=restart game (visible on game-over screen)
+  mode: 1=ffa, 2=2v2 (selectable in lobby before game starts)
+
+output:
+  balls: { id, x, z, vx, vz, radius, speed }[];
+  players: { side, position, velocity, hp, superCharge, superActive, superWaveRadius, eliminated }[];
   ballSpeed: number;
-  gameOver: boolean;
-  winner: TPlayerSide | null;`;
+  isGameOver: boolean;
+  winner: TPlayerSide | null;
+  rankings: TPlayerSide[];
+  gameMode: 'ffa' | '2v2';
+  isLobbyActive: boolean;`;
 
   public override players: Player[] = [
     new Player(
@@ -82,7 +91,7 @@ export class Crashball extends Game {
     ),
     new Player(
       2,
-      true,
+      false,
       'Player 3 (green)',
       { move: 0, super: 0, restart: 0, mode: 0 },
       {
@@ -101,7 +110,7 @@ export class Crashball extends Game {
     ),
     new Player(
       3,
-      true,
+      false,
       'Player 4 (yellow)',
       { move: 0, super: 0, restart: 0, mode: 0 },
       {

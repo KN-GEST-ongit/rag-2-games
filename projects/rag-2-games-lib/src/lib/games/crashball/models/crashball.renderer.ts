@@ -752,7 +752,7 @@ export class CrashballRenderer extends Base3DRenderer {
   private showLobby(state: CrashballState): void {
     const panel = new Rectangle('lobbyPanel');
     panel.width = '400px';
-    panel.height = '260px';
+    panel.height = '300px';
     panel.background = '#05051499';
     panel.color = '#2244aa';
     panel.thickness = 2;
@@ -793,7 +793,7 @@ export class CrashballRenderer extends Base3DRenderer {
     const teamHint = new TextBlock('lobbyTeamHint', 'Teams: Blue+Yellow  vs  Red+Green');
     teamHint.color = '#666';
     teamHint.fontSize = 12;
-    teamHint.height = '22px';
+    teamHint.height = '20px';
     stack.addControl(teamHint);
 
     const hint = new TextBlock('lobbyHint', 'Press ENTER to start');
