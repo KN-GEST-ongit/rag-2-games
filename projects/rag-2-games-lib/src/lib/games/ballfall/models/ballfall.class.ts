@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
@@ -11,9 +12,8 @@ export class BallfallState implements TGameState {
 
   public cylinderRotY = 0;
 
-  public gravity = 0.015;
-  public bounceForce = 0.35;
-  public rotationSpeed = 0.08;
+  public distToNextPlatform = 0;
+  public nextPlatformSegments: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 }
 
 export class Ballfall extends Game {

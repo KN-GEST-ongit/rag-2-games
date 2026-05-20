@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
@@ -5,6 +6,17 @@ import { Ballfall, BallfallState } from './models/ballfall.class';
 import { Base3DGameWindowComponent } from '../../engine-3d/base-3d-game.component';
 import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
 import { BallfallRenderer } from './models/ballfall.renderer';
+
+export enum SegmentType {
+  Empty = 0,
+  Safe = 1,
+  Danger = 2,
+}
+
+export interface Platform {
+  y: number;
+  segments: SegmentType[];
+}
 
 @Component({
   selector: 'app-ballfall',
@@ -25,9 +37,18 @@ export class BallfallGameWindowComponent
   public override game!: Ballfall;
   protected override renderer3D?: BallfallRenderer;
 
+  public gravity = 0.015;
+  public bounceForce = 0.35;
+  public rotationSpeed = 0.08;
+  private platforms: Platform[] = [];
+
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Ballfall;
+
+    if (this.platforms.length === 0) {
+      this.generateInitialPlatforms();
+    }
   }
 
   protected override createRenderer(canvas: HTMLCanvasElement): Base3DRenderer {
@@ -36,16 +57,10 @@ export class BallfallGameWindowComponent
     return renderer;
   }
 
-  public override ngAfterViewInit(): void {
-    super.ngAfterViewInit();
-  }
-
-  public override ngOnDestroy(): void {
-    super.ngOnDestroy();
-  }
-
   public override restart(): void {
     this.game.state = new BallfallState();
+    this.platforms = [];
+    this.generateInitialPlatforms();
   }
 
   protected override update(): void {
@@ -56,7 +71,7 @@ export class BallfallGameWindowComponent
 
     this.handleInput();
     this.updatePhysics();
-    this.renderer3D.render(this.game.state);
+    this.renderer3D.render(this.game.state, this.platforms);
   }
 
   private handleInput(): void {
@@ -65,39 +80,71 @@ export class BallfallGameWindowComponent
 
     if (player) {
       const move = (player.inputData['move'] as number) || 0;
-      state.cylinderRotY += move * state.rotationSpeed;
+      state.cylinderRotY += move * this.rotationSpeed;
     }
   }
 
   private updatePhysics(): void {
     const state = this.game.state;
 
-    state.ballVY -= state.gravity;
+    state.ballVY -= this.gravity;
     state.ballY += state.ballVY;
 
     const ballRadius = 0.4;
-    const totalLevels = 8;
-    const distanceBetweenLevels = 4;
-    const firstLevelY = 12;
 
-    for (let i = 0; i < totalLevels; i++) {
-      const levelY = firstLevelY - i * distanceBetweenLevels;
-      const distanceToLevel = state.ballY - levelY;
+    if (this.platforms.length > 0) {
+      const lowestPlatform = this.platforms[this.platforms.length - 1];
+
+      if (state.ballY < lowestPlatform.y + 12) {
+        this.spawnPlatform(lowestPlatform.y - 4);
+      }
+
+      if (this.platforms[0].y > state.ballY + 10) {
+        this.platforms.shift();
+      }
+    }
+
+    for (const platform of this.platforms) {
+      const distanceToLevel = state.ballY - platform.y;
 
       if (
         distanceToLevel <= ballRadius &&
         distanceToLevel >= 0 &&
         state.ballVY < 0
       ) {
-        state.ballY = levelY + ballRadius;
-        state.ballVY = state.bounceForce;
-
+        state.ballY = platform.y + ballRadius;
+        state.ballVY = this.bounceForce;
         break;
       }
     }
 
-    if (state.ballY < -20) {
+    if (state.ballY < -100) {
       this.restart();
+    }
+  }
+
+  private spawnPlatform(yLevel: number): void {
+    const state = this.game.state;
+    const segments: number[] = [];
+
+    for (let i = 0; i < 12; i++) {
+      const rand = Math.random();
+      if (rand < 0.2) segments.push(0);
+      else if (rand < 0.4) segments.push(2);
+      else segments.push(1);
+    }
+
+    if (!segments.includes(0)) segments[Math.floor(Math.random() * 12)] = 0;
+
+    this.platforms.push({
+      y: yLevel,
+      segments: segments,
+    });
+  }
+
+  private generateInitialPlatforms(): void {
+    for (let i = 0; i < 6; i++) {
+      this.spawnPlatform(12 - i * 4);
     }
   }
 }
