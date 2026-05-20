@@ -12,6 +12,7 @@ import { Tetris } from '../games/tetris/models/tetris.class';
 import { CrossyRoad } from '../games/crossyroad/models/crossyroad.class';
 import { Soccer } from '../games/soccer/models/soccer.class';
 import { Crashball } from '../games/crashball/models/crashball.class';
+import { Ballfall } from '../games/ballfall/models/ballfall.class';
 export const games: Record<string, Game> = {
   pong: new Pong(),
   skijump: new SkiJump(),
@@ -26,4 +27,5 @@ export const games: Record<string, Game> = {
   crossyroad: new CrossyRoad(),
   soccer: new Soccer(),
   crashball: new Crashball(),
+  ballfall: new Ballfall(),
 };
