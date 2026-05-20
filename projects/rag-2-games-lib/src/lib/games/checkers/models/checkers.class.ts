@@ -30,6 +30,7 @@ export class CheckersState implements TGameState {
   public possibleMoves: (string | ICaptureMove)[] = [];
   public isGameOver = false;
   public winner: TColor | null = null;
+  public cursor = { r: 7, c: 0 };
 
   public constructor() {
     this.initializeBoard();
@@ -66,7 +67,7 @@ export class CheckersState implements TGameState {
 
 export class Checkers extends Game {
   public override name = 'checkers';
-  public override author = 'NAME SURNAME';
+  public override author = 'Jakub Skibicki';
   public override state = new CheckersState();
   public isRotationEnabled = false;
 
@@ -76,18 +77,73 @@ export class Checkers extends Game {
       currentPlayer: 'BLACK' | 'WHITE';
       selected: string | null;
       possibleMoves: array;
+      cursor: { r: number, c: number };
+      isGameOver: boolean;
+      winner: 'BLACK' | 'WHITE' | null;
+
+    default values:
+      currentPlayer: 'WHITE';
+      selected: null;
+      possibleMoves: [];
+      cursor: { r: 7, c: 0 };
+      isGameOver: false;
+      winner: null;
+      board: {};
   `;
 
   public override players = [
-    new Player(0, true, 'White', { restart: 0 }, {}, 'keyboard player', {}, undefined),
-    new Player(1, true, 'Black', { restart: 0 }, {}, 'keyboard player', {}, undefined),
+    new Player(
+      0,
+      true,
+      'White',
+      { move: 0, action: 0 },
+      Checkers.getKeyboardBindings(),
+      '<move>: 1 left-up, 2 right-up, 3 left-down, 4 right-down; <action>: 1 select/confirm, 3 cancel',
+      {
+        move: 'Q/E/A/D or Numpad 4/6/1/3',
+        select: 'Space',
+        cancel: 'Esc',
+      }
+    ),
+    new Player(
+      1,
+      true,
+      'Black',
+      { move: 0, action: 0 },
+      Checkers.getKeyboardBindings(),
+      '<move>: 1 left-up, 2 right-up, 3 left-down, 4 right-down; <action>: 1 select/confirm, 3 cancel',
+      {
+        move: 'W/A/S/D or Numpad 4/6/1/3',
+        select: 'Space',
+        cancel: 'Esc',
+      }
+    ),
   ];
+
+  private static getKeyboardBindings(): Record<string, { variableName: string; pressedValue: number; releasedValue: number }> {
+    return {
+      q: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+      e: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+      a: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+      d: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+      Q: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+      E: { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+      A: { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+      D: { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+      '4': { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+      '6': { variableName: 'move', pressedValue: 2, releasedValue: 0 },
+      '1': { variableName: 'move', pressedValue: 3, releasedValue: 0 },
+      '3': { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+      ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
+      Escape: { variableName: 'action', pressedValue: 3, releasedValue: 0 },
+    };
+  }
 
   private readonly _diagonalDirs = [
     { dr: -1, dc: -1 },
     { dr: -1, dc: 1 },
     { dr: 1, dc: -1 },
-    { dr: 1, dc: 1 }
+    { dr: 1, dc: 1 },
   ];
 
   private isOnBoard(r: number, c: number): boolean {
@@ -98,7 +154,7 @@ export class Checkers extends Game {
     if (!piece) {
       return null;
     }
-    return (piece === 'b' || piece === 'B') ? 'BLACK' : 'WHITE';
+    return piece === 'b' || piece === 'B' ? 'BLACK' : 'WHITE';
   }
 
   public getPiece(key: string): TPiece {
@@ -155,7 +211,16 @@ export class Checkers extends Game {
         }
       }
     } else {
-      const forwardDirs = color === 'WHITE' ? [{ dr: -1, dc: -1 }, { dr: -1, dc: 1 }] : [{ dr: 1, dc: -1 }, { dr: 1, dc: 1 }];
+      const forwardDirs =
+        color === 'WHITE'
+          ? [
+              { dr: -1, dc: -1 },
+              { dr: -1, dc: 1 },
+            ]
+          : [
+              { dr: 1, dc: -1 },
+              { dr: 1, dc: 1 },
+            ];
       const src = keyToPos(key);
       for (const d of forwardDirs) {
         const nr = src.r + d.dr;

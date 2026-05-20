@@ -1,10 +1,11 @@
 /* eslint-disable complexity */
 /* eslint-disable max-lines */
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Checkers, CheckersState, posToKey, keyToPos, ICaptureMove } from './models/checkers.class';
+import { TExchangeData } from '../../models/exchange-data.type';
 
 @Component({
   selector: 'app-checkers',
@@ -19,7 +20,7 @@ import { Checkers, CheckersState, posToKey, keyToPos, ICaptureMove } from './mod
     <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b> `,
 })
-export class CheckersGameWindowComponent extends BaseGameWindowComponent implements OnInit, AfterViewInit, OnDestroy {
+export class CheckersGameWindowComponent extends BaseGameWindowComponent implements OnInit, AfterViewInit {
   public override game!: Checkers;
   private _squareSize = 0;
   private _boardOrigin = { x: 0, y: 0 };
@@ -31,14 +32,7 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
 
   public override ngAfterViewInit(): void {
     super.ngAfterViewInit();
-    this.setupCanvasInteraction();
     this.render();
-  }
-
-  public override ngOnDestroy(): void {
-    super.ngOnDestroy();
-    const canvas = this._canvas;
-    canvas.removeEventListener('click', this._onClickHandler);
   }
 
   public override restart(): void {
@@ -46,71 +40,108 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
     this.render();
   }
 
-  private setupCanvasInteraction(): void {
-    const canvas = this._canvas;
-    this._onClickHandler = (e: MouseEvent): void => this.onCanvasClick(e);
-    canvas.addEventListener('click', this._onClickHandler);
-  }
-
-  private _onClickHandler!: (e: MouseEvent) => void;
-
   private getShouldRotate(): boolean {
     return !!this.game.isRotationEnabled && this.game.state.currentPlayer === 'BLACK';
   }
 
-  private onCanvasClick(e: MouseEvent): void {
-    if (!this._canvas) {
+  protected override update(): void {
+    super.update();
+    if (!this.isPaused) {
+      this.handleInput();
+    }
+    this.render();
+  }
+
+  private handleInput(): void {
+    const state = this.game.state;
+    const input = this.getCurrentTurnInput();
+
+    const rawMove = (input['move'] as number) || 0;
+    const action = (input['action'] as number) || 0;
+
+    if (rawMove !== 0) {
+      input['move'] = 0;
+    }
+    if (action !== 0) {
+      input['action'] = 0;
+    }
+
+    if (state.isGameOver) {
       return;
     }
 
-    const rect = this._canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this._canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this._canvas.height / rect.height);
+    const move = this.translateMoveIfRotated(rawMove);
 
-    this.computeBoardLayout();
-
-    let localX = x - this._boardOrigin.x;
-    let localY = y - this._boardOrigin.y;
-    if (this.getShouldRotate()) {
-      localX = this._squareSize * 8 - localX;
-      localY = this._squareSize * 8 - localY;
+    if (move !== 0) {
+      this.moveCursor(move);
     }
 
-    const col = Math.floor(localX / this._squareSize);
-    const row = Math.floor(localY / this._squareSize);
-    if (row < 0 || row >= 8 || col < 0 || col >= 8) {
+    if (action === 1) {
+      this.handleSelectOrConfirm();
+    } else if (action === 3) {
+      this.game.clearSelection();
+    }
+  }
+
+  private getCurrentTurnInput(): TExchangeData {
+    const playerIndex = this.game.state.currentPlayer === 'WHITE' ? 0 : 1;
+    const currentPlayer = this.game.players[playerIndex] ?? this.game.players[0];
+    return currentPlayer?.inputData ?? {};
+  }
+
+  private translateMoveIfRotated(move: number): number {
+    if (!this.getShouldRotate()) return move;
+    if (move === 1) return 4;
+    if (move === 2) return 3;
+    if (move === 3) return 2;
+    if (move === 4) return 1;
+    return move;
+  }
+
+  private moveCursor(move: number): void {
+    const cur = this.game.state.cursor;
+    let r = cur.r;
+    let c = cur.c;
+
+    if (move === 1) { r -= 1; c -= 1; }
+    if (move === 2) { r -= 1; c += 1; } 
+    if (move === 3) { r += 1; c -= 1; } 
+    if (move === 4) { r += 1; c += 1; }
+
+    if (r < 0 || r > 7 || c < 0 || c > 7) {
       return;
     }
 
-    const key = posToKey(row, col);
+    this.game.state.cursor = { r, c };
+  }
+
+  private handleSelectOrConfirm(): void {
+    const state = this.game.state;
+    const key = posToKey(state.cursor.r, state.cursor.c);
     const piece = this.game.getPiece(key);
-    const currentPlayer = this.game.state.currentPlayer;
+    const currentPlayer = state.currentPlayer;
 
-    const checkers = this.game as Checkers;
-    const maxCapturingPieces = checkers.getPiecesWithMaxCaptures(currentPlayer);
+    const maxCapturingPieces = this.game.getPiecesWithMaxCaptures(currentPlayer);
 
-    if (!this.game.state.selected) {
+    if (!state.selected) {
       if (maxCapturingPieces.length > 0) {
         if (piece && this.game.pieceColor(piece) === currentPlayer && maxCapturingPieces.includes(key)) {
-          this.game.state.selected = key;
-          this.game.state.possibleMoves = this.game.computeMovesFor(key);
-          this.render();
+          state.selected = key;
+          state.possibleMoves = this.game.computeMovesFor(key);
         }
         return;
       }
       if (piece && this.game.pieceColor(piece) === currentPlayer) {
-        this.game.state.selected = key;
-        this.game.state.possibleMoves = this.game.computeMovesFor(key);
-        this.render();
+        state.selected = key;
+        state.possibleMoves = this.game.computeMovesFor(key);
       }
       return;
     }
 
-    const selectedKey = this.game.state.selected;
+    const selectedKey = state.selected;
 
     if (selectedKey === key) {
       this.game.clearSelection();
-      this.render();
       return;
     }
 
@@ -118,18 +149,16 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
       if (maxCapturingPieces.length > 0 && !maxCapturingPieces.includes(key)) {
         return;
       }
-      this.game.state.selected = key;
-      this.game.state.possibleMoves = this.game.computeMovesFor(key);
-      this.render();
+      state.selected = key;
+      state.possibleMoves = this.game.computeMovesFor(key);
       return;
     }
 
-    const moves = this.game.state.possibleMoves as (string | ICaptureMove)[];
+    const moves = state.possibleMoves as (string | ICaptureMove)[];
     const found = moves.find(m => (typeof m === 'string' ? m === key : m.dst === key));
 
     if (!found) {
       this.game.clearSelection();
-      this.render();
       return;
     }
 
@@ -138,19 +167,13 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
     }
 
     this.game.executeMove(selectedKey, found);
-    this.render();
   }
 
   private computeBoardLayout(): void {
-    const size = Math.min(this._canvas.width, this._canvas.height) * 0.8;
+    const size = this._canvas.height;
     this._squareSize = Math.floor(size / 8);
     this._boardOrigin.x = Math.floor((this._canvas.width - this._squareSize * 8) / 2);
     this._boardOrigin.y = Math.floor((this._canvas.height - this._squareSize * 8) / 2);
-  }
-
-  protected override update(): void {
-    super.update();
-    this.render();
   }
 
   private render(): void {
@@ -177,6 +200,16 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
         ctx.fillRect(x, y, this._squareSize, this._squareSize);
       }
     }
+
+    const cursor = this.game.state.cursor;
+    ctx.strokeStyle = 'rgba(59,130,246,0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(
+      this._boardOrigin.x + cursor.c * this._squareSize + 2,
+      this._boardOrigin.y + cursor.r * this._squareSize + 2,
+      this._squareSize - 4,
+      this._squareSize - 4
+    );
 
     if (this.game.state.selected) {
       const p = keyToPos(this.game.state.selected);
@@ -243,7 +276,7 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
       ctx.fillStyle = '#fff';
       ctx.font = '36px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`Game Over — Winner: ${this.game.state.winner}`, this._canvas.width / 2, this._canvas.height / 2);
+      ctx.fillText(`Game Over - Winner: ${this.game.state.winner}`, this._canvas.width / 2, this._canvas.height / 2);
     }
   }
 }
