@@ -5,8 +5,12 @@ import { Player } from '../../../models/player.class';
 export class BallfallState implements TGameState {
   public score = 0;
   public isGameOver = false;
+
   public ballY = 15;
+  public ballVY = 0;
+
   public cylinderRotY = 0;
+
   public gravity = 0.015;
   public bounceForce = 0.35;
   public rotationSpeed = 0.08;

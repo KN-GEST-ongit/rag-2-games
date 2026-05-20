@@ -55,6 +55,7 @@ export class BallfallGameWindowComponent
     }
 
     this.handleInput();
+    this.updatePhysics();
     this.renderer3D.render(this.game.state);
   }
 
@@ -65,6 +66,38 @@ export class BallfallGameWindowComponent
     if (player) {
       const move = (player.inputData['move'] as number) || 0;
       state.cylinderRotY += move * state.rotationSpeed;
+    }
+  }
+
+  private updatePhysics(): void {
+    const state = this.game.state;
+
+    state.ballVY -= state.gravity;
+    state.ballY += state.ballVY;
+
+    const ballRadius = 0.4;
+    const totalLevels = 8;
+    const distanceBetweenLevels = 4;
+    const firstLevelY = 12;
+
+    for (let i = 0; i < totalLevels; i++) {
+      const levelY = firstLevelY - i * distanceBetweenLevels;
+      const distanceToLevel = state.ballY - levelY;
+
+      if (
+        distanceToLevel <= ballRadius &&
+        distanceToLevel >= 0 &&
+        state.ballVY < 0
+      ) {
+        state.ballY = levelY + ballRadius;
+        state.ballVY = state.bounceForce;
+
+        break;
+      }
+    }
+
+    if (state.ballY < -20) {
+      this.restart();
     }
   }
 }
