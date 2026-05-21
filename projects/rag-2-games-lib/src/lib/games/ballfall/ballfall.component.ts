@@ -9,7 +9,7 @@ import { BallfallRenderer } from './models/ballfall.renderer';
 
 export enum SegmentType {
   Empty = 0,
-  Safe = 1,
+  Normal = 1,
   Danger = 2,
 }
 
@@ -87,21 +87,29 @@ export class BallfallGameWindowComponent
   private updatePhysics(): void {
     const state = this.game.state;
 
+    if (state.isGameOver) return;
+
     state.ballVY -= this.gravity;
     state.ballY += state.ballVY;
 
     const ballRadius = 0.4;
+    const segmentsCount = 12;
+    const anglePerSegment = (Math.PI * 2) / segmentsCount;
 
     if (this.platforms.length > 0) {
       const lowestPlatform = this.platforms[this.platforms.length - 1];
-
       if (state.ballY < lowestPlatform.y + 12) {
         this.spawnPlatform(lowestPlatform.y - 4);
       }
-
       if (this.platforms[0].y > state.ballY + 10) {
         this.platforms.shift();
       }
+    }
+
+    const nextPlatform = this.platforms.find(p => p.y < state.ballY);
+    if (nextPlatform) {
+      state.distToNextPlatform = state.ballY - nextPlatform.y;
+      state.nextPlatformSegments = [...nextPlatform.segments];
     }
 
     for (const platform of this.platforms) {
@@ -112,9 +120,26 @@ export class BallfallGameWindowComponent
         distanceToLevel >= 0 &&
         state.ballVY < 0
       ) {
-        state.ballY = platform.y + ballRadius;
-        state.ballVY = this.bounceForce;
-        break;
+        let localAngle = (Math.PI / 2 - state.cylinderRotY) % (Math.PI * 2);
+        if (localAngle <= 0) localAngle += Math.PI * 2;
+
+        const currentSegmentIndex =
+          Math.ceil(localAngle / anglePerSegment) % segmentsCount;
+        const segmentUnderBall = platform.segments[currentSegmentIndex];
+
+        if (segmentUnderBall === SegmentType.Empty) {
+          continue;
+        } else if (segmentUnderBall === SegmentType.Danger) {
+          state.isGameOver = true;
+          console.log('GAME OVER! Piłka trafiła w czerwoną strefę.');
+          this.restart();
+          return;
+        } else if (segmentUnderBall === SegmentType.Normal) {
+          state.ballY = platform.y + ballRadius;
+          state.ballVY = this.bounceForce;
+
+          break;
+        }
       }
     }
 

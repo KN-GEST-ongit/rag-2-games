@@ -27,7 +27,6 @@ export class BallfallRenderer extends Base3DRenderer {
   private ballMesh!: Mesh;
   private mainPillar!: Mesh;
 
-  private safeMat!: StandardMaterial;
   private dangerMat!: StandardMaterial;
   private pillarMat!: StandardMaterial;
 
@@ -83,9 +82,6 @@ export class BallfallRenderer extends Base3DRenderer {
     const ballMat = new StandardMaterial('ballMat', this.scene);
     ballMat.diffuseColor = new Color3(0.2, 0.6, 1);
     this.ballMesh.material = ballMat;
-
-    this.safeMat = new StandardMaterial('safeMat', this.scene);
-    this.safeMat.diffuseColor = new Color3(0.2, 0.8, 0.2);
 
     this.dangerMat = new StandardMaterial('dangerMat', this.scene);
     this.dangerMat.diffuseColor = new Color3(0.8, 0.2, 0.2);
@@ -148,7 +144,7 @@ export class BallfallRenderer extends Base3DRenderer {
       slice.rotation.y = i * anglePerSegment;
       slice.setParent(this.mainPillar);
 
-      slice.material = segmentType === 1 ? this.safeMat : this.dangerMat;
+      slice.material = segmentType === 1 ? this.pillarMat : this.dangerMat;
       platformMeshes.push(slice);
     }
 
