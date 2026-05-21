@@ -7,6 +7,11 @@ import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
 import { Ballfall, BallfallState } from './models/ballfall.class';
 import { BallfallRenderer } from './models/ballfall.renderer';
 
+export interface Obstacle {
+  x: number;
+  z: number;
+}
+
 export interface TrackSegment {
   zStart: number;
   zEnd: number;
@@ -14,6 +19,7 @@ export interface TrackSegment {
   width: number;
   isRamp?: boolean;
   rampAngle?: number;
+  obstacles?: Obstacle[];
 }
 
 @Component({
@@ -119,6 +125,20 @@ export class BallfallGameWindowComponent
           break;
         }
       }
+
+      if (segment.obstacles) {
+        for (const obs of segment.obstacles) {
+          const dist = Math.sqrt(
+            Math.pow(state.ballX - (segment.xOffset + obs.x), 2) +
+              Math.pow(state.ballZ - obs.z, 2)
+          );
+          if (dist < 0.8) {
+            this.game.state.isGameOver = true;
+            this.restart();
+            return;
+          }
+        }
+      }
     }
 
     if (isOnTrack && activeSegment) {
@@ -155,6 +175,15 @@ export class BallfallGameWindowComponent
       width: 6,
       isRamp: isRamp,
       rampAngle: isRamp ? 0.3 : 0,
+      obstacles:
+        !isRamp && Math.random() > 0.5
+          ? [
+              {
+                x: (Math.random() - 0.5) * 4,
+                z: this.lastTrackZ + 10,
+              },
+            ]
+          : [],
     };
 
     this.track.push(newSegment);

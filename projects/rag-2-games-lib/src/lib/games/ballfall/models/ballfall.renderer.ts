@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -22,6 +23,7 @@ export class BallfallRenderer extends Base3DRenderer {
   private camera: UniversalCamera;
   private ballMesh!: Mesh;
   private trackMat!: StandardMaterial;
+  private obsMat!: StandardMaterial;
   private renderedTracks: Map<number, Mesh> = new Map();
 
   constructor(canvas: HTMLCanvasElement) {
@@ -70,6 +72,10 @@ export class BallfallRenderer extends Base3DRenderer {
     this.trackMat = new StandardMaterial('trackMat', this.scene);
     this.trackMat.diffuseColor = new Color3(0.1, 0.1, 0.1);
     this.trackMat.specularColor = new Color3(0, 0, 0);
+
+    const obsMat = new StandardMaterial('obsMat', this.scene);
+    obsMat.diffuseColor = new Color3(1, 0, 0);
+    this.obsMat = obsMat;
   }
 
   public render(state: BallfallState, track: TrackSegment[]): void {
@@ -113,6 +119,39 @@ export class BallfallRenderer extends Base3DRenderer {
           { width: segment.width, height: 1, depth: length },
           this.scene
         );
+
+        if (segment.obstacles) {
+          for (const obs of segment.obstacles) {
+            const obstacle = MeshBuilder.CreateBox(
+              'obs',
+              { size: 0.8 },
+              this.scene
+            );
+            obstacle.position = new Vector3(segment.xOffset + obs.x, 0, obs.z);
+            obstacle.material = this.obsMat;
+
+            if (segment.obstacles) {
+              for (const obs of segment.obstacles) {
+                const obstacle = MeshBuilder.CreateCylinder(
+                  'spike',
+                  {
+                    diameterTop: 0,
+                    diameterBottom: 0.8,
+                    height: 1.2,
+                  },
+                  this.scene
+                );
+
+                obstacle.position = new Vector3(
+                  segment.xOffset + obs.x,
+                  0.1,
+                  segment.zStart + obs.z
+                );
+                obstacle.material = this.obsMat;
+              }
+            }
+          }
+        }
 
         if (segment.isRamp) {
           box.rotation.x = -(segment.rampAngle || 0);
