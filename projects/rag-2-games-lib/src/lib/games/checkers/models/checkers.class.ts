@@ -101,7 +101,7 @@ export class Checkers extends Game {
       '<move>: 1 left-up, 2 right-up, 3 left-down, 4 right-down; <action>: 1 select/confirm, 3 cancel',
       {
         move: 'Q/E/A/D or Numpad 4/6/1/3',
-        select: 'Space',
+        select: 'Space or 0',
         cancel: 'Esc',
       }
     ),
@@ -114,7 +114,7 @@ export class Checkers extends Game {
       '<move>: 1 left-up, 2 right-up, 3 left-down, 4 right-down; <action>: 1 select/confirm, 3 cancel',
       {
         move: 'W/A/S/D or Numpad 4/6/1/3',
-        select: 'Space',
+        select: 'Space or 0',
         cancel: 'Esc',
       }
     ),
@@ -134,6 +134,7 @@ export class Checkers extends Game {
       '6': { variableName: 'move', pressedValue: 2, releasedValue: 0 },
       '1': { variableName: 'move', pressedValue: 3, releasedValue: 0 },
       '3': { variableName: 'move', pressedValue: 4, releasedValue: 0 },
+      '0': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       ' ': { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       Escape: { variableName: 'action', pressedValue: 3, releasedValue: 0 },
     };
