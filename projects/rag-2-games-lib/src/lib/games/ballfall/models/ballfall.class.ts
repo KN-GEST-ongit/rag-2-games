@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { TGameState } from '../../../models/game-state.type';
 import { Game } from '../../../models/game.class';
 import { Player } from '../../../models/player.class';
@@ -7,25 +6,24 @@ export class BallfallState implements TGameState {
   public score = 0;
   public isGameOver = false;
 
-  public ballY = 15;
+  public ballX = 0;
+  public ballY = 0.5;
+  public ballZ = 0;
+
   public ballVY = 0;
-
-  public cylinderRotY = 0;
-
-  public distToNextPlatform = 0;
-  public nextPlatformSegments: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 }
 
 export class Ballfall extends Game {
   public override name = 'ballfall';
-  public override author = 'Mateusz Mączyński';
+  public override author = 'Twój Nick';
   public override state = new BallfallState();
 
   public override outputSpec = `
   output:
-    score: int, <0, inf>;
+    score: int;
+    ballX: float;
     ballY: float;
-    cylinderRotY: float;
+    ballZ: float;
   `;
 
   public override players = [
@@ -40,7 +38,7 @@ export class Ballfall extends Game {
         a: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
         d: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
       },
-      `<move>: -1 obraca w lewo, 1 obraca w prawo;`,
+      `<move>: -1 left, 1 right;`,
       { left: '[←/A]', right: '[→/D]' }
     ),
   ];

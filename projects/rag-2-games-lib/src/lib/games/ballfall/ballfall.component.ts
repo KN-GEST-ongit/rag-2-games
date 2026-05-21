@@ -1,21 +1,19 @@
 /* eslint-disable complexity */
+/* eslint-disable @typescript-eslint/naming-convention */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
-import { BaseGameWindowComponent } from '../base-game.component';
-import { Ballfall, BallfallState } from './models/ballfall.class';
 import { Base3DGameWindowComponent } from '../../engine-3d/base-3d-game.component';
 import { Base3DRenderer } from '../../engine-3d/base-3d.renderer';
+import { Ballfall, BallfallState } from './models/ballfall.class';
 import { BallfallRenderer } from './models/ballfall.renderer';
 
-export enum SegmentType {
-  Empty = 0,
-  Normal = 1,
-  Danger = 2,
-}
-
-export interface Platform {
-  y: number;
-  segments: SegmentType[];
+export interface TrackSegment {
+  zStart: number;
+  zEnd: number;
+  xOffset: number;
+  width: number;
+  isRamp?: boolean;
+  rampAngle?: number;
 }
 
 @Component({
@@ -27,7 +25,7 @@ export interface Platform {
       [displayMode]="'horizontal'"
       [is3DEnabled]="true"
       #gameCanvas></app-canvas>
-    <b>FPS: {{ fps }}</b>
+    <b>Wynik: {{ Math.floor(game.state.score) }} | FPS: {{ fps }}</b>
   `,
 })
 export class BallfallGameWindowComponent
@@ -36,19 +34,22 @@ export class BallfallGameWindowComponent
 {
   public override game!: Ballfall;
   protected override renderer3D?: BallfallRenderer;
+  public Math = Math;
 
-  public gravity = 0.015;
-  public bounceForce = 0.35;
-  public rotationSpeed = 0.08;
-  private platforms: Platform[] = [];
+  public forwardSpeed = 0.2;
+  public sideSpeed = 0.15;
+  public gravity = 0.02;
+
+  public maxForwardSpeed = 0.8;
+  public acceleration = 0.0005;
+
+  private track: TrackSegment[] = [];
+  private lastTrackZ = 0;
 
   public override ngOnInit(): void {
     super.ngOnInit();
     this.game = this.game as Ballfall;
-
-    if (this.platforms.length === 0) {
-      this.generateInitialPlatforms();
-    }
+    if (this.track.length === 0) this.generateInitialTrack();
   }
 
   protected override createRenderer(canvas: HTMLCanvasElement): Base3DRenderer {
@@ -59,19 +60,18 @@ export class BallfallGameWindowComponent
 
   public override restart(): void {
     this.game.state = new BallfallState();
-    this.platforms = [];
-    this.generateInitialPlatforms();
+    this.track = [];
+    this.lastTrackZ = 0;
+    this.generateInitialTrack();
   }
 
   protected override update(): void {
     super.update();
-    if (!this.renderer3D || this.isPaused || this.game.state.isGameOver) {
-      return;
-    }
+    if (!this.renderer3D || this.isPaused || this.game.state.isGameOver) return;
 
     this.handleInput();
     this.updatePhysics();
-    this.renderer3D.render(this.game.state, this.platforms);
+    this.renderer3D.render(this.game.state, this.track);
   }
 
   private handleInput(): void {
@@ -80,96 +80,90 @@ export class BallfallGameWindowComponent
 
     if (player) {
       const move = (player.inputData['move'] as number) || 0;
-      state.cylinderRotY += move * this.rotationSpeed;
+      state.ballX += move * this.sideSpeed;
     }
   }
 
   private updatePhysics(): void {
     const state = this.game.state;
 
-    if (state.isGameOver) return;
+    if (this.forwardSpeed < this.maxForwardSpeed) {
+      this.forwardSpeed += this.acceleration;
+    }
+
+    state.ballZ += this.forwardSpeed;
+    state.score = state.ballZ;
+
+    if (state.ballZ > this.lastTrackZ - 100) {
+      this.spawnTrackSegment();
+    }
+
+    if (this.track.length > 0 && this.track[0].zEnd < state.ballZ - 20) {
+      this.track.shift();
+    }
 
     state.ballVY -= this.gravity;
     state.ballY += state.ballVY;
 
-    const ballRadius = 0.4;
-    const segmentsCount = 12;
-    const anglePerSegment = (Math.PI * 2) / segmentsCount;
+    let isOnTrack = false;
+    let activeSegment: TrackSegment | null = null;
 
-    if (this.platforms.length > 0) {
-      const lowestPlatform = this.platforms[this.platforms.length - 1];
-      if (state.ballY < lowestPlatform.y + 12) {
-        this.spawnPlatform(lowestPlatform.y - 4);
-      }
-      if (this.platforms[0].y > state.ballY + 10) {
-        this.platforms.shift();
-      }
-    }
+    for (const segment of this.track) {
+      if (state.ballZ >= segment.zStart && state.ballZ <= segment.zEnd) {
+        const leftEdge = segment.xOffset - segment.width / 2;
+        const rightEdge = segment.xOffset + segment.width / 2;
 
-    const nextPlatform = this.platforms.find(p => p.y < state.ballY);
-    if (nextPlatform) {
-      state.distToNextPlatform = state.ballY - nextPlatform.y;
-      state.nextPlatformSegments = [...nextPlatform.segments];
-    }
-
-    for (const platform of this.platforms) {
-      const distanceToLevel = state.ballY - platform.y;
-
-      if (
-        distanceToLevel <= ballRadius &&
-        distanceToLevel >= 0 &&
-        state.ballVY < 0
-      ) {
-        let localAngle = (Math.PI / 2 - state.cylinderRotY) % (Math.PI * 2);
-        if (localAngle <= 0) localAngle += Math.PI * 2;
-
-        const currentSegmentIndex =
-          Math.ceil(localAngle / anglePerSegment) % segmentsCount;
-        const segmentUnderBall = platform.segments[currentSegmentIndex];
-
-        if (segmentUnderBall === SegmentType.Empty) {
-          continue;
-        } else if (segmentUnderBall === SegmentType.Danger) {
-          state.isGameOver = true;
-          console.log('GAME OVER! Piłka trafiła w czerwoną strefę.');
-          this.restart();
-          return;
-        } else if (segmentUnderBall === SegmentType.Normal) {
-          state.ballY = platform.y + ballRadius;
-          state.ballVY = this.bounceForce;
-
+        if (state.ballX >= leftEdge && state.ballX <= rightEdge) {
+          isOnTrack = true;
+          activeSegment = segment;
           break;
         }
       }
     }
 
-    if (state.ballY < -100) {
+    if (isOnTrack && activeSegment) {
+      let groundLevel = 0.5;
+
+      if (activeSegment.isRamp && activeSegment.rampAngle) {
+        const distFromStart = state.ballZ - activeSegment.zStart;
+        groundLevel = 0.5 + distFromStart * Math.sin(activeSegment.rampAngle);
+      }
+
+      if (state.ballY < groundLevel) {
+        state.ballY = groundLevel;
+        state.ballVY = 0;
+
+        if (activeSegment.isRamp) {
+          state.ballVY += 0.02;
+        }
+      }
+    }
+
+    if (state.ballY < -10) {
       this.restart();
     }
   }
 
-  private spawnPlatform(yLevel: number): void {
-    const state = this.game.state;
-    const segments: number[] = [];
+  private spawnTrackSegment(): void {
+    const segmentLength = 20;
+    const isRamp = Math.random() > 0.8;
 
-    for (let i = 0; i < 12; i++) {
-      const rand = Math.random();
-      if (rand < 0.2) segments.push(0);
-      else if (rand < 0.4) segments.push(2);
-      else segments.push(1);
-    }
+    const newSegment: TrackSegment = {
+      zStart: this.lastTrackZ,
+      zEnd: this.lastTrackZ + segmentLength,
+      xOffset: (Math.random() - 0.5) * 4,
+      width: 6,
+      isRamp: isRamp,
+      rampAngle: isRamp ? 0.3 : 0,
+    };
 
-    if (!segments.includes(0)) segments[Math.floor(Math.random() * 12)] = 0;
-
-    this.platforms.push({
-      y: yLevel,
-      segments: segments,
-    });
+    this.track.push(newSegment);
+    this.lastTrackZ += segmentLength;
   }
 
-  private generateInitialPlatforms(): void {
-    for (let i = 0; i < 6; i++) {
-      this.spawnPlatform(12 - i * 4);
-    }
+  private generateInitialTrack(): void {
+    this.track.push({ zStart: -10, zEnd: 20, xOffset: 0, width: 6 });
+    this.lastTrackZ = 20;
+    for (let i = 0; i < 5; i++) this.spawnTrackSegment();
   }
 }
