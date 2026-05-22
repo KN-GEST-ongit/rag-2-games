@@ -3,7 +3,7 @@
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { Timberman, TimbermanState, generateSegment, INITIAL_TIME } from './models/timberman.class';
+import { Timberman, TimbermanState, generateSegment, MAX_TIME } from './models/timberman.class';
 
 @Component({
   selector: 'app-timberman',
@@ -40,9 +40,12 @@ export class TimbermanGameWindowComponent
   private _wasChopPressed: [boolean, boolean] = [false, false];
   private _chopAnimTimer: [number, number] = [0, 0];
   private _chopAnimSide: ['left' | 'right', 'left' | 'right'] = ['left', 'left'];
+  private _isStarted: [boolean, boolean] = [false, false];
 
   private readonly _timeDrain = 0.33;
-  private readonly _timeBonus = 8;
+  private readonly _initialTimeBonus = 12;
+  private _timeBonusPerPlayer: [number, number] = [12, 12];
+  private _levelUpTimer: [number, number] = [0, 0];
 
   private readonly _sectionW = 400;
   private readonly _canvasH = 600;
@@ -74,6 +77,9 @@ export class TimbermanGameWindowComponent
     this._wasChopPressed = [false, false];
     this._chopAnimTimer = [0, 0];
     this._chopAnimSide = ['left', 'left'];
+    this._isStarted = [false, false];
+    this._timeBonusPerPlayer = [this._initialTimeBonus, this._initialTimeBonus];
+    this._levelUpTimer = [0, 0];
     this.resizeCanvas();
     this.render();
   }
@@ -108,15 +114,18 @@ export class TimbermanGameWindowComponent
     const isGameOver = playerIndex === 0 ? st.isGameOver0 : st.isGameOver1;
     if (isGameOver) return;
 
-    if (playerIndex === 0) {
-      st.timeLeft0 = Math.max(0, st.timeLeft0 - this._timeDrain);
-      if (st.timeLeft0 <= 0) { st.isGameOver0 = true; return; }
-    } else {
-      st.timeLeft1 = Math.max(0, st.timeLeft1 - this._timeDrain);
-      if (st.timeLeft1 <= 0) { st.isGameOver1 = true; return; }
+    if (this._isStarted[playerIndex]) {
+      if (playerIndex === 0) {
+        st.timeLeft0 = Math.max(0, st.timeLeft0 - this._timeDrain);
+        if (st.timeLeft0 <= 0) { st.isGameOver0 = true; return; }
+      } else {
+        st.timeLeft1 = Math.max(0, st.timeLeft1 - this._timeDrain);
+        if (st.timeLeft1 <= 0) { st.isGameOver1 = true; return; }
+      }
     }
 
     if (this._chopAnimTimer[playerIndex] > 0) this._chopAnimTimer[playerIndex]--;
+    if (this._levelUpTimer[playerIndex] > 0) this._levelUpTimer[playerIndex]--;
 
     const chop = (this.game.players[playerIndex]?.inputData['chop'] as number) ?? 0;
     const isChopPressed = chop !== 0;
@@ -129,6 +138,7 @@ export class TimbermanGameWindowComponent
   }
 
   private processChop(playerIndex: number, side: 'left' | 'right'): void {
+    this._isStarted[playerIndex] = true;
     const st = this.game.state as TimbermanState;
     const segments = playerIndex === 0 ? st.treeSegments0 : st.treeSegments1;
 
@@ -149,11 +159,34 @@ export class TimbermanGameWindowComponent
 
     if (playerIndex === 0) {
       st.score0++;
-      st.timeLeft0 = Math.min(INITIAL_TIME, st.timeLeft0 + this._timeBonus);
+      st.chopsThisLevel0++;
+      st.timeLeft0 = Math.min(MAX_TIME, st.timeLeft0 + this._timeBonusPerPlayer[0]);
     } else {
       st.score1++;
-      st.timeLeft1 = Math.min(INITIAL_TIME, st.timeLeft1 + this._timeBonus);
+      st.chopsThisLevel1++;
+      st.timeLeft1 = Math.min(MAX_TIME, st.timeLeft1 + this._timeBonusPerPlayer[1]);
     }
+    this.checkLevelUp(playerIndex);
+  }
+
+  private checkLevelUp(playerIndex: number): void {
+    const st = this.game.state as TimbermanState;
+    const chopsThisLevel = playerIndex === 0 ? st.chopsThisLevel0 : st.chopsThisLevel1;
+    const chopsToNext = playerIndex === 0 ? st.chopsToNextLevel0 : st.chopsToNextLevel1;
+
+    if (chopsThisLevel < chopsToNext) return;
+
+    if (playerIndex === 0) {
+      st.level0++;
+      st.chopsThisLevel0 = 0;
+      st.chopsToNextLevel0 = Math.round(st.chopsToNextLevel0 * 1.2);
+    } else {
+      st.level1++;
+      st.chopsThisLevel1 = 0;
+      st.chopsToNextLevel1 = Math.round(st.chopsToNextLevel1 * 1.2);
+    }
+    this._timeBonusPerPlayer[playerIndex] = Math.round(this._timeBonusPerPlayer[playerIndex] * 0.85 * 10) / 10;
+    this._levelUpTimer[playerIndex] = 90;
   }
 
   private renderAxe(ctx: CanvasRenderingContext2D, playerIndex: number, playerX: number): void {
@@ -234,17 +267,47 @@ export class TimbermanGameWindowComponent
       this.renderAxe(ctx, playerIndex, playerX);
     }
 
+    if (!this._isStarted[playerIndex] && !isGameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(offsetX, this._canvasH / 2 - 35, this._sectionW, 70);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        playerIndex === 0 ? 'Press A or D to start' : 'Press ← or → to start',
+        offsetX + this._sectionW / 2,
+        this._canvasH / 2 + 8
+      );
+    }
+
     const barX = offsetX + 20;
     const barW = this._sectionW - 40;
     ctx.fillStyle = '#444';
     ctx.fillRect(barX, 10, barW, 20);
     ctx.fillStyle = timeLeft > 30 ? '#22CC44' : '#CC2200';
-    ctx.fillRect(barX, 10, barW * (timeLeft / INITIAL_TIME), 20);
+    ctx.fillRect(barX, 10, barW * (timeLeft / MAX_TIME), 20);
 
     ctx.fillStyle = '#000';
     ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`Score: ${score}`, offsetX + this._sectionW / 2, 50);
+
+    const level = playerIndex === 0 ? (this.game.state as TimbermanState).level0 : (this.game.state as TimbermanState).level1;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`Lv.${level}`, offsetX + this._sectionW - 8, 58);
+
+    if (this._levelUpTimer[playerIndex] > 0) {
+      const alpha = this._levelUpTimer[playerIndex] / 90;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Level ${level}!`, offsetX + this._sectionW / 2, 72);
+      ctx.restore();
+    }
 
     if (this.isMultiplayer && playerIndex === 0) {
       ctx.strokeStyle = '#333';
@@ -258,14 +321,21 @@ export class TimbermanGameWindowComponent
 
     if (isGameOver) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.fillRect(offsetX, this._canvasH / 2 - 50, this._sectionW, 100);
+      ctx.fillRect(offsetX, this._canvasH / 2 - 60, this._sectionW, 120);
       ctx.fillStyle = isDead ? '#FF2222' : '#FFAA00';
       ctx.font = 'bold 36px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(
         isDead ? 'YOU DIED!' : 'TIME UP!',
         offsetX + this._sectionW / 2,
-        this._canvasH / 2 + 14
+        this._canvasH / 2
+      );
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '18px sans-serif';
+      ctx.fillText(
+        'Use restart button to play again',
+        offsetX + this._sectionW / 2,
+        this._canvasH / 2 + 40
       );
     }
   }

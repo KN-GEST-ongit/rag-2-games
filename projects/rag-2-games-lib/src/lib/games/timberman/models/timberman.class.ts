@@ -10,6 +10,7 @@ export interface ITreeSegment{
 
 export const TREE_HEIGHT = 7;
 export const INITIAL_TIME = 120;
+export const MAX_TIME = INITIAL_TIME * 2;
 
 export function generateSegment(prevBranch: BranchSide): ITreeSegment {
     if (prevBranch !== null) return {branch: null};
@@ -37,6 +38,9 @@ export class TimbermanState implements TGameState {
     public isGameOver0 = false;
     public isDead0 = false;
     public treeSegments0: ITreeSegment[] = generateTree();
+    public level0 = 1;
+    public chopsThisLevel0 = 0;
+    public chopsToNextLevel0 = 20;
 
     //Additional player
     public position1: 'left' | 'right' = 'left';
@@ -45,6 +49,9 @@ export class TimbermanState implements TGameState {
     public isGameOver1 = false;
     public isDead1 = false;
     public treeSegments1: ITreeSegment[] = generateTree();
+    public level1 = 1;
+    public chopsThisLevel1 = 0;
+    public chopsToNextLevel1 = 20;
 }
 
 export class Timberman extends Game {
