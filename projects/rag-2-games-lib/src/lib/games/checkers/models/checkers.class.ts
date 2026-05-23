@@ -431,9 +431,29 @@ export class Checkers extends Game {
       this.setPiece(typeof selectedMove === 'string' ? selectedMove : selectedMove.dst, 'B');
     }
 
+    const isCapture =
+      typeof selectedMove !== 'string' && selectedMove.captures.length > 0;
+    const isKingMove = piece === 'B' || piece === 'W';
+
+    if (isCapture) {
+      this._noCaptureKingPlyCount = 0;
+    } else if (isKingMove) {
+      this._noCaptureKingPlyCount += 1;
+    } else {
+      this._noCaptureKingPlyCount = 0;
+    }
+
     this.state.currentPlayer = this.state.currentPlayer === 'WHITE' ? 'BLACK' : 'WHITE';
     this.clearSelection();
     this.updateGameOver();
+  }
+
+  private _noCaptureKingPlyCount = 0;
+  private readonly _drawPlyLimit = 20;
+
+  public reset(): void {
+    this.state = new CheckersState();
+    this._noCaptureKingPlyCount = 0;
   }
 
   private updateGameOver(): void {
@@ -463,6 +483,12 @@ export class Checkers extends Game {
           break;
         }
       }
+    }
+
+    if (this._noCaptureKingPlyCount >= this._drawPlyLimit) {
+      this.state.isGameOver = true;
+      this.state.winner = null;
+      return;
     }
 
     if (!hasMove) {

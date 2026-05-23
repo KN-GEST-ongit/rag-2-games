@@ -36,7 +36,7 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
   }
 
   public override restart(): void {
-    this.game.state = new CheckersState();
+    this.game.reset();
     this.render();
   }
 
@@ -51,6 +51,8 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
     }
     this.render();
   }
+
+  private isAwaitingResetInput = false;
 
   private handleInput(): void {
     const state = this.game.state;
@@ -67,8 +69,18 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
     }
 
     if (state.isGameOver) {
+      if (!this.isAwaitingResetInput) {
+        this.isAwaitingResetInput = true;
+        return;
+      }
+      if (rawMove !== 0 || action !== 0) {
+        this.isAwaitingResetInput = false;
+        this.restart();
+      }
       return;
     }
+
+    this.isAwaitingResetInput = false;
 
     const move = this.translateMoveIfRotated(rawMove);
 
@@ -410,7 +422,18 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
       ctx.fillStyle = '#fff';
       ctx.font = '36px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`Game Over - Winner: ${this.game.state.winner}`, this._canvas.width / 2, this._canvas.height / 2);
+      ctx.textBaseline = 'middle';
+
+      const cx = this._canvas.width / 2;
+      const cy = this._canvas.height / 2;
+      const lineGap = 44;
+
+      const winnerText = this.game.state.winner
+        ? `Winner: ${this.game.state.winner}`
+        : 'Draw';
+
+      ctx.fillText(`Game Over - ${winnerText}`, cx, cy - lineGap / 2);
+      ctx.fillText('Press any key to restart', cx, cy + lineGap / 2);
     }
   }
 }
