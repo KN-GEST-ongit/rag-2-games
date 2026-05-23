@@ -3,7 +3,7 @@
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { Timberman, TimbermanState, generateSegment, MAX_TIME } from './models/timberman.class';
+import { Timberman, TimbermanState, generateSegment, generateTree, INITIAL_TIME, MAX_TIME } from './models/timberman.class';
 
 @Component({
   selector: 'app-timberman',
@@ -38,6 +38,7 @@ export class TimbermanGameWindowComponent
 
   private _previousGameMode = '';
   private _wasChopPressed: [boolean, boolean] = [false, false];
+  private _wasRestartPressed: [boolean, boolean] = [false, false];
   private _chopAnimTimer: [number, number] = [0, 0];
   private _chopAnimSide: ['left' | 'right', 'left' | 'right'] = ['left', 'left'];
   private _isStarted: [boolean, boolean] = [false, false];
@@ -75,6 +76,7 @@ export class TimbermanGameWindowComponent
   public override restart(): void {
     this.game.state = new TimbermanState();
     this._wasChopPressed = [false, false];
+    this._wasRestartPressed = [false, false];
     this._chopAnimTimer = [0, 0];
     this._chopAnimSide = ['left', 'left'];
     this._isStarted = [false, false];
@@ -82,6 +84,28 @@ export class TimbermanGameWindowComponent
     this._levelUpTimer = [0, 0];
     this.resizeCanvas();
     this.render();
+  }
+
+  private restartPlayer(playerIndex: number): void {
+    const st = this.game.state as TimbermanState;
+    if (playerIndex === 0) {
+      st.position0 = 'left'; st.score0 = 0; st.timeLeft0 = INITIAL_TIME;
+      st.isGameOver0 = false; st.isDead0 = false;
+      st.treeSegments0 = generateTree();
+      st.level0 = 1; st.chopsThisLevel0 = 0; st.chopsToNextLevel0 = 20;
+    } else {
+      st.position1 = 'left'; st.score1 = 0; st.timeLeft1 = INITIAL_TIME;
+      st.isGameOver1 = false; st.isDead1 = false;
+      st.treeSegments1 = generateTree();
+      st.level1 = 1; st.chopsThisLevel1 = 0; st.chopsToNextLevel1 = 20;
+    }
+    this._wasChopPressed[playerIndex] = false;
+    this._wasRestartPressed[playerIndex] = false;
+    this._chopAnimTimer[playerIndex] = 0;
+    this._chopAnimSide[playerIndex] = 'left';
+    this._isStarted[playerIndex] = false;
+    this._timeBonusPerPlayer[playerIndex] = this._initialTimeBonus;
+    this._levelUpTimer[playerIndex] = 0;
   }
 
   private resizeCanvas(): void {
@@ -112,7 +136,14 @@ export class TimbermanGameWindowComponent
   private updatePlayer(playerIndex: number): void {
     const st = this.game.state as TimbermanState;
     const isGameOver = playerIndex === 0 ? st.isGameOver0 : st.isGameOver1;
-    if (isGameOver) return;
+
+    if (isGameOver) {
+      const restartVal = (this.game.players[playerIndex]?.inputData['restart'] as number) ?? 0;
+      const isRestartPressed = restartVal !== 0;
+      if (isRestartPressed && !this._wasRestartPressed[playerIndex]) this.restartPlayer(playerIndex);
+      this._wasRestartPressed[playerIndex] = isRestartPressed;
+      return;
+    }
 
     if (this._isStarted[playerIndex]) {
       if (playerIndex === 0) {
@@ -333,7 +364,7 @@ export class TimbermanGameWindowComponent
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '18px sans-serif';
       ctx.fillText(
-        'Use restart button to play again',
+        playerIndex === 0 ? 'Press Space to play again' : 'Press Enter to play again',
         offsetX + this._sectionW / 2,
         this._canvasH / 2 + 40
       );

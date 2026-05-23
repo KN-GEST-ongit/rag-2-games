@@ -85,25 +85,27 @@ export class Timberman extends Game {
             0,
             true,
             'Player 1',
-            {chop: 0},
+            {chop: 0, restart: 0},
             {
                 a: { variableName: 'chop', pressedValue: 1, releasedValue: 0 },
                 d: { variableName: 'chop', pressedValue: 2, releasedValue: 0 },
+                ' ': { variableName: 'restart', pressedValue: 1, releasedValue: 0 },
             },
-            '<chop>: {0: none, 1: chop left, 2: chop right}',
-            {chopLeft: '[A]', chopRight: '[D]' }
+            '<chop>: {0: none, 1: chop left, 2: chop right}; <restart>: 1=restart',
+            {chopLeft: '[A]', chopRight: '[D]', restart: '[Space]' }
         ),
         new Player(
             1,
             false,
             'Player 2',
-            {chop: 0},
+            {chop: 0, restart: 0},
             {
                 ArrowLeft: { variableName: 'chop', pressedValue: 1, releasedValue: 0 },
                 ArrowRight: { variableName: 'chop', pressedValue: 2, releasedValue: 0 },
+                Enter: { variableName: 'restart', pressedValue: 1, releasedValue: 0 },
             },
-            '<chop>: {0: none, 1: chop left, 2: chop right}',
-            {chopLeft: '[←]', chopRight: '[→]' }
+            '<chop>: {0: none, 1: chop left, 2: chop right}; <restart>: 1=restart',
+            {chopLeft: '[←]', chopRight: '[→]', restart: '[Enter]' }
         )
     ];
 }
