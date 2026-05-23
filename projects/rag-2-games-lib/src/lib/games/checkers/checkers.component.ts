@@ -91,10 +91,10 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
 
   private translateMoveIfRotated(move: number): number {
     if (!this.getShouldRotate()) return move;
-    if (move === 1) return 4;
-    if (move === 2) return 3;
-    if (move === 3) return 2;
-    if (move === 4) return 1;
+    if (move === 1) return 2;
+    if (move === 2) return 1;
+    if (move === 3) return 4;
+    if (move === 4) return 3;
     return move;
   }
 
@@ -103,9 +103,9 @@ export class CheckersGameWindowComponent extends BaseGameWindowComponent impleme
     let r = cur.r;
     let c = cur.c;
 
-    if (move === 1) { r -= 1; c -= 1; }
-    if (move === 2) { r -= 1; c += 1; } 
-    if (move === 3) { r += 1; c -= 1; } 
+    if (move === 1) { c -= 2; } 
+    if (move === 2) { c += 2; }
+    if (move === 3) { r -= 1; c -= 1; }
     if (move === 4) { r += 1; c += 1; }
 
     if (r < 0 || r > 7 || c < 0 || c > 7) {
