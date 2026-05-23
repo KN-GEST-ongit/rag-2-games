@@ -9,9 +9,6 @@ export class TwozerofoureightState implements TGameState {
   public bestScore = 0;
   public isGameOver = false;
   public hasWon = false;
-  
-
-  
 
   public constructor() {
     this.grid = Array.from({ length: this.size }, () =>

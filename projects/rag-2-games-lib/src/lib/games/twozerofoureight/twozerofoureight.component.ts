@@ -30,9 +30,6 @@ interface ITileAnim {
       Score: <b>{{ game.state.score }}</b> | Best:
       <b>{{ game.state.bestScore }}</b>
     </div>
-    <div class="game-info" *ngIf="game.state.isGameOver">
-      <b>Game Over</b> — press restart in the menu.
-    </div>
 
     <div class="game-shell" [class.is-win-overlay]="game.state.hasWon && !hasWinAcknowledged">
       <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
@@ -91,6 +88,7 @@ export class TwozerofoureightGameWindowComponent
   public hasWinAcknowledged = false;
   private _tileAnims: ITileAnim[] = [];
   private _animDuration = 160;
+  private _gameOverAt = 0;
 
   public override ngOnInit(): void {
     super.ngOnInit();
@@ -130,6 +128,7 @@ export class TwozerofoureightGameWindowComponent
       Array.from({ length: st.size }, () => 0)
     );
     st.score = 0;
+    this._gameOverAt = 0;
     st.isGameOver = false;
     st.hasWon = false;
     this._lastMove = 0;
@@ -141,12 +140,27 @@ export class TwozerofoureightGameWindowComponent
   }
 
   private processMoveInput(): void {
-    if (this.game.state.isGameOver) return;
-
     const player = this.game.players[0];
     const move = Number(player.inputData['move'] ?? 0);
     const isSocket = player.playerType === PlayerSourceType.SOCKET;
     
+    if (this.game.state.isGameOver) {
+      if (move === 0) {
+        this._lastMove = 0;
+        return;
+      }
+
+      if (!isSocket) {
+        if (move === this._lastMove) return;
+        this._lastMove = move;
+      }
+
+      if (performance.now() - this._gameOverAt < 150) return;
+
+      this.restart();
+      return;
+    }
+
     if (move === 0) {
       this._lastMove = 0;
       return;
@@ -291,6 +305,7 @@ export class TwozerofoureightGameWindowComponent
       return;
     }
     st.isGameOver = true;
+    this._gameOverAt = performance.now();
   }
 
   private hasMovesAvailable(grid: number[][]): boolean {
@@ -419,6 +434,12 @@ export class TwozerofoureightGameWindowComponent
         'GAME OVER',
         startX + boardSize / 2,
         startY + boardSize / 2
+      );
+      ctx.font = '18px Arial';
+      ctx.fillText(
+        'Press any key to restart',
+        startX + boardSize / 2,
+        startY + boardSize / 2 + 34
       );
     }
 
