@@ -12,11 +12,11 @@ import { Timberman, TimbermanState, generateSegment, generateTree, INITIAL_TIME,
   template: `
     @if (isMultiplayer) {
       <div style="display: flex; justify-content: space-around; width: 85%">
-        <span>P1 Score: <b>{{ game.state.score0 }}</b></span>
-        <span>P2 Score: <b>{{ game.state.score1 }}</b></span>
+        <span>P1 Score: <b>{{ game.state.scoreP1 }}</b></span>
+        <span>P2 Score: <b>{{ game.state.scoreP2 }}</b></span>
       </div>
     } @else {
-      <div>Score: <b>{{ game.state.score0 }}</b></div>
+      <div>Score: <b>{{ game.state.scoreP1 }}</b></div>
     }
     <app-canvas [displayMode]="canvasDisplayMode" #gameCanvas></app-canvas>
     <b>FPS: {{ fps }}</b>
@@ -89,15 +89,15 @@ export class TimbermanGameWindowComponent
   private restartPlayer(playerIndex: number): void {
     const st = this.game.state as TimbermanState;
     if (playerIndex === 0) {
-      st.position0 = 'left'; st.score0 = 0; st.timeLeft0 = INITIAL_TIME;
-      st.isGameOver0 = false; st.isDead0 = false;
-      st.treeSegments0 = generateTree();
-      st.level0 = 1; st.chopsThisLevel0 = 0; st.chopsToNextLevel0 = 20;
+      st.positionP1 = 'left'; st.scoreP1 = 0; st.timeLeftP1 = INITIAL_TIME;
+      st.isGameOverP1 = false; st.isDeadP1 = false;
+      st.visibleTreeLayoutP1 = generateTree();
+      st.levelP1 = 1; st.chopsThisLevelP1 = 0; st.chopsToNextLevelP1 = 20;
     } else {
-      st.position1 = 'left'; st.score1 = 0; st.timeLeft1 = INITIAL_TIME;
-      st.isGameOver1 = false; st.isDead1 = false;
-      st.treeSegments1 = generateTree();
-      st.level1 = 1; st.chopsThisLevel1 = 0; st.chopsToNextLevel1 = 20;
+      st.positionP2 = 'left'; st.scoreP2 = 0; st.timeLeftP2 = INITIAL_TIME;
+      st.isGameOverP2 = false; st.isDeadP2 = false;
+      st.visibleTreeLayoutP2 = generateTree();
+      st.levelP2 = 1; st.chopsThisLevelP2 = 0; st.chopsToNextLevelP2 = 20;
     }
     this._wasChopPressed[playerIndex] = false;
     this._wasRestartPressed[playerIndex] = false;
@@ -135,7 +135,7 @@ export class TimbermanGameWindowComponent
 
   private updatePlayer(playerIndex: number): void {
     const st = this.game.state as TimbermanState;
-    const isGameOver = playerIndex === 0 ? st.isGameOver0 : st.isGameOver1;
+    const isGameOver = playerIndex === 0 ? st.isGameOverP1 : st.isGameOverP2;
 
     if (isGameOver) {
       const restartVal = (this.game.players[playerIndex]?.inputData['restart'] as number) ?? 0;
@@ -147,11 +147,11 @@ export class TimbermanGameWindowComponent
 
     if (this._isStarted[playerIndex]) {
       if (playerIndex === 0) {
-        st.timeLeft0 = Math.max(0, st.timeLeft0 - this._timeDrain);
-        if (st.timeLeft0 <= 0) { st.isGameOver0 = true; return; }
+        st.timeLeftP1 = Math.max(0, st.timeLeftP1 - this._timeDrain);
+        if (st.timeLeftP1 <= 0) { st.isGameOverP1 = true; return; }
       } else {
-        st.timeLeft1 = Math.max(0, st.timeLeft1 - this._timeDrain);
-        if (st.timeLeft1 <= 0) { st.isGameOver1 = true; return; }
+        st.timeLeftP2 = Math.max(0, st.timeLeftP2 - this._timeDrain);
+        if (st.timeLeftP2 <= 0) { st.isGameOverP2 = true; return; }
       }
     }
 
@@ -171,10 +171,10 @@ export class TimbermanGameWindowComponent
   private processChop(playerIndex: number, side: 'left' | 'right'): void {
     this._isStarted[playerIndex] = true;
     const st = this.game.state as TimbermanState;
-    const segments = playerIndex === 0 ? st.treeSegments0 : st.treeSegments1;
+    const segments = playerIndex === 0 ? st.visibleTreeLayoutP1 : st.visibleTreeLayoutP2;
 
-    if (playerIndex === 0) st.position0 = side;
-    else st.position1 = side;
+    if (playerIndex === 0) st.positionP1 = side;
+    else st.positionP2 = side;
 
     this._chopAnimTimer[playerIndex] = 8;
     this._chopAnimSide[playerIndex] = side;
@@ -183,38 +183,38 @@ export class TimbermanGameWindowComponent
     segments.push(generateSegment(segments[segments.length - 1]?.branch ?? null));
 
     if (segments[0].branch === side) {
-      if (playerIndex === 0) { st.isDead0 = true; st.isGameOver0 = true; }
-      else { st.isDead1 = true; st.isGameOver1 = true; }
+      if (playerIndex === 0) { st.isDeadP1 = true; st.isGameOverP1 = true; }
+      else { st.isDeadP2 = true; st.isGameOverP2 = true; }
       return;
     }
 
     if (playerIndex === 0) {
-      st.score0++;
-      st.chopsThisLevel0++;
-      st.timeLeft0 = Math.min(MAX_TIME, st.timeLeft0 + this._timeBonusPerPlayer[0]);
+      st.scoreP1++;
+      st.chopsThisLevelP1++;
+      st.timeLeftP1 = Math.min(MAX_TIME, st.timeLeftP1 + this._timeBonusPerPlayer[0]);
     } else {
-      st.score1++;
-      st.chopsThisLevel1++;
-      st.timeLeft1 = Math.min(MAX_TIME, st.timeLeft1 + this._timeBonusPerPlayer[1]);
+      st.scoreP2++;
+      st.chopsThisLevelP2++;
+      st.timeLeftP2 = Math.min(MAX_TIME, st.timeLeftP2 + this._timeBonusPerPlayer[1]);
     }
     this.checkLevelUp(playerIndex);
   }
 
   private checkLevelUp(playerIndex: number): void {
     const st = this.game.state as TimbermanState;
-    const chopsThisLevel = playerIndex === 0 ? st.chopsThisLevel0 : st.chopsThisLevel1;
-    const chopsToNext = playerIndex === 0 ? st.chopsToNextLevel0 : st.chopsToNextLevel1;
+    const chopsThisLevel = playerIndex === 0 ? st.chopsThisLevelP1 : st.chopsThisLevelP2;
+    const chopsToNext = playerIndex === 0 ? st.chopsToNextLevelP1 : st.chopsToNextLevelP2;
 
     if (chopsThisLevel < chopsToNext) return;
 
     if (playerIndex === 0) {
-      st.level0++;
-      st.chopsThisLevel0 = 0;
-      st.chopsToNextLevel0 = Math.round(st.chopsToNextLevel0 * 1.2);
+      st.levelP1++;
+      st.chopsThisLevelP1 = 0;
+      st.chopsToNextLevelP1 = Math.round(st.chopsToNextLevelP1 * 1.2);
     } else {
-      st.level1++;
-      st.chopsThisLevel1 = 0;
-      st.chopsToNextLevel1 = Math.round(st.chopsToNextLevel1 * 1.2);
+      st.levelP2++;
+      st.chopsThisLevelP2 = 0;
+      st.chopsToNextLevelP2 = Math.round(st.chopsToNextLevelP2 * 1.2);
     }
     this._timeBonusPerPlayer[playerIndex] = Math.round(this._timeBonusPerPlayer[playerIndex] * 0.85 * 10) / 10;
     this._levelUpTimer[playerIndex] = 90;
@@ -258,12 +258,12 @@ export class TimbermanGameWindowComponent
     offsetX: number
   ): void {
     const st = this.game.state as TimbermanState;
-    const segments  = playerIndex === 0 ? st.treeSegments0 : st.treeSegments1;
-    const position  = playerIndex === 0 ? st.position0     : st.position1;
-    const score     = playerIndex === 0 ? st.score0        : st.score1;
-    const timeLeft  = playerIndex === 0 ? st.timeLeft0     : st.timeLeft1;
-    const isGameOver = playerIndex === 0 ? st.isGameOver0  : st.isGameOver1;
-    const isDead    = playerIndex === 0 ? st.isDead0       : st.isDead1;
+    const segments  = playerIndex === 0 ? st.visibleTreeLayoutP1 : st.visibleTreeLayoutP2;
+    const position  = playerIndex === 0 ? st.positionP1     : st.positionP2;
+    const score     = playerIndex === 0 ? st.scoreP1        : st.scoreP2;
+    const timeLeft  = playerIndex === 0 ? st.timeLeftP1     : st.timeLeftP2;
+    const isGameOver = playerIndex === 0 ? st.isGameOverP1  : st.isGameOverP2;
+    const isDead    = playerIndex === 0 ? st.isDeadP1       : st.isDeadP2;
     const trunkCX   = offsetX + this._trunkCenterX;
 
     ctx.fillStyle = '#87CEEB';
@@ -323,7 +323,7 @@ export class TimbermanGameWindowComponent
     ctx.textAlign = 'center';
     ctx.fillText(`Score: ${score}`, offsetX + this._sectionW / 2, 50);
 
-    const level = playerIndex === 0 ? (this.game.state as TimbermanState).level0 : (this.game.state as TimbermanState).level1;
+    const level = playerIndex === 0 ? (this.game.state as TimbermanState).levelP1 : (this.game.state as TimbermanState).levelP2;
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'right';

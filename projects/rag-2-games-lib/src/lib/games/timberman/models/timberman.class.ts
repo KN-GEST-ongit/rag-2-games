@@ -31,27 +31,27 @@ export function generateTree(): ITreeSegment[] {
 }
 
 export class TimbermanState implements TGameState {
-    //Main player
-    public position0: 'left' | 'right' = 'left';
-    public score0 = 0;
-    public timeLeft0 = INITIAL_TIME;
-    public isGameOver0 = false;
-    public isDead0 = false;
-    public treeSegments0: ITreeSegment[] = generateTree();
-    public level0 = 1;
-    public chopsThisLevel0 = 0;
-    public chopsToNextLevel0 = 20;
+    // Player 1
+    public positionP1: 'left' | 'right' = 'left';
+    public scoreP1 = 0;
+    public timeLeftP1 = INITIAL_TIME;
+    public isGameOverP1 = false;
+    public isDeadP1 = false;
+    public visibleTreeLayoutP1: ITreeSegment[] = generateTree();
+    public levelP1 = 1;
+    public chopsThisLevelP1 = 0;
+    public chopsToNextLevelP1 = 20;
 
-    //Additional player
-    public position1: 'left' | 'right' = 'left';
-    public score1 = 0;
-    public timeLeft1 = INITIAL_TIME;
-    public isGameOver1 = false;
-    public isDead1 = false;
-    public treeSegments1: ITreeSegment[] = generateTree();
-    public level1 = 1;
-    public chopsThisLevel1 = 0;
-    public chopsToNextLevel1 = 20;
+    // Player 2
+    public positionP2: 'left' | 'right' = 'left';
+    public scoreP2 = 0;
+    public timeLeftP2 = INITIAL_TIME;
+    public isGameOverP2 = false;
+    public isDeadP2 = false;
+    public visibleTreeLayoutP2: ITreeSegment[] = generateTree();
+    public levelP2 = 1;
+    public chopsThisLevelP2 = 0;
+    public chopsToNextLevelP2 = 20;
 }
 
 export class Timberman extends Game {
@@ -60,25 +60,50 @@ export class Timberman extends Game {
     public override state = new TimbermanState();
 
     public override outputSpec = `
-        output:
-            position0: string, {'left','right'};
-            score0: int, <0, inf>;
-            timeLeft0: float, <0, 120>;
-            isGameOver0: boolean;
-            isDead0: boolean;
-            treeSegments0: [{ branch: string|null, {'left', 'right', null} }];
-            position1: string, {'left', 'right'};
-            score1: int, <0, inf>;
-            timeLeft1: float, <0, 120>;
-            isGameOver1: boolean;
-            isDead1: boolean;
-            treeSegments1: [{ branch: string|null, {'left', 'right', null} }];
+        Both players run independent games side by side. All fields below exist for
+        P1 (Player 1) and P2 (Player 2) — e.g. positionP1 / positionP2.
 
-        default values:
-            position0: 'left'; score0: 0; timeLeft0: 120;
-            isGameOver0: false; isDead0: false;
-            position1: 'left'; score1: 0; timeLeft1: 120;
-            isGameOver1: false; isDead1: false;
+        input:
+            chop:    0 = no action | 1 = chop left | 2 = chop right
+            restart: 1 = restart this player's game (only works when isGameOver is true)
+
+        output:
+            positionP1 / positionP2: 'left' | 'right'
+                Which side of the tree the player is currently standing on.
+
+            scoreP1 / scoreP2: int >= 0
+                Number of successful chops (each safe chop = +1).
+
+            timeLeftP1 / timeLeftP2: float [0, 240]
+                Remaining time. Drains every frame; each successful chop adds time back.
+                Reaches 0 → game over by timeout (isDead stays false).
+
+            isGameOverP1 / isGameOverP2: boolean
+                True when the player's game has ended, either by branch hit or timeout.
+
+            isDeadP1 / isDeadP2: boolean
+                True when the player was killed by chopping into a branch.
+                False when the game ended by running out of time.
+
+            visibleTreeLayoutP1 / visibleTreeLayoutP2: { branch: 'left' | 'right' | null }[]  (length: 7)
+                The visible tree segments, ordered bottom to top.
+                [0] is the segment directly above the player — the one about to be chopped.
+                If treeSegments[0].branch matches the player's current position → instant death.
+
+            levelP1 / levelP2: int >= 1
+                Current difficulty level. Goes up as the player accumulates enough chops.
+                Higher level = smaller time bonus per chop.
+
+            chopsThisLevelP1 / chopsThisLevelP2: int >= 0
+                Chops completed so far toward the next level-up.
+
+            chopsToNextLevelP1 / chopsToNextLevelP2: int >= 0
+                Total chops needed this level to advance to the next one.
+
+        default values (at game start):
+            positionP1/P2: 'left'  |  scoreP1/P2: 0  |  timeLeftP1/P2: 120
+            isGameOverP1/P2: false  |  isDeadP1/P2: false
+            levelP1/P2: 1  |  chopsThisLevelP1/P2: 0  |  chopsToNextLevelP1/P2: 20
     `;
     public override players = [
         new Player(
