@@ -8,6 +8,7 @@ import {
   Twozerofoureight,
   TwozerofoureightState,
 } from './models/twozerofoureight.class';
+import { PlayerSourceType } from '../../models/player-source-type.enum';
 
 type TMoveDir = 'left' | 'right' | 'up' | 'down';
 type TTileAnimType = 'spawn' | 'merge';
@@ -86,7 +87,7 @@ export class TwozerofoureightGameWindowComponent
 {
   public override game!: Twozerofoureight;
 
-  private _isMoveHeld = false;
+  private _lastMove = 0;
   public hasWinAcknowledged = false;
   private _tileAnims: ITileAnim[] = [];
   private _animDuration = 160;
@@ -131,7 +132,7 @@ export class TwozerofoureightGameWindowComponent
     st.score = 0;
     st.isGameOver = false;
     st.hasWon = false;
-    this._isMoveHeld = false;
+    this._lastMove = 0;
     this.hasWinAcknowledged = false;
     this._tileAnims = [];
 
@@ -142,31 +143,34 @@ export class TwozerofoureightGameWindowComponent
   private processMoveInput(): void {
     if (this.game.state.isGameOver) return;
 
-    const move = Number(this.game.players[0].inputData['move'] ?? 0);
+    const player = this.game.players[0];
+    const move = Number(player.inputData['move'] ?? 0);
+    const isSocket = player.playerType === PlayerSourceType.SOCKET;
     
     if (move === 0) {
-      this._isMoveHeld = false;
+      this._lastMove = 0;
       return;
     }
 
-    if (this._isMoveHeld) return;
+    if (!isSocket) {
+      if (move === this._lastMove) return;
+      this._lastMove = move;
+    }  
 
     if (this.game.state.hasWon && !this.hasWinAcknowledged) {
       this.hasWinAcknowledged = true;
-      this._isMoveHeld = true;
       return;
     }
 
     const direction = this.mapMoveToDirection(move);
     if (!direction) return;
 
-    const moved = this.tryMove(direction);
-    if (moved) {
+    const isMoved = this.tryMove(direction);
+    if (isMoved) {
       this.spawnRandomTile();
       this.updateGameOverState();
     }
 
-    this._isMoveHeld = true;
   }
 
   private mapMoveToDirection(value: number): TMoveDir | null {
@@ -187,7 +191,7 @@ export class TwozerofoureightGameWindowComponent
   private tryMove(dir: TMoveDir): boolean {
     const st = this.game.state;
     const size = st.size;
-    let moved = false;
+    let isMoved = false;
     let gained = 0;
     const grid = this.cloneGrid(st.grid);
 
@@ -200,7 +204,7 @@ export class TwozerofoureightGameWindowComponent
         const finalLine =
           dir === 'right' ? result.line.reverse() : result.line;
 
-        if (!this.linesEqual(originalRow, finalLine)) moved = true;
+        if (!this.linesEqual(originalRow, finalLine)) isMoved = true;
         grid[r] = finalLine;
 
         for (let i = 0; i < size; i++) {
@@ -229,7 +233,7 @@ export class TwozerofoureightGameWindowComponent
           dir === 'down' ? result.line.reverse() : result.line;
 
         for (let r = 0; r < size; r++) {
-          if (grid[r][c] !== finalLine[r]) moved = true;
+          if (grid[r][c] !== finalLine[r]) isMoved = true;
           grid[r][c] = finalLine[r];
         }
 
@@ -249,14 +253,14 @@ export class TwozerofoureightGameWindowComponent
       }
     }
 
-    if (moved) {
+    if (isMoved) {
       st.grid = grid;
       st.score += gained;
       if (st.score > st.bestScore) st.bestScore = st.score;
       if (this.containsValue(st.grid, 2048)) st.hasWon = true;
     }
 
-    return moved;
+    return isMoved;
   }
 
   private slideAndMerge(line: number[]): { line: number[]; score: number } {
