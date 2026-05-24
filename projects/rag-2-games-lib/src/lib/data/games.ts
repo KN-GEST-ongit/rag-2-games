@@ -14,6 +14,7 @@ import { Soccer } from '../games/soccer/models/soccer.class';
 import { Checkers } from '../games/checkers/models/checkers.class';
 import { Crashball } from '../games/crashball/models/crashball.class';
 
+import { Twozerofoureight } from '../games/twozerofoureight/models/twozerofoureight.class';
 export const games: Record<string, Game> = {
   pong: new Pong(),
   skijump: new SkiJump(),
@@ -27,6 +28,7 @@ export const games: Record<string, Game> = {
   tetris: new Tetris(),
   crossyroad: new CrossyRoad(),
   soccer: new Soccer(),
+  twozerofoureight: new Twozerofoureight(),
   checkers: new Checkers(),
   crashball: new Crashball(),
 };
