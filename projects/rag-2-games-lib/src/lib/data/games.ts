@@ -11,7 +11,9 @@ import { Abalone } from '../games/abalone/models/abalone.class';
 import { Tetris } from '../games/tetris/models/tetris.class';
 import { CrossyRoad } from '../games/crossyroad/models/crossyroad.class';
 import { Soccer } from '../games/soccer/models/soccer.class';
+import { Checkers } from '../games/checkers/models/checkers.class';
 import { Crashball } from '../games/crashball/models/crashball.class';
+
 export const games: Record<string, Game> = {
   pong: new Pong(),
   skijump: new SkiJump(),
@@ -25,5 +27,6 @@ export const games: Record<string, Game> = {
   tetris: new Tetris(),
   crossyroad: new CrossyRoad(),
   soccer: new Soccer(),
+  checkers: new Checkers(),
   crashball: new Crashball(),
 };
