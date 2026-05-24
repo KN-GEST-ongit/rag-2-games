@@ -135,6 +135,8 @@ export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
           break;
         case 'checkers':
           ComponentClass = (await import('./games/checkers/checkers.component')).CheckersGameWindowComponent;
+        case 'crashball':
+          ComponentClass = (await import('./games/crashball/crashball.component')).CrashballGameWindowComponent;
           break;
         default:
           console.error(`Unknown game: ${gameName}`);
