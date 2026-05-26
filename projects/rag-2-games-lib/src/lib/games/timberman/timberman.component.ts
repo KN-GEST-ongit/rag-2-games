@@ -4,6 +4,7 @@ import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Timberman, TimbermanState, generateSegment, generateTree, INITIAL_TIME, MAX_TIME } from './models/timberman.class';
+import { PlayerSourceType } from '../../models/player-source-type.enum';
 
 @Component({
   selector: 'app-timberman',
@@ -136,12 +137,18 @@ export class TimbermanGameWindowComponent
   private updatePlayer(playerIndex: number): void {
     const st = this.game.state as TimbermanState;
     const isGameOver = playerIndex === 0 ? st.isGameOverP1 : st.isGameOverP2;
+    const isSocketPlayer = this.game.players[playerIndex]?.playerType === PlayerSourceType.SOCKET;
 
     if (isGameOver) {
       const restartVal = (this.game.players[playerIndex]?.inputData['restart'] as number) ?? 0;
       const isRestartPressed = restartVal !== 0;
       if (isRestartPressed && !this._wasRestartPressed[playerIndex]) this.restartPlayer(playerIndex);
-      this._wasRestartPressed[playerIndex] = isRestartPressed;
+      if (isSocketPlayer && isRestartPressed) {
+        this.game.players[playerIndex].inputData['restart'] = 0;
+        this._wasRestartPressed[playerIndex] = false;
+      } else {
+        this._wasRestartPressed[playerIndex] = isRestartPressed;
+      }
       return;
     }
 
@@ -165,7 +172,12 @@ export class TimbermanGameWindowComponent
       this.processChop(playerIndex, chop === 1 ? 'left' : 'right');
     }
 
-    this._wasChopPressed[playerIndex] = isChopPressed;
+    if (isSocketPlayer && isChopPressed) {
+      this.game.players[playerIndex].inputData['chop'] = 0;
+      this._wasChopPressed[playerIndex] = false;
+    } else {
+      this._wasChopPressed[playerIndex] = isChopPressed;
+    }
   }
 
   private processChop(playerIndex: number, side: 'left' | 'right'): void {
