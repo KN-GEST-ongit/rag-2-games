@@ -74,7 +74,8 @@ export class BallfallRenderer extends Base3DRenderer {
     this.trackMat.specularColor = new Color3(0, 0, 0);
 
     const obsMat = new StandardMaterial('obsMat', this.scene);
-    obsMat.diffuseColor = new Color3(1, 0, 0);
+    obsMat.diffuseColor = new Color3(0, 0, 0);
+    obsMat.specularColor = new Color3(0, 0, 0);
     this.obsMat = obsMat;
   }
 
@@ -122,34 +123,28 @@ export class BallfallRenderer extends Base3DRenderer {
 
         if (segment.obstacles) {
           for (const obs of segment.obstacles) {
-            const obstacle = MeshBuilder.CreateBox(
-              'obs',
-              { size: 0.8 },
+            const obstacle = MeshBuilder.CreateCylinder(
+              'spike',
+              {
+                diameterTop: 0,
+                diameterBottom: 1.6,
+                height: 2.4,
+                tessellation: 6,
+              },
               this.scene
             );
-            obstacle.position = new Vector3(segment.xOffset + obs.x, 0, obs.z);
+
+            obstacle.position = new Vector3(
+              segment.xOffset + obs.x,
+              0.1,
+              obs.z
+            );
+
             obstacle.material = this.obsMat;
 
-            if (segment.obstacles) {
-              for (const obs of segment.obstacles) {
-                const obstacle = MeshBuilder.CreateCylinder(
-                  'spike',
-                  {
-                    diameterTop: 0,
-                    diameterBottom: 0.8,
-                    height: 1.2,
-                  },
-                  this.scene
-                );
-
-                obstacle.position = new Vector3(
-                  segment.xOffset + obs.x,
-                  0.1,
-                  segment.zStart + obs.z
-                );
-                obstacle.material = this.obsMat;
-              }
-            }
+            obstacle.enableEdgesRendering();
+            obstacle.edgesWidth = 8.0;
+            obstacle.edgesColor = new Color4(1, 0, 0, 1);
           }
         }
 
@@ -164,7 +159,6 @@ export class BallfallRenderer extends Base3DRenderer {
           box.position = new Vector3(segment.xOffset, -0.5, centerZ);
         }
 
-        box.position = new Vector3(segment.xOffset, -0.5, centerZ);
         box.material = this.trackMat;
 
         box.enableEdgesRendering();
