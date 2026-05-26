@@ -195,12 +195,6 @@ export class BallfallGameWindowComponent
     if (isOnTrack && activeSegment) {
       let groundLevel = 0.5;
 
-      const distFromEnd = activeSegment.zEnd - state.ballZ;
-
-      if (!activeSegment.isRamp && distFromEnd < 0.1) {
-        isOnTrack = false;
-      }
-
       if (activeSegment.isRamp && activeSegment.rampX !== undefined) {
         const rampLength = 4;
         const rampZStart = activeSegment.zEnd - rampLength;
@@ -224,12 +218,15 @@ export class BallfallGameWindowComponent
           if (distOnRamp > rampLength - this.forwardSpeed - 0.1) {
             state.ballVY = 0.35;
           }
-        } else if (state.ballZ >= rampZStart) {
-          isOnTrack = false;
         }
       }
 
-      if (isOnTrack && state.ballY <= groundLevel) {
+      const snapToleranceBelowGround = 1.0;
+      if (
+        isOnTrack &&
+        state.ballY <= groundLevel &&
+        state.ballY >= groundLevel - snapToleranceBelowGround
+      ) {
         state.ballY = groundLevel;
         if (state.ballVY < 0) state.ballVY = 0;
       }
