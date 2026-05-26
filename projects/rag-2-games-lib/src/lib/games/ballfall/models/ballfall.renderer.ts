@@ -18,6 +18,7 @@ import {
 import { Base3DRenderer } from '../../../engine-3d/base-3d.renderer';
 import { BallfallState } from './ballfall.class';
 import type { TrackSegment } from '../ballfall.component';
+import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui';
 
 export class BallfallRenderer extends Base3DRenderer {
   private camera: UniversalCamera;
@@ -25,6 +26,9 @@ export class BallfallRenderer extends Base3DRenderer {
   private trackMat!: StandardMaterial;
   private obsMat!: StandardMaterial;
   private renderedTracks: Map<number, Mesh> = new Map();
+  private guiTexture?: AdvancedDynamicTexture;
+  private gameOverPanel?: Rectangle;
+  private scoreText?: TextBlock;
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, new Color4(0.1, 0.1, 0.15, 1));
@@ -50,6 +54,40 @@ export class BallfallRenderer extends Base3DRenderer {
     dirLight.intensity = 0.8;
 
     this.createEnvironment();
+    this.setupGUI();
+  }
+
+  private setupGUI(): void {
+    this.guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('UI');
+
+    this.gameOverPanel = new Rectangle();
+    this.gameOverPanel.width = 1;
+    this.gameOverPanel.height = 1;
+    this.gameOverPanel.background = 'rgba(0, 0, 0, 0.8)';
+    this.gameOverPanel.color = 'transparent';
+    this.gameOverPanel.isVisible = false;
+    this.guiTexture.addControl(this.gameOverPanel);
+
+    const title = new TextBlock();
+    title.text = 'GAME OVER';
+    title.color = 'red';
+    title.fontSize = 64;
+    title.fontWeight = 'bold';
+    title.top = '-100px';
+    this.gameOverPanel.addControl(title);
+
+    this.scoreText = new TextBlock();
+    this.scoreText.color = 'white';
+    this.scoreText.fontSize = 32;
+    this.scoreText.top = '40px';
+    this.gameOverPanel.addControl(this.scoreText);
+
+    const restartHint = new TextBlock();
+    restartHint.text = 'Press Enter to Play Again';
+    restartHint.color = 'white';
+    restartHint.fontSize = 24;
+    restartHint.top = '100px';
+    this.gameOverPanel.addControl(restartHint);
   }
 
   private createEnvironment(): void {
@@ -105,6 +143,15 @@ export class BallfallRenderer extends Base3DRenderer {
         state.ballZ + 5
       )
     );
+
+    if (this.gameOverPanel && this.scoreText) {
+      if (state.isGameOver) {
+        this.scoreText.text = `Score: ${Math.floor(state.score)}`;
+        this.gameOverPanel.isVisible = true;
+      } else {
+        this.gameOverPanel.isVisible = false;
+      }
+    }
 
     this.syncTrack(track);
   }

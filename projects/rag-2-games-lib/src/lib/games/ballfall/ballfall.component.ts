@@ -31,6 +31,7 @@ export interface TrackSegment {
       [displayMode]="'horizontal'"
       [is3DEnabled]="true"
       #gameCanvas></app-canvas>
+
     <b>Wynik: {{ Math.floor(game.state.score) }} | FPS: {{ fps }}</b>
   `,
 })
@@ -73,10 +74,14 @@ export class BallfallGameWindowComponent
 
   protected override update(): void {
     super.update();
-    if (!this.renderer3D || this.isPaused || this.game.state.isGameOver) return;
+    if (!this.renderer3D || this.isPaused) return;
 
     this.handleInput();
-    this.updatePhysics();
+
+    if (!this.game.state.isGameOver) {
+      this.updatePhysics();
+    }
+
     this.renderer3D.render(this.game.state, this.track);
   }
 
@@ -84,10 +89,17 @@ export class BallfallGameWindowComponent
     const state = this.game.state;
     const player = this.game.players[0];
 
-    if (player) {
-      const move = (player.inputData['move'] as number) || 0;
-      state.ballX += move * this.sideSpeed;
+    if (!player) return;
+
+    if (state.isGameOver) {
+      if (player.inputData['action'] === 1) {
+        this.restart();
+      }
+      return;
     }
+
+    const move = (player.inputData['move'] as number) || 0;
+    state.ballX += move * this.sideSpeed;
   }
 
   private updatePhysics(): void {

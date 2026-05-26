@@ -31,15 +31,16 @@ export class Ballfall extends Game {
       0,
       true,
       'Gracz',
-      { move: 0 },
+      { move: 0, action: 0 },
       {
         ArrowLeft: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
         ArrowRight: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
         a: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
         d: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        Enter: { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       },
-      `<move>: -1 left, 1 right;`,
-      { left: '[←/A]', right: '[→/D]' }
+      `<move>: -1 left, 1 right; <action>: 1 restart;`,
+      { left: '[←/A]', right: '[→/D]', restart: '[ENTER]' }
     ),
   ];
 }
