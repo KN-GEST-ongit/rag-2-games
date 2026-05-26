@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
@@ -66,9 +67,17 @@ export class BallfallGameWindowComponent
   }
 
   public override restart(): void {
+    if (this.renderer3D) {
+      this.renderer3D.clear();
+    }
+
     this.game.state = new BallfallState();
+
     this.track = [];
     this.lastTrackZ = 0;
+
+    this.forwardSpeed = 0.2;
+
     this.generateInitialTrack();
   }
 
@@ -123,6 +132,22 @@ export class BallfallGameWindowComponent
     state.ballVY -= this.gravity;
     state.ballY += state.ballVY;
 
+    for (const segment of this.track) {
+      if (segment.obstacles) {
+        for (const obs of segment.obstacles) {
+          const dist = Math.sqrt(
+            Math.pow(state.ballX - (segment.xOffset + obs.x), 2) +
+              Math.pow(state.ballZ - obs.z, 2)
+          );
+
+          if (dist < 1.2) {
+            this.game.state.isGameOver = true;
+            return;
+          }
+        }
+      }
+    }
+
     let isOnTrack = false;
     let activeSegment: TrackSegment | null = null;
 
@@ -135,20 +160,6 @@ export class BallfallGameWindowComponent
           isOnTrack = true;
           activeSegment = segment;
           break;
-        }
-      }
-
-      if (segment.obstacles) {
-        for (const obs of segment.obstacles) {
-          const dist = Math.sqrt(
-            Math.pow(state.ballX - (segment.xOffset + obs.x), 2) +
-              Math.pow(state.ballZ - obs.z, 2)
-          );
-          if (dist < 0.8) {
-            this.game.state.isGameOver = true;
-            this.restart();
-            return;
-          }
         }
       }
     }

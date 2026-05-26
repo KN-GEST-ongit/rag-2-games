@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
@@ -181,14 +182,11 @@ export class BallfallRenderer extends Base3DRenderer {
               this.scene
             );
 
-            obstacle.position = new Vector3(
-              segment.xOffset + obs.x,
-              0.1,
-              obs.z
-            );
+            obstacle.parent = box;
+
+            obstacle.position = new Vector3(obs.x, 1.7, obs.z - centerZ);
 
             obstacle.material = this.obsMat;
-
             obstacle.enableEdgesRendering();
             obstacle.edgesWidth = 8.0;
             obstacle.edgesColor = new Color4(1, 0, 0, 1);
@@ -207,7 +205,6 @@ export class BallfallRenderer extends Base3DRenderer {
         }
 
         box.material = this.trackMat;
-
         box.enableEdgesRendering();
         box.edgesWidth = 4.0;
         box.edgesColor = new Color4(1, 0.5, 0, 1);
@@ -225,5 +222,10 @@ export class BallfallRenderer extends Base3DRenderer {
     }
   }
 
-  public clear(): void {}
+  public clear(): void {
+    this.renderedTracks.forEach(mesh => {
+      mesh.dispose();
+    });
+    this.renderedTracks.clear();
+  }
 }
