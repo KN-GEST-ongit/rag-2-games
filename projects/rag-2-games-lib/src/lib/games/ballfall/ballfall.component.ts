@@ -20,6 +20,7 @@ export interface TrackSegment {
   width: number;
   isRamp?: boolean;
   rampAngle?: number;
+  rampX?: number;
   obstacles?: Obstacle[];
 }
 
@@ -140,7 +141,7 @@ export class BallfallGameWindowComponent
               Math.pow(state.ballZ - obs.z, 2)
           );
 
-          if (dist < 1.2) {
+          if (dist < 0.95) {
             this.game.state.isGameOver = true;
             return;
           }
@@ -167,29 +168,46 @@ export class BallfallGameWindowComponent
     if (isOnTrack && activeSegment) {
       let groundLevel = 0.5;
 
-      if (activeSegment.isRamp && activeSegment.rampAngle) {
-        const distFromStart = state.ballZ - activeSegment.zStart;
-        groundLevel = 0.5 + distFromStart * Math.sin(activeSegment.rampAngle);
+      if (activeSegment.isRamp && activeSegment.rampX !== undefined) {
+        const rampLength = 4;
+        const rampZStart = activeSegment.zEnd - rampLength;
+        const rampZEnd = activeSegment.zEnd;
+        const rampWidth = 2.0;
+
+        const absoluteRampX = activeSegment.xOffset + activeSegment.rampX;
+
+        const isHitX =
+          Math.abs(state.ballX - absoluteRampX) < rampWidth / 2 + 0.5;
+
+        if (isHitX && state.ballZ >= rampZStart && state.ballZ <= rampZEnd) {
+          const distOnRamp = state.ballZ - rampZStart;
+          const t = Math.max(0, Math.min(1, distOnRamp / rampLength));
+
+          groundLevel = 0.5 + Math.pow(t, 2) * 2;
+
+          if (distOnRamp > rampLength - this.forwardSpeed - 0.1) {
+            state.ballVY = 0.35;
+          }
+        }
       }
 
       if (state.ballY < groundLevel) {
         state.ballY = groundLevel;
-        state.ballVY = 0;
-
-        if (activeSegment.isRamp) {
-          state.ballVY += 0.02;
+        if (state.ballVY < 0) {
+          state.ballVY = 0;
         }
       }
     }
 
-    if (state.ballY < -10) {
-      this.restart();
+    if (state.ballY < -5) {
+      this.game.state.isGameOver = true;
+      return;
     }
   }
 
   private spawnTrackSegment(): void {
     const segmentLength = 20;
-    const isRamp = Math.random() > 0.8;
+    const isRamp = Math.random() > 0.9;
 
     const newSegment: TrackSegment = {
       zStart: this.lastTrackZ,
@@ -197,20 +215,20 @@ export class BallfallGameWindowComponent
       xOffset: (Math.random() - 0.5) * 4,
       width: 6,
       isRamp: isRamp,
-      rampAngle: isRamp ? 0.3 : 0,
+      rampX: isRamp ? (Math.random() - 0.5) * 3 : undefined,
       obstacles:
         !isRamp && Math.random() > 0.5
-          ? [
-              {
-                x: (Math.random() - 0.5) * 4,
-                z: this.lastTrackZ + 10,
-              },
-            ]
+          ? [{ x: (Math.random() - 0.5) * 4, z: this.lastTrackZ + 10 }]
           : [],
     };
 
     this.track.push(newSegment);
-    this.lastTrackZ += segmentLength;
+
+    if (isRamp) {
+      this.lastTrackZ += segmentLength + 10;
+    } else {
+      this.lastTrackZ += segmentLength;
+    }
   }
 
   private generateInitialTrack(): void {

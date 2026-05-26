@@ -163,29 +163,67 @@ export class BallfallRenderer extends Base3DRenderer {
         const length = segment.zEnd - segment.zStart;
         const centerZ = segment.zStart + length / 2;
 
-        const box = MeshBuilder.CreateBox(
+        const trackMesh = MeshBuilder.CreateBox(
           `track_${segment.zStart}`,
           { width: segment.width, height: 1, depth: length },
           this.scene
         );
+        trackMesh.position = new Vector3(segment.xOffset, -0.5, centerZ);
 
-        if (segment.obstacles) {
+        if (segment.isRamp && segment.rampX !== undefined) {
+          const rampHeight = 2;
+          const rampLength = 4;
+          const rampWidth = 2.0;
+
+          const path = [];
+          for (let i = 0; i <= 10; i++) {
+            const t = i / 10;
+            path.push(
+              new Vector3(0, Math.pow(t, 2) * rampHeight, t * rampLength)
+            );
+          }
+
+          const shape = [
+            new Vector3(-rampWidth / 2, 0, 0),
+            new Vector3(rampWidth / 2, 0, 0),
+            new Vector3(rampWidth / 2, -1, 0),
+            new Vector3(-rampWidth / 2, -1, 0),
+            new Vector3(-rampWidth / 2, 0, 0),
+          ];
+
+          const rampMesh = MeshBuilder.ExtrudeShape(
+            `ramp_${segment.zStart}`,
+            { shape: shape, path: path, sideOrientation: 2 },
+            this.scene
+          );
+
+          rampMesh.parent = trackMesh;
+
+          const localZStart = segment.zEnd - rampLength - centerZ;
+
+          rampMesh.position = new Vector3(segment.rampX, 0.5, localZStart);
+
+          rampMesh.material = this.trackMat;
+          rampMesh.enableEdgesRendering();
+          rampMesh.edgesWidth = 6.0;
+          rampMesh.edgesColor = new Color4(0, 1, 0.2, 1);
+        }
+
+        if (segment.obstacles && !segment.isRamp) {
           for (const obs of segment.obstacles) {
             const obstacle = MeshBuilder.CreateCylinder(
               'spike',
               {
                 diameterTop: 0,
-                diameterBottom: 1.6,
-                height: 2.4,
+                diameterBottom: 1.0,
+                height: 1.5,
                 tessellation: 6,
               },
               this.scene
             );
 
-            obstacle.parent = box;
-
-            obstacle.position = new Vector3(obs.x, 1.7, obs.z - centerZ);
-
+            obstacle.parent = trackMesh;
+            obstacle.position = new Vector3(obs.x, 1.25, obs.z - centerZ);
             obstacle.material = this.obsMat;
             obstacle.enableEdgesRendering();
             obstacle.edgesWidth = 8.0;
@@ -193,23 +231,12 @@ export class BallfallRenderer extends Base3DRenderer {
           }
         }
 
-        if (segment.isRamp) {
-          box.rotation.x = -(segment.rampAngle || 0);
-          box.position = new Vector3(
-            segment.xOffset,
-            -0.5 + (length / 2) * Math.sin(segment.rampAngle || 0),
-            centerZ
-          );
-        } else {
-          box.position = new Vector3(segment.xOffset, -0.5, centerZ);
-        }
+        trackMesh.material = this.trackMat;
+        trackMesh.enableEdgesRendering();
+        trackMesh.edgesWidth = 4.0;
+        trackMesh.edgesColor = new Color4(1, 0.5, 0, 1);
 
-        box.material = this.trackMat;
-        box.enableEdgesRendering();
-        box.edgesWidth = 4.0;
-        box.edgesColor = new Color4(1, 0.5, 0, 1);
-
-        this.renderedTracks.set(segment.zStart, box);
+        this.renderedTracks.set(segment.zStart, trackMesh);
       }
     }
 
