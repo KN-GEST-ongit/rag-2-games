@@ -13,6 +13,11 @@ export interface Obstacle {
   z: number;
 }
 
+export interface BoostPad {
+  x: number;
+  z: number;
+}
+
 export interface TrackSegment {
   zStart: number;
   zEnd: number;
@@ -22,6 +27,7 @@ export interface TrackSegment {
   rampAngle?: number;
   rampX?: number;
   obstacles?: Obstacle[];
+  boostPads?: BoostPad[];
 }
 
 @Component({
@@ -46,10 +52,10 @@ export class BallfallGameWindowComponent
   public Math = Math;
 
   public forwardSpeed = 0.2;
-  public sideSpeed = 0.15;
+  public sideSpeed = 0.1;
   public gravity = 0.02;
 
-  public maxForwardSpeed = 0.8;
+  public maxForwardSpeed = 0.5;
   public acceleration = 0.0005;
 
   private track: TrackSegment[] = [];
@@ -115,6 +121,11 @@ export class BallfallGameWindowComponent
   private updatePhysics(): void {
     const state = this.game.state;
 
+    if (state.boostTimer > 0) {
+      state.boostTimer--;
+      state.ballZ += 0.3;
+    }
+
     if (this.forwardSpeed < this.maxForwardSpeed) {
       this.forwardSpeed += this.acceleration;
     }
@@ -144,6 +155,16 @@ export class BallfallGameWindowComponent
           if (dist < 0.95) {
             this.game.state.isGameOver = true;
             return;
+          }
+        }
+      }
+
+      if (segment.boostPads) {
+        for (const pad of segment.boostPads) {
+          const distX = Math.abs(state.ballX - (segment.xOffset + pad.x));
+          const distZ = Math.abs(state.ballZ - pad.z);
+          if (distX < 1.5 && distZ < 2.0 && state.ballY < 1.0) {
+            state.boostTimer = 30;
           }
         }
       }
@@ -209,6 +230,19 @@ export class BallfallGameWindowComponent
     const segmentLength = 20;
     const isRamp = Math.random() > 0.9;
 
+    const spawnThreshold = Math.max(0.2, 0.5 - this.lastTrackZ / 5000);
+
+    const hasObstacle = !isRamp && Math.random() > spawnThreshold;
+
+    const obstacles: Obstacle[] = hasObstacle
+      ? [{ x: (Math.random() - 0.5) * 4, z: this.lastTrackZ + 10 }]
+      : [];
+
+    const boostPads: BoostPad[] = [];
+    if (!isRamp && !hasObstacle && Math.random() > 0.4) {
+      boostPads.push({ x: (Math.random() - 0.5) * 4, z: this.lastTrackZ + 10 });
+    }
+
     const newSegment: TrackSegment = {
       zStart: this.lastTrackZ,
       zEnd: this.lastTrackZ + segmentLength,
@@ -216,10 +250,8 @@ export class BallfallGameWindowComponent
       width: 6,
       isRamp: isRamp,
       rampX: isRamp ? (Math.random() - 0.5) * 3 : undefined,
-      obstacles:
-        !isRamp && Math.random() > 0.5
-          ? [{ x: (Math.random() - 0.5) * 4, z: this.lastTrackZ + 10 }]
-          : [],
+      obstacles: obstacles,
+      boostPads: boostPads,
     };
 
     this.track.push(newSegment);

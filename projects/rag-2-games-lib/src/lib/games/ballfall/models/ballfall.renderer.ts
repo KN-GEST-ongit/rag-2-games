@@ -15,6 +15,8 @@ import {
   GlowLayer,
   DirectionalLight,
   HemisphericLight,
+  TrailMesh,
+  Texture,
 } from '@babylonjs/core';
 import { Base3DRenderer } from '../../../engine-3d/base-3d.renderer';
 import { BallfallState } from './ballfall.class';
@@ -30,6 +32,12 @@ export class BallfallRenderer extends Base3DRenderer {
   private guiTexture?: AdvancedDynamicTexture;
   private gameOverPanel?: Rectangle;
   private scoreText?: TextBlock;
+  private boostMat!: StandardMaterial;
+  private trailMat!: StandardMaterial;
+  private trailRibbon: Mesh | null = null;
+  private trailPathCenter: Vector3[] = [];
+  private ballTrail!: TrailMesh;
+  private isTrailActive = false;
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, new Color4(0.1, 0.1, 0.15, 1));
@@ -116,6 +124,19 @@ export class BallfallRenderer extends Base3DRenderer {
     obsMat.diffuseColor = new Color3(0, 0, 0);
     obsMat.specularColor = new Color3(0, 0, 0);
     this.obsMat = obsMat;
+
+    const boostMat = new StandardMaterial('boostMat', this.scene);
+    boostMat.diffuseColor = new Color3(1, 0.8, 0);
+    boostMat.emissiveColor = new Color3(0.6, 0.4, 0);
+    this.boostMat = boostMat;
+
+    const trailMat = new StandardMaterial('trailMat', this.scene);
+    trailMat.diffuseColor = new Color3(1, 0.4, 0);
+    trailMat.emissiveColor = new Color3(1, 0.4, 0);
+    trailMat.alpha = 0.6;
+    trailMat.disableLighting = true;
+    trailMat.backFaceCulling = false;
+    this.trailMat = trailMat;
   }
 
   public render(state: BallfallState, track: TrackSegment[]): void {
@@ -144,6 +165,69 @@ export class BallfallRenderer extends Base3DRenderer {
         state.ballZ + 5
       )
     );
+
+    const MAX_TRAIL_LENGTH = 40;
+
+    if (state.boostTimer > 0) {
+      this.trailPathCenter.push(
+        new Vector3(state.ballX, state.ballY - 0.48, state.ballZ)
+      );
+    } else if (this.trailPathCenter.length > 0) {
+      this.trailPathCenter.shift();
+    }
+
+    if (this.trailPathCenter.length > MAX_TRAIL_LENGTH) {
+      this.trailPathCenter.shift();
+    }
+
+    if (this.trailPathCenter.length > 1) {
+      const leftPath: Vector3[] = [];
+      const rightPath: Vector3[] = [];
+
+      const fillCount = MAX_TRAIL_LENGTH - this.trailPathCenter.length;
+      const firstPoint = this.trailPathCenter[0];
+
+      for (let i = 0; i < fillCount; i++) {
+        leftPath.push(
+          new Vector3(firstPoint.x - 0.45, firstPoint.y, firstPoint.z)
+        );
+        rightPath.push(
+          new Vector3(firstPoint.x + 0.45, firstPoint.y, firstPoint.z)
+        );
+      }
+
+      for (let i = 0; i < this.trailPathCenter.length; i++) {
+        const p = this.trailPathCenter[i];
+
+        let yPos = p.y;
+        let width = 0.45;
+
+        if (i === this.trailPathCenter.length - 1 && state.boostTimer > 0) {
+          yPos = state.ballY;
+          width = 0.3;
+        }
+
+        leftPath.push(new Vector3(p.x - width, yPos, p.z));
+        rightPath.push(new Vector3(p.x + width, yPos, p.z));
+      }
+
+      if (this.trailRibbon) {
+        this.trailRibbon = MeshBuilder.CreateRibbon('trailRibbon', {
+          pathArray: [leftPath, rightPath],
+          instance: this.trailRibbon,
+        });
+      } else {
+        this.trailRibbon = MeshBuilder.CreateRibbon(
+          'trailRibbon',
+          { pathArray: [leftPath, rightPath], updatable: true },
+          this.scene
+        );
+        this.trailRibbon.material = this.trailMat;
+      }
+    } else if (this.trailRibbon) {
+      this.trailRibbon.dispose();
+      this.trailRibbon = null;
+    }
 
     if (this.gameOverPanel && this.scoreText) {
       if (state.isGameOver) {
@@ -228,6 +312,23 @@ export class BallfallRenderer extends Base3DRenderer {
             obstacle.enableEdgesRendering();
             obstacle.edgesWidth = 8.0;
             obstacle.edgesColor = new Color4(1, 0, 0, 1);
+          }
+        }
+
+        if (segment.boostPads && !segment.isRamp) {
+          for (const pad of segment.boostPads) {
+            const padMesh = MeshBuilder.CreateBox(
+              'boostPad',
+              { width: 2, height: 0.11, depth: 3 },
+              this.scene
+            );
+            padMesh.parent = trackMesh;
+            padMesh.position = new Vector3(pad.x, 0.55, pad.z - centerZ);
+            padMesh.material = this.boostMat;
+
+            padMesh.enableEdgesRendering();
+            padMesh.edgesWidth = 4.0;
+            padMesh.edgesColor = new Color4(1, 1, 0, 1);
           }
         }
 

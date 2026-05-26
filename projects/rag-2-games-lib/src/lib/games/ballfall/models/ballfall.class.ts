@@ -11,6 +11,7 @@ export class BallfallState implements TGameState {
   public ballZ = 0;
 
   public ballVY = 0;
+  public boostTimer = 0;
 }
 
 export class Ballfall extends Game {
@@ -37,6 +38,8 @@ export class Ballfall extends Game {
         ArrowRight: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
         a: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
         d: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
+        A: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
+        D: { variableName: 'move', pressedValue: 1, releasedValue: 0 },
         Enter: { variableName: 'action', pressedValue: 1, releasedValue: 0 },
       },
       `<move>: -1 left, 1 right; <action>: 1 restart;`,
