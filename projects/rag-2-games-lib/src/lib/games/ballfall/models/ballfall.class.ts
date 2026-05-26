@@ -11,20 +11,20 @@ export class BallfallState implements TGameState {
   public ballZ = 0;
 
   public ballVY = 0;
-  public boostTimer = 0;
 }
 
 export class Ballfall extends Game {
   public override name = 'ballfall';
-  public override author = 'Twój Nick';
+  public override author = 'Mateusz Mączyński';
   public override state = new BallfallState();
 
   public override outputSpec = `
   output:
-    score: int;
-    ballX: float;
-    ballY: float;
-    ballZ: float;
+    score: int, <0, inf>;
+    ballX: float, <-5.0, 5.0>;;
+    ballY: float, <-5.0, 5.0>;
+    ballZ: float, <0, inf>;
+    isGameOver: boolean;
   `;
 
   public override players = [

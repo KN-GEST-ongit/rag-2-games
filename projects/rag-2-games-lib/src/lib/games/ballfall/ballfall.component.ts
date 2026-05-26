@@ -51,6 +51,7 @@ export class BallfallGameWindowComponent
   public override game!: Ballfall;
   protected override renderer3D?: BallfallRenderer;
   public Math = Math;
+  public boostTimer = 0;
 
   public forwardSpeed = 0.2;
   public sideSpeed = 0.1;
@@ -122,8 +123,8 @@ export class BallfallGameWindowComponent
   private updatePhysics(): void {
     const state = this.game.state;
 
-    if (state.boostTimer > 0) {
-      state.boostTimer--;
+    if (this.boostTimer > 0) {
+      this.boostTimer--;
       state.ballZ += 0.3;
     }
 
@@ -165,7 +166,7 @@ export class BallfallGameWindowComponent
           const distX = Math.abs(state.ballX - (segment.xOffset + pad.x));
           const distZ = Math.abs(state.ballZ - pad.z);
           if (distX < 1.5 && distZ < 2.0 && state.ballY < 1.0) {
-            state.boostTimer = 30;
+            this.boostTimer = 30;
           }
         }
       }
