@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 /* eslint-disable max-lines */
 /* eslint-disable complexity */
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -174,7 +175,12 @@ export class BallfallGameWindowComponent
     let activeSegment: TrackSegment | null = null;
 
     for (const segment of this.track) {
-      if (state.ballZ >= segment.zStart && state.ballZ <= segment.zEnd) {
+      const safetyBuffer = 0.5;
+
+      if (
+        state.ballZ >= segment.zStart &&
+        state.ballZ <= segment.zEnd + safetyBuffer
+      ) {
         const leftEdge = segment.xOffset - segment.width / 2;
         const rightEdge = segment.xOffset + segment.width / 2;
 
@@ -189,35 +195,45 @@ export class BallfallGameWindowComponent
     if (isOnTrack && activeSegment) {
       let groundLevel = 0.5;
 
+      const distFromEnd = activeSegment.zEnd - state.ballZ;
+
+      if (!activeSegment.isRamp && distFromEnd < 0.1) {
+        isOnTrack = false;
+      }
+
       if (activeSegment.isRamp && activeSegment.rampX !== undefined) {
         const rampLength = 4;
         const rampZStart = activeSegment.zEnd - rampLength;
-        const rampZEnd = activeSegment.zEnd;
         const rampWidth = 2.0;
 
-        const absoluteRampX = activeSegment.xOffset + activeSegment.rampX;
-
         const isHitX =
-          Math.abs(state.ballX - absoluteRampX) < rampWidth / 2 + 0.5;
+          Math.abs(
+            state.ballX - (activeSegment.xOffset + activeSegment.rampX)
+          ) <
+          rampWidth / 2 + 0.5;
 
-        if (isHitX && state.ballZ >= rampZStart && state.ballZ <= rampZEnd) {
+        if (
+          isHitX &&
+          state.ballZ >= rampZStart &&
+          state.ballZ <= activeSegment.zEnd
+        ) {
           const distOnRamp = state.ballZ - rampZStart;
           const t = Math.max(0, Math.min(1, distOnRamp / rampLength));
-
           groundLevel = 0.5 + Math.pow(t, 2) * 2;
 
           if (distOnRamp > rampLength - this.forwardSpeed - 0.1) {
             state.ballVY = 0.35;
           }
+        } else if (state.ballZ >= rampZStart) {
+          isOnTrack = false;
         }
       }
 
-      if (state.ballY < groundLevel) {
+      if (isOnTrack && state.ballY <= groundLevel) {
         state.ballY = groundLevel;
-        if (state.ballVY < 0) {
-          state.ballVY = 0;
-        }
+        if (state.ballVY < 0) state.ballVY = 0;
       }
+    } else {
     }
 
     if (state.ballY < -5) {

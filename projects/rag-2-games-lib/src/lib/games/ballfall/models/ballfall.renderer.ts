@@ -42,6 +42,10 @@ export class BallfallRenderer extends Base3DRenderer {
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, new Color4(0.1, 0.1, 0.15, 1));
 
+    this.scene.fogMode = 1;
+    this.scene.fogDensity = 0.02;
+    this.scene.fogColor = new Color3(0, 0, 0.05);
+
     this.camera = new UniversalCamera(
       'camera',
       new Vector3(0, 5, -10),
@@ -126,8 +130,8 @@ export class BallfallRenderer extends Base3DRenderer {
     this.obsMat = obsMat;
 
     const boostMat = new StandardMaterial('boostMat', this.scene);
-    boostMat.diffuseColor = new Color3(1, 0.8, 0);
-    boostMat.emissiveColor = new Color3(0.6, 0.4, 0);
+    boostMat.diffuseColor = new Color3(0.05, 0.05, 0.05);
+    boostMat.specularColor = new Color3(0, 0, 0);
     this.boostMat = boostMat;
 
     const trailMat = new StandardMaterial('trailMat', this.scene);
@@ -327,8 +331,8 @@ export class BallfallRenderer extends Base3DRenderer {
             padMesh.material = this.boostMat;
 
             padMesh.enableEdgesRendering();
-            padMesh.edgesWidth = 4.0;
-            padMesh.edgesColor = new Color4(1, 1, 0, 1);
+            padMesh.edgesWidth = 6.0;
+            padMesh.edgesColor = new Color4(0, 0.5, 1, 1);
           }
         }
 
