@@ -11,6 +11,7 @@ export class BallfallState implements TGameState {
   public ballZ = 0;
 
   public ballVY = 0;
+  public boostTimer = 0;
 }
 
 export class Ballfall extends Game {
