@@ -32,7 +32,7 @@ export class Ballfall extends Game {
     new Player(
       0,
       true,
-      'Gracz',
+      'Player',
       { move: 0, action: 0 },
       {
         ArrowLeft: { variableName: 'move', pressedValue: -1, releasedValue: 0 },
