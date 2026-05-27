@@ -109,7 +109,7 @@ export class BallfallGameWindowComponent
     if (!player) return;
 
     if (state.isGameOver) {
-      if (player.inputData['action'] === 1) {
+      if (player.inputData['restart'] === 1) {
         this.restart();
       }
       return;
@@ -232,6 +232,22 @@ export class BallfallGameWindowComponent
       }
     } else {
     }
+
+    state.upcomingTrack = this.track
+      .filter(seg => seg.zEnd >= state.ballZ)
+      .slice(0, 3)
+      .map(seg => ({
+        zStart: seg.zStart,
+        zEnd: seg.zEnd,
+        xOffset: seg.xOffset,
+        isRamp: !!seg.isRamp,
+        obstacles: seg.obstacles
+          ? seg.obstacles.map(o => ({ x: o.x, z: o.z }))
+          : [],
+        boostPads: seg.boostPads
+          ? seg.boostPads.map(b => ({ x: b.x, z: b.z }))
+          : [],
+      }));
 
     if (state.ballY < -5) {
       this.game.state.isGameOver = true;
