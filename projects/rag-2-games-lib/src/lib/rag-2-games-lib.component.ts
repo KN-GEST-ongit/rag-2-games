@@ -133,8 +133,20 @@ export class Rag2GamesLibComponent implements OnChanges, OnDestroy {
           ComponentClass = (await import('./games/soccer/soccer.component'))
             .SoccerGameWindowComponent;
           break;
+        case 'timberman':
+          ComponentClass = (await import('./games/timberman/timberman.component')).TimbermanGameWindowComponent;
+          break;
+          case 'twozerofoureight':
+          ComponentClass = (await import('./games/twozerofoureight/twozerofoureight.component')).TwozerofoureightGameWindowComponent;
+          break;
+        case 'checkers':
+          ComponentClass = (await import('./games/checkers/checkers.component'))
+            .CheckersGameWindowComponent;
+          break;
         case 'crashball':
-          ComponentClass = (await import('./games/crashball/crashball.component')).CrashballGameWindowComponent;
+          ComponentClass = (
+            await import('./games/crashball/crashball.component')
+          ).CrashballGameWindowComponent;
           break;
         case 'ballfall':
           ComponentClass = (await import('./games/ballfall/ballfall.component')).BallfallGameWindowComponent;
