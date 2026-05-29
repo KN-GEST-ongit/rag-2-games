@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { NgIf } from '@angular/common';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
 import { Abalone, AbaloneState, ICubeCoords, IMarbleAnim, cubeToNotation, notationToCube, areNeighbors, areInLine, ABALONE_WIN_SCORE, TPlayerColor } from './models/abalone.class';
@@ -21,7 +21,7 @@ interface IMoveRecord {
 @Component({
   selector: 'app-abalone',
   standalone: true,
-  imports: [CanvasComponent, NgIf],
+  imports: [CanvasComponent, NgIf, NgFor],
   template: `
     <div class="game-info">
       Turn: <b [style.color]="game.state.currentPlayer === 'BLACK' ? 'black' : 'white'">
@@ -37,7 +37,36 @@ interface IMoveRecord {
     <div class="game-hint" *ngIf="!game.state.isGameOver && shouldDisplayCursor()">
       {{ getHintText() }}
     </div>
-    <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
+    <div class="flex flex-row gap-2 items-start">
+      <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
+      <div *ngIf="moveHistory.length > 0"
+           class="flex flex-col bg-mainGray border border-mainOrange rounded text-mainCreme text-xs"
+           style="min-width:160px; max-width:200px;">
+        <div class="flex items-center justify-between px-2 py-1 border-b border-mainOrange">
+          <span class="font-semibold text-mainOrange">History</span>
+          <button *ngIf="replayIndex !== null"
+                  (click)="exitReplay()"
+                  class="text-xs px-2 py-0.5 rounded bg-mainOrange text-black font-semibold hover:brightness-110 transition-all">
+            Live
+          </button>
+        </div>
+        <div #historyList
+             class="overflow-y-auto px-2 py-1"
+             style="max-height:320px;">
+          <div *ngFor="let entry of moveHistory; let i = index"
+               (click)="selectReplay(i)"
+               class="py-0.5 border-b border-lightGray last:border-0 cursor-pointer hover:bg-zinc-700 transition-colors"
+               [class.bg-zinc-600]="replayIndex === i">
+            <span class="text-gray-500">#{{ entry.moveNumber }}</span>
+            <span [style.color]="entry.player === 'BLACK' ? '#1a1a1a' : '#e0e0e0'"
+                  class="mx-1">{{ entry.player === 'BLACK' ? '⬛' : '⬜' }}</span>
+            <span class="text-mainOrange">{{ marbleDots(entry.marbles.length) }}</span>
+            <span class="mx-1">{{ entry.marbles.join(' ') }}</span>
+            <span class="font-bold">{{ directionArrow(entry.direction) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div *ngIf="game.state.isGameOver" class="flex justify-center gap-4 mt-2">
       <button
         class="px-6 py-2 rounded font-semibold bg-mainOrange text-black hover:brightness-110 transition-all"
@@ -117,6 +146,8 @@ export class AbaloneGameWindowComponent
   public isInfoVisible = false;
   public isGameOverDismissed = false;
   public moveHistory: IMoveRecord[] = [];
+  public replayIndex: number | null = null;
+  @ViewChild('historyList') private historyList?: ElementRef<HTMLDivElement>;
 
   public toggleInfo(): void {
     this.isInfoVisible = !this.isInfoVisible;
@@ -213,6 +244,16 @@ export class AbaloneGameWindowComponent
     return '●'.repeat(count);
   }
 
+  public selectReplay(index: number): void {
+    this.replayIndex = index;
+    this.isPaused = true;
+  }
+
+  public exitReplay(): void {
+    this.replayIndex = null;
+    this.isPaused = false;
+  }
+
   private getShouldRotate(): boolean {
     if (!this.game.isRotationEnabled) return false;
     const socketCount = this.getSocketPlayerCount();
@@ -250,6 +291,8 @@ export class AbaloneGameWindowComponent
     this._animationFrame = 0;
     this.isGameOverDismissed = false;
     this.moveHistory = [];
+    this.replayIndex = null;
+    this.isPaused = false;
     for (const player of this.game.players) {
       if (player?.inputData) {
         player.inputData['marbles'] = null;
@@ -763,11 +806,9 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-
     ctx.save();
     ctx.translate(this._canvas.width / 2, this._canvas.height / 2);
 
-    // Rotation logic: depends on socket configuration
     if (this.getShouldRotate()) {
       ctx.rotate(Math.PI);
     }
@@ -775,24 +816,31 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
     drawHexGrid(ctx, this._hexSize);
     drawBoardLabels(ctx, this._hexSize, this.getShouldRotate());
 
-    if (this.game.state.phase === 'ANIMATING' && this._animation.length > 0) {
-      const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this._hexSize);
-      drawMarbles(ctx, this.game.state, this._hexSize, skipKeys);
+    if (this.replayIndex !== null) {
+      const entry = this.moveHistory[this.replayIndex];
+      const snapState = new AbaloneState();
+      snapState.board = { ...entry.boardSnapshot };
+      snapState.deadMarbles = { ...entry.deadMarblesSnapshot };
+      drawMarbles(ctx, snapState, this._hexSize);
+      ctx.restore();
+      drawCemetery(ctx, snapState, this._canvas.width, this._canvas.height, this._hexSize);
     } else {
-      drawMarbles(ctx, this.game.state, this._hexSize);
-      drawMoveGhosts(ctx, this.game.state, this._hexSize, this._directions, k => notationToCube(k), p => this.isOnBoard(p));
-      drawDirectionCompass(ctx, this.game.state, this._hexSize, this._directions, this.getDisplayLabels(), k => notationToCube(k), this.getShouldRotate());
-      if (this.shouldDisplayCursor() && this.game.state.phase === 'SELECT') {
-        drawHexCursor(ctx, this.game.state, this._hexSize);
+      if (this.game.state.phase === 'ANIMATING' && this._animation.length > 0) {
+        const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this._hexSize);
+        drawMarbles(ctx, this.game.state, this._hexSize, skipKeys);
+      } else {
+        drawMarbles(ctx, this.game.state, this._hexSize);
+        drawMoveGhosts(ctx, this.game.state, this._hexSize, this._directions, k => notationToCube(k), p => this.isOnBoard(p));
+        drawDirectionCompass(ctx, this.game.state, this._hexSize, this._directions, this.getDisplayLabels(), k => notationToCube(k), this.getShouldRotate());
+        if (this.shouldDisplayCursor() && this.game.state.phase === 'SELECT') {
+          drawHexCursor(ctx, this.game.state, this._hexSize);
+        }
       }
-    }
-
-    ctx.restore();
-
-    drawCemetery(ctx, this.game.state, this._canvas.width, this._canvas.height, this._hexSize);
-
-    if (this.game.state.isGameOver && !this.isGameOverDismissed) {
-      drawGameOver(ctx, this._canvas, this.game.state);
+      ctx.restore();
+      drawCemetery(ctx, this.game.state, this._canvas.width, this._canvas.height, this._hexSize);
+      if (this.game.state.isGameOver && !this.isGameOverDismissed) {
+        drawGameOver(ctx, this._canvas, this.game.state);
+      }
     }
   }
 }
