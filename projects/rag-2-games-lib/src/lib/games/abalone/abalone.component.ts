@@ -14,6 +14,8 @@ interface IMoveRecord {
   player: TPlayerColor;
   marbles: string[];
   direction: number;
+  boardSnapshot: Record<string, TPlayerColor>;
+  deadMarblesSnapshot: Record<TPlayerColor, number>;
 }
 
 @Component({
@@ -589,13 +591,6 @@ export class AbaloneGameWindowComponent
     const selected = state.selectedMarbles.map(k => notationToCube(k));
     const dir = this._directions[dirIdx];
 
-    this.moveHistory.push({
-      moveNumber: this.moveHistory.length + 1,
-      player: state.currentPlayer,
-      marbles: [...state.selectedMarbles],
-      direction: dirIdx
-    });
-
     // Capture animation data BEFORE executing the move
     if (selected.length === 1) {
       this._animation = captureInlineAnimData(state, selected, dir, this.sortMarblesAlongDir, this.isOnBoard);
@@ -610,6 +605,15 @@ export class AbaloneGameWindowComponent
         executeBroadsideMove(state, selected, dir);
       }
     }
+
+    this.moveHistory.push({
+      moveNumber: this.moveHistory.length + 1,
+      player: state.currentPlayer,
+      marbles: [...state.selectedMarbles],
+      direction: dirIdx,
+      boardSnapshot: { ...state.board },
+      deadMarblesSnapshot: { ...state.deadMarbles }
+    });
 
     // Start animation instead of immediately switching turns
     this._animationProgress = 0;
