@@ -14,6 +14,9 @@ interface IMoveRecord {
   player: TPlayerColor;
   marbles: string[];
   direction: number;
+  animData: IMarbleAnim[];
+  preBoardSnapshot: Record<string, TPlayerColor>;
+  preDeadMarblesSnapshot: Record<TPlayerColor, number>;
   boardSnapshot: Record<string, TPlayerColor>;
   deadMarblesSnapshot: Record<TPlayerColor, number>;
 }
@@ -37,34 +40,36 @@ interface IMoveRecord {
     <div class="game-hint" *ngIf="!game.state.isGameOver && shouldDisplayCursor()">
       {{ getHintText() }}
     </div>
-    <div class="flex flex-row gap-2 items-start">
+    <div class="flex flex-row gap-3 items-start">
       <app-canvas [displayMode]="'horizontal'" #gameCanvas></app-canvas>
-      <div *ngIf="moveHistory.length > 0"
-           class="flex flex-col bg-mainGray border border-mainOrange rounded text-mainCreme text-xs"
-           style="min-width:160px; max-width:200px;">
-        <div class="flex items-center justify-between px-2 py-1 border-b border-mainOrange">
-          <span class="font-semibold text-mainOrange">History</span>
-          <button *ngIf="replayIndex !== null"
-                  (click)="exitReplay()"
-                  class="text-xs px-2 py-0.5 rounded bg-mainOrange text-black font-semibold hover:brightness-110 transition-all">
-            Live
-          </button>
-        </div>
-        <div #historyList
-             class="overflow-y-auto px-2 py-1"
-             style="max-height:320px;">
-          <div *ngFor="let entry of moveHistory; let i = index"
-               (click)="selectReplay(i)"
-               class="py-0.5 border-b border-lightGray last:border-0 cursor-pointer hover:bg-zinc-700 transition-colors"
-               [class.bg-zinc-600]="replayIndex === i">
-            <span class="text-gray-500">#{{ entry.moveNumber }}</span>
-            <span [style.color]="entry.player === 'BLACK' ? '#888888' : '#e0e0e0'"
-                  class="mx-1">{{ entry.player === 'BLACK' ? '⬛' : '⬜' }}</span>
-            <span class="text-mainOrange">{{ marbleDots(entry.marbles.length) }}</span>
-            <span class="mx-1">{{ entry.marbles.join(' ') }}</span>
-            <span class="font-bold">{{ directionArrow(entry.direction) }}</span>
+      <div *ngIf="moveHistory.length > 0" class="flex flex-col" style="min-width:170px; max-width:210px;">
+        <div class="flex flex-col bg-lightGray border-2 border-mainOrange rounded-lg text-xs shadow-lg">
+          <div class="flex items-center px-3 py-2 border-b-2 border-mainOrange bg-lightGray rounded-t-lg">
+            <span class="font-bold text-sm text-mainOrange tracking-wide">History</span>
+          </div>
+          <div #historyList
+               class="overflow-y-auto overflow-x-hidden"
+               style="max-height:320px;">
+            <div *ngFor="let entry of moveHistory; let i = index"
+                 (click)="selectReplay(i)"
+                 class="flex items-center gap-1 px-3 py-1 border-b border-zinc-700 last:border-0 cursor-pointer hover:bg-zinc-700 transition-colors"
+                 [class.bg-zinc-600]="replayIndex === i"
+                 [class.border-l-2]="replayIndex === i"
+                 [class.border-l-mainOrange]="replayIndex === i">
+              <span class="text-mainCreme w-6 shrink-0">#{{ entry.moveNumber }}</span>
+              <span class="shrink-0">{{ entry.player === 'BLACK' ? '⬛' : '⬜' }}</span>
+              <span class="text-mainOrange shrink-0">{{ marbleDots(entry.marbles.length) }}</span>
+              <span class="text-mainCreme truncate">{{ entry.marbles.join(' ') }}</span>
+              <span class="text-mainCreme font-bold shrink-0 ml-auto inline-block"
+                    [style.transform]="directionRotation(entry.direction)">→</span>
+            </div>
           </div>
         </div>
+        <button *ngIf="replayIndex !== null"
+                (click)="exitReplay()"
+                class="flex items-center gap-2 text-sm px-4 py-1.5 rounded-full bg-mainOrange text-black font-bold hover:brightness-125 active:scale-95 transition-all shadow mt-2 w-full justify-center">
+          Go back to game
+        </button>
       </div>
     </div>
     <div *ngIf="game.state.isGameOver" class="flex justify-center gap-4 mt-2">
@@ -148,6 +153,10 @@ export class AbaloneGameWindowComponent
   public moveHistory: IMoveRecord[] = [];
   public replayIndex: number | null = null;
   private _replaySnapState = new AbaloneState();
+  private _replayPreSnapState = new AbaloneState();
+  private _replayIsAnimating = false;
+  private _replayAnimFrame = 0;
+  private _replayAnimProgress = 0;
   @ViewChild('historyList') private historyList?: ElementRef<HTMLDivElement>;
 
   public toggleInfo(): void {
@@ -193,6 +202,7 @@ export class AbaloneGameWindowComponent
   private _animationProgress = 0;
   private _animationFrame = 0;
   private readonly _animFramesTotal = 20;
+  private readonly _replayAnimFramesTotal = 40;
 
   private readonly _directions: Record<number, ICubeCoords> = {
     1: { x: 0, y: -1, z: 1 },
@@ -234,11 +244,11 @@ export class AbaloneGameWindowComponent
     return this.getSocketPlayerCount() !== 2;
   }
 
-  public directionArrow(dir: number): string {
-    const arrows: Record<number, string> = {
-      1: '↖', 2: '↗', 3: '→', 4: '↘', 5: '↙', 6: '←'
+  public directionRotation(dir: number): string {
+    const rotations: Record<number, number> = {
+      1: -135, 2: -45, 3: 0, 4: 45, 5: 135, 6: 180
     };
-    return arrows[dir] ?? '?';
+    return `rotate(${rotations[dir] ?? 0}deg)`;
   }
 
   public marbleDots(count: number): string {
@@ -248,6 +258,14 @@ export class AbaloneGameWindowComponent
   public selectReplay(index: number): void {
     this.replayIndex = index;
     this.isPaused = true;
+    const entry = this.moveHistory[index];
+    this._replayPreSnapState.board = { ...entry.preBoardSnapshot };
+    this._replayPreSnapState.deadMarbles = { ...entry.preDeadMarblesSnapshot };
+    this._replaySnapState.board = { ...entry.boardSnapshot };
+    this._replaySnapState.deadMarbles = { ...entry.deadMarblesSnapshot };
+    this._replayIsAnimating = true;
+    this._replayAnimFrame = 0;
+    this._replayAnimProgress = 0;
     setTimeout(() => {
       if (this.historyList) {
         const el = this.historyList.nativeElement;
@@ -262,6 +280,9 @@ export class AbaloneGameWindowComponent
   public exitReplay(): void {
     this.replayIndex = null;
     this.isPaused = false;
+    this._replayIsAnimating = false;
+    this._replayAnimFrame = 0;
+    this._replayAnimProgress = 0;
   }
 
   private getShouldRotate(): boolean {
@@ -303,6 +324,9 @@ export class AbaloneGameWindowComponent
     this.moveHistory = [];
     this.replayIndex = null;
     this.isPaused = false;
+    this._replayIsAnimating = false;
+    this._replayAnimFrame = 0;
+    this._replayAnimProgress = 0;
     for (const player of this.game.players) {
       if (player?.inputData) {
         player.inputData['marbles'] = null;
@@ -332,13 +356,16 @@ export class AbaloneGameWindowComponent
   }
 
   protected override update(): void {
-    this.consumeGlobalInputs();
+    if (this.consumeGlobalInputs()) {
+      this.restart();
+    }
     super.update();
 
     if (!this.isPaused) {
       this.updateAnimation();
       this.handleInput();
     }
+    this.updateReplayAnimation();
     this.render();
   }
 
@@ -350,6 +377,8 @@ export class AbaloneGameWindowComponent
 
   private handleInput(): void {
     const state = this.game.state;
+
+    if (state.phase === 'ANIMATING') return;
 
     if (state.isGameOver) {
       const isTriggered = this.game.players.some(p => {
@@ -403,7 +432,8 @@ export class AbaloneGameWindowComponent
     input['marbles'] = null;
     input['direction'] = 0;
 
-    if (this.isMoveValid(dirIdx, marbles)) {
+    const marblesOwnedByCurrentPlayer = marbles.every(key => state.board[key] === state.currentPlayer);
+    if (marblesOwnedByCurrentPlayer && this.isMoveValid(dirIdx, marbles)) {
       state.selectedMarbles = marbles;
       this.executeMove(dirIdx);
     }
@@ -434,6 +464,8 @@ export class AbaloneGameWindowComponent
       if (player) {
         player.inputData['move'] = 0;
         player.inputData['action'] = 0;
+        player.inputData['marbles'] = null;
+        player.inputData['direction'] = 0;
       }
     }
   }
@@ -644,8 +676,8 @@ export class AbaloneGameWindowComponent
     const selected = state.selectedMarbles.map(k => notationToCube(k));
     const dir = this._directions[dirIdx];
 
-    const boardSnapshot = { ...state.board };
-    const deadMarblesSnapshot = { ...state.deadMarbles };
+    const preBoardSnapshot = { ...state.board };
+    const preDeadMarblesSnapshot = { ...state.deadMarbles };
 
     // Capture animation data BEFORE executing the move
     if (selected.length === 1) {
@@ -663,12 +695,15 @@ export class AbaloneGameWindowComponent
     }
 
     this.moveHistory.push({
-      moveNumber: this.moveHistory.length + 1,
+      moveNumber: Math.ceil((this.moveHistory.length + 1) / 2),
       player: state.currentPlayer,
       marbles: [...state.selectedMarbles],
       direction: dirIdx,
-      boardSnapshot,
-      deadMarblesSnapshot
+      animData: [...this._animation],
+      preBoardSnapshot,
+      preDeadMarblesSnapshot,
+      boardSnapshot: { ...state.board },
+      deadMarblesSnapshot: { ...state.deadMarbles }
     });
 
     // Start animation instead of immediately switching turns
@@ -779,6 +814,15 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
   }
 
 
+  private updateReplayAnimation(): void {
+    if (!this._replayIsAnimating) return;
+    this._replayAnimFrame++;
+    this._replayAnimProgress = Math.min(this._replayAnimFrame / this._replayAnimFramesTotal, 1);
+    if (this._replayAnimProgress >= 1) {
+      this._replayIsAnimating = false;
+    }
+  }
+
   private updateAnimation(): void {
     if (this.game.state.phase !== 'ANIMATING') return;
 
@@ -831,11 +875,16 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
 
     if (this.replayIndex !== null) {
       const entry = this.moveHistory[this.replayIndex];
-      this._replaySnapState.board = { ...entry.boardSnapshot };
-      this._replaySnapState.deadMarbles = { ...entry.deadMarblesSnapshot };
-      drawMarbles(ctx, this._replaySnapState, this._hexSize);
-      ctx.restore();
-      drawCemetery(ctx, this._replaySnapState, this._canvas.width, this._canvas.height, this._hexSize);
+      if (this._replayIsAnimating && entry.animData.length > 0) {
+        const skipKeys = drawAnimatingMarbles(ctx, entry.animData, this._replayAnimProgress, this._hexSize);
+        drawMarbles(ctx, this._replaySnapState, this._hexSize, skipKeys);
+        ctx.restore();
+        drawCemetery(ctx, this._replaySnapState, this._canvas.width, this._canvas.height, this._hexSize);
+      } else {
+        drawMarbles(ctx, this._replaySnapState, this._hexSize);
+        ctx.restore();
+        drawCemetery(ctx, this._replaySnapState, this._canvas.width, this._canvas.height, this._hexSize);
+      }
     } else {
       if (this.game.state.phase === 'ANIMATING' && this._animation.length > 0) {
         const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this._hexSize);

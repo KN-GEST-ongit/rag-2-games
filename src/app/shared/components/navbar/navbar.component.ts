@@ -54,7 +54,7 @@ import { GameListComponent } from './game-list.component';
             class="absolute z-20 w-full bg-mainGray ease-in-out transition-all duration-200 shadow-navbarShadow rounded-b-lg {{
               isGameListActive
                 ? 'top-[56px] 2xs:top-[60px] xs:top-[64px] opacity-100'
-                : '-top-72 opacity-0'
+                : '-top-72 opacity-0 pointer-events-none'
             }}" />
         </div>
         <div></div>

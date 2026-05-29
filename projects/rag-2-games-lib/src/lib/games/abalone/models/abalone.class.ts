@@ -156,7 +156,7 @@ export class Abalone extends Game {
       0,
       true,
       'White',
-      { move: 0, action: 0, info: 0 },
+      { move: 0, action: 0, info: 0, restart: 0, marbles: null, direction: 0 },
       Abalone.getKeyboardBindings(),
       '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect or Execute move, 3:Cancel selection',
       {
@@ -168,7 +168,7 @@ export class Abalone extends Game {
       1,
       true,
       'Black',
-      { move: 0, action: 0, info: 0 },
+      { move: 0, action: 0, info: 0, restart: 0, marbles: null, direction: 0 },
       Abalone.getKeyboardBindings(),
       '<move>: 1-6 (hex directions), <action>: 1:Select/Deselect or Execute move, 3:Cancel selection',
       {
