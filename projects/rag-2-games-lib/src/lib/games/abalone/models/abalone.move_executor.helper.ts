@@ -43,10 +43,12 @@ export function executeInlineMove(
   }
 
   // Move own marbles
-  const colors = sorted.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
+  const colors = sorted.map(m => state.board[cubeToNotation(m)]);
   sorted.forEach(m => delete state.board[cubeToNotation(m)]);
   sorted.forEach((m, i) => {
-    state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
+    if (colors[i]) {
+      state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
+    }
   });
 }
 
@@ -55,10 +57,12 @@ export function executeBroadsideMove(
   selected: ICubeCoords[],
   dir: ICubeCoords
 ): void {
-  const colors = selected.map(m => state.board[cubeToNotation(m)] ?? state.currentPlayer);
+  const colors = selected.map(m => state.board[cubeToNotation(m)]);
   selected.forEach(m => delete state.board[cubeToNotation(m)]);
   selected.forEach((m, i) => {
-    state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
+    if (colors[i]) {
+      state.board[cubeToNotation({ x: m.x + dir.x, y: m.y + dir.y, z: m.z + dir.z })] = colors[i];
+    }
   });
 }
 
