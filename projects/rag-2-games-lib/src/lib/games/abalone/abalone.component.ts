@@ -228,6 +228,14 @@ export class AbaloneGameWindowComponent
     this._animationProgress = 0;
     this._animationFrame = 0;
     this.isGameOverDismissed = false;
+    for (const player of this.game.players) {
+      if (player?.inputData) {
+        player.inputData['marbles'] = null;
+        player.inputData['direction'] = 0;
+        player.inputData['move'] = 0;
+        player.inputData['action'] = 0;
+      }
+    }
   }
 
   private consumeGlobalInputs(): boolean {
