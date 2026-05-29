@@ -3,11 +3,18 @@ import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { CanvasComponent } from '../../components/canvas/canvas.component';
 import { BaseGameWindowComponent } from '../base-game.component';
-import { Abalone, AbaloneState, ICubeCoords, IMarbleAnim, cubeToNotation, notationToCube, areNeighbors, areInLine, ABALONE_WIN_SCORE } from './models/abalone.class';
+import { Abalone, AbaloneState, ICubeCoords, IMarbleAnim, cubeToNotation, notationToCube, areNeighbors, areInLine, ABALONE_WIN_SCORE, TPlayerColor } from './models/abalone.class';
 import { drawHexGrid, drawMarbles, drawMoveGhosts, drawDirectionCompass, drawCursor as drawHexCursor, drawAnimatingMarbles, drawBoardLabels, drawCemetery, drawGameOver } from './models/abalone.drawing.helper';
 import { captureBroadsideAnimData, captureInlineAnimData, executeBroadsideMove, executeInlineMove } from './models/abalone.move_executor.helper';
 import { TExchangeData } from '../../models/exchange-data.type';
 import { PlayerSourceType } from '../../models/player-source-type.enum';
+
+interface IMoveRecord {
+  moveNumber: number;
+  player: TPlayerColor;
+  marbles: string[];
+  direction: number;
+}
 
 @Component({
   selector: 'app-abalone',
@@ -107,6 +114,7 @@ export class AbaloneGameWindowComponent
   private readonly _hexSize = 30;
   public isInfoVisible = false;
   public isGameOverDismissed = false;
+  public moveHistory: IMoveRecord[] = [];
 
   public toggleInfo(): void {
     this.isInfoVisible = !this.isInfoVisible;
@@ -192,6 +200,17 @@ export class AbaloneGameWindowComponent
     return this.getSocketPlayerCount() !== 2;
   }
 
+  public directionArrow(dir: number): string {
+    const arrows: Record<number, string> = {
+      1: '↖', 2: '↗', 3: '→', 4: '↘', 5: '↙', 6: '←'
+    };
+    return arrows[dir] ?? '?';
+  }
+
+  public marbleDots(count: number): string {
+    return '●'.repeat(count);
+  }
+
   private getShouldRotate(): boolean {
     if (!this.game.isRotationEnabled) return false;
     const socketCount = this.getSocketPlayerCount();
@@ -228,6 +247,7 @@ export class AbaloneGameWindowComponent
     this._animationProgress = 0;
     this._animationFrame = 0;
     this.isGameOverDismissed = false;
+    this.moveHistory = [];
     for (const player of this.game.players) {
       if (player?.inputData) {
         player.inputData['marbles'] = null;
@@ -568,6 +588,13 @@ export class AbaloneGameWindowComponent
     const state = this.game.state;
     const selected = state.selectedMarbles.map(k => notationToCube(k));
     const dir = this._directions[dirIdx];
+
+    this.moveHistory.push({
+      moveNumber: this.moveHistory.length + 1,
+      player: state.currentPlayer,
+      marbles: [...state.selectedMarbles],
+      direction: dirIdx
+    });
 
     // Capture animation data BEFORE executing the move
     if (selected.length === 1) {
