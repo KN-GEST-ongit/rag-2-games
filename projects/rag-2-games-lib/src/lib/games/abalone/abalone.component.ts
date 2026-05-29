@@ -58,7 +58,7 @@ interface IMoveRecord {
                class="py-0.5 border-b border-lightGray last:border-0 cursor-pointer hover:bg-zinc-700 transition-colors"
                [class.bg-zinc-600]="replayIndex === i">
             <span class="text-gray-500">#{{ entry.moveNumber }}</span>
-            <span [style.color]="entry.player === 'BLACK' ? '#1a1a1a' : '#e0e0e0'"
+            <span [style.color]="entry.player === 'BLACK' ? '#888888' : '#e0e0e0'"
                   class="mx-1">{{ entry.player === 'BLACK' ? '⬛' : '⬜' }}</span>
             <span class="text-mainOrange">{{ marbleDots(entry.marbles.length) }}</span>
             <span class="mx-1">{{ entry.marbles.join(' ') }}</span>
@@ -147,6 +147,7 @@ export class AbaloneGameWindowComponent
   public isGameOverDismissed = false;
   public moveHistory: IMoveRecord[] = [];
   public replayIndex: number | null = null;
+  private _replaySnapState = new AbaloneState();
   @ViewChild('historyList') private historyList?: ElementRef<HTMLDivElement>;
 
   public toggleInfo(): void {
@@ -247,6 +248,15 @@ export class AbaloneGameWindowComponent
   public selectReplay(index: number): void {
     this.replayIndex = index;
     this.isPaused = true;
+    setTimeout(() => {
+      if (this.historyList) {
+        const el = this.historyList.nativeElement;
+        const item = el.children[index] as HTMLElement | undefined;
+        if (item) {
+          item.scrollIntoView({ block: 'nearest' });
+        }
+      }
+    });
   }
 
   public exitReplay(): void {
@@ -634,6 +644,9 @@ export class AbaloneGameWindowComponent
     const selected = state.selectedMarbles.map(k => notationToCube(k));
     const dir = this._directions[dirIdx];
 
+    const boardSnapshot = { ...state.board };
+    const deadMarblesSnapshot = { ...state.deadMarbles };
+
     // Capture animation data BEFORE executing the move
     if (selected.length === 1) {
       this._animation = captureInlineAnimData(state, selected, dir, this.sortMarblesAlongDir, this.isOnBoard);
@@ -654,8 +667,8 @@ export class AbaloneGameWindowComponent
       player: state.currentPlayer,
       marbles: [...state.selectedMarbles],
       direction: dirIdx,
-      boardSnapshot: { ...state.board },
-      deadMarblesSnapshot: { ...state.deadMarbles }
+      boardSnapshot,
+      deadMarblesSnapshot
     });
 
     // Start animation instead of immediately switching turns
@@ -818,12 +831,11 @@ public isMoveValid(dirIdx: number, overrideSelection?: string[]): boolean {
 
     if (this.replayIndex !== null) {
       const entry = this.moveHistory[this.replayIndex];
-      const snapState = new AbaloneState();
-      snapState.board = { ...entry.boardSnapshot };
-      snapState.deadMarbles = { ...entry.deadMarblesSnapshot };
-      drawMarbles(ctx, snapState, this._hexSize);
+      this._replaySnapState.board = { ...entry.boardSnapshot };
+      this._replaySnapState.deadMarbles = { ...entry.deadMarblesSnapshot };
+      drawMarbles(ctx, this._replaySnapState, this._hexSize);
       ctx.restore();
-      drawCemetery(ctx, snapState, this._canvas.width, this._canvas.height, this._hexSize);
+      drawCemetery(ctx, this._replaySnapState, this._canvas.width, this._canvas.height, this._hexSize);
     } else {
       if (this.game.state.phase === 'ANIMATING' && this._animation.length > 0) {
         const skipKeys = drawAnimatingMarbles(ctx, this._animation, this._animationProgress, this._hexSize);
