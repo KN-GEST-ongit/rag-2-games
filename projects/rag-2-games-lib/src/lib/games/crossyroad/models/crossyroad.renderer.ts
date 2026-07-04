@@ -14,6 +14,7 @@ import {
   Color4,
   ShadowGenerator,
   Scalar,
+  DirectionalLight,
 } from '@babylonjs/core';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui';
 import { CrossyRoadAssets } from './crossyroad.assets';
@@ -40,6 +41,8 @@ export class CrossyRoadRenderer extends Base3DRenderer {
 
   private readonly cameraOffset = new Vector3(2, 10, -10);
 
+  private dirLight!: DirectionalLight;
+
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, new Color4(0.53, 0.81, 0.92, 1));
 
@@ -49,6 +52,8 @@ export class CrossyRoadRenderer extends Base3DRenderer {
 
     const lighting = this.setupStandardLightingAndShadows(new Vector3(-0.5, -1.5, -0.5));
     this.shadowGenerator = lighting.shadowGenerator;
+    this.dirLight = lighting.dirLight;
+    this.shadowGenerator.bias = 0.0005;
 
     this.grassMat = new StandardMaterial("grassMat", this.scene);
     this.grassMat.diffuseColor = new Color3(0.3, 0.7, 0.3);
@@ -154,6 +159,14 @@ export class CrossyRoadRenderer extends Base3DRenderer {
     this.camera.position.y = this.cameraOffset.y; 
 
     this.camera.setTarget(new Vector3(this.cameraOffset.x, 0, this.playerMesh.position.z));
+
+    if (this.dirLight) {
+      const lightOffset = new Vector3(20, 40, 20);
+      this.dirLight.position.x = this.playerMesh.position.x + lightOffset.x;
+      this.dirLight.position.z = this.playerMesh.position.z + lightOffset.z;
+      const targetPosition = new Vector3(this.playerMesh.position.x, 0, this.playerMesh.position.z);
+      this.dirLight.direction = targetPosition.subtract(this.dirLight.position).normalize();
+    }
 
     this.syncLanes(state.lanes);
     
